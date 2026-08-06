@@ -1,0 +1,2582 @@
+// State Management for Locker Webapp
+let db = {
+  departments: [],
+  users: [],
+  employees: [], // Nhân sự sử dụng tủ đồ (không có tài khoản đăng nhập)
+  lockers: [],
+  history: [],
+  lobbyNames: { A: "Sảnh A", B: "Sảnh B" },
+  settings: {
+    rows: 10, // Mặc định hiển thị 10 dãy tủ
+    cols: 13  // 13 cột mỗi dãy, mỗi cột cao 6 tầng (tương ứng 78 tủ/dãy)
+  },
+  currentUser: null,  // Current logged-in user
+  isLoggedIn: false   // Login authentication state
+};
+
+// LocalStorage Keys
+const STORAGE_KEY = "smart_locker_db_v7";
+
+// Default Seed Data
+const DEFAULT_DEPARTMENTS = [
+  { id: "dept-kt", name: "Kỹ thuật", description: "Bộ phận hỗ trợ kỹ thuật và bảo trì" },
+  { id: "dept-ns", name: "Nhân sự", description: "Quản lý nhân sự và chế độ phúc lợi" },
+  { id: "dept-sx", name: "Sản xuất", description: "Công nhân và tổ trưởng dây chuyền sản xuất" },
+  { id: "dept-kd", name: "Kinh doanh", description: "Bộ phận bán hàng và chăm sóc khách hàng" }
+];
+
+const DEFAULT_USERS = [
+  { id: "user-admin", username: "admin", fullname: "Quản trị viên", departmentId: "dept-ns", role: "admin", password: "admin" },
+  { id: "user-manager", username: "manager", fullname: "Người quản lý", departmentId: "dept-ns", role: "manager", password: "123" }
+];
+
+const DEFAULT_EMPLOYEES = [
+  { code: "annan", fullname: "Nguyễn Văn An", departmentId: "dept-kt" },
+  { code: "binhtran", fullname: "Trần Thị Bình", departmentId: "dept-sx" },
+  { code: "cuongle", fullname: "Lê Minh Cường", departmentId: "dept-kt" },
+  { code: "dungpham", fullname: "Phạm Hoàng Dung", departmentId: "dept-kd" }
+];
+
+// Pagination Configuration for Locker List view
+let lockerListCurrentPage = 1;
+const lockerListItemsPerPage = 50;
+
+// Initialize Application
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+});
+
+function init() {
+  loadDatabase();
+  setupAuth();
+  setupNavigation();
+  setupEventListeners();
+  populateDropdowns();
+  
+  if (db.isLoggedIn && db.currentUser) {
+    showAppScreen();
+  } else {
+    showLoginScreen();
+  }
+}
+
+// ==========================================
+// AUTHENTICATION MANAGEMENT
+// ==========================================
+
+function setupAuth() {
+  const loginForm = document.getElementById("login-form");
+  if (loginForm) {
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      
+      const usernameInput = document.getElementById("login-username").value.trim().toLowerCase();
+      const passwordInput = document.getElementById("login-password").value.trim();
+      
+      if (!usernameInput || !passwordInput) {
+        showToast("Vui lòng điền đầy đủ tên đăng nhập và mật khẩu!", "error");
+        return;
+      }
+      
+      // Find matching user
+      const user = db.users.find(u => u.username === usernameInput && u.password === passwordInput);
+      
+      if (user) {
+        db.isLoggedIn = true;
+        db.currentUser = user;
+        saveDatabase();
+        
+        // Reset login form fields
+        document.getElementById("login-username").value = "";
+        document.getElementById("login-password").value = "";
+        
+        showAppScreen();
+        showToast(`Đăng nhập thành công! Chào mừng ${user.fullname}`, "success");
+      } else {
+        showToast("Sai tên đăng nhập hoặc mật khẩu!", "error");
+      }
+    });
+  }
+  
+  const logoutBtn = document.getElementById("btn-logout");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      confirmAction("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?", () => {
+        db.isLoggedIn = false;
+        db.currentUser = null;
+        saveDatabase();
+        showLoginScreen();
+        showToast("Đã đăng xuất thành công!", "info");
+      }, "Đăng xuất");
+    });
+  }
+}
+
+function showLoginScreen() {
+  document.getElementById("login-container").classList.remove("hidden");
+  document.getElementById("app-container").classList.add("hidden");
+}
+
+function showAppScreen() {
+  document.getElementById("login-container").classList.add("hidden");
+  document.getElementById("app-container").classList.remove("hidden");
+  
+  applyPermissions();
+  populateDropdowns();
+  
+  // Render current views
+  renderLockerMap();
+  renderDepartments();
+  renderUsers();
+  renderLockerList();
+  renderHistory();
+  renderStatistics();
+}
+
+// ==========================================
+// MOCK DATABASE OPERATIONS
+// ==========================================
+
+function loadDatabase() {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (data) {
+    db = JSON.parse(data);
+    if (!db.settings) {
+      db.settings = { rows: 10, cols: 13 };
+    }
+    if (!db.employees) {
+      db.employees = [...DEFAULT_EMPLOYEES];
+    }
+  } else {
+    // Seed default database
+    db.departments = [...DEFAULT_DEPARTMENTS];
+    db.users = [...DEFAULT_USERS];
+    db.employees = [...DEFAULT_EMPLOYEES];
+    db.lobbyNames = { A: "Sảnh A", B: "Sảnh B" };
+    db.settings = { rows: 10, cols: 13 }; 
+    db.currentUser = null;
+    db.isLoggedIn = false;
+    
+    generateLockers();
+    seedHistory();
+    saveDatabase();
+  }
+}
+
+function saveDatabase() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+}
+
+// Generate lockers based on settings (height is always 6 tiers)
+function generateLockers() {
+  const newLockers = [];
+  const oldLockers = db.lockers || [];
+  
+  const lobbies = ["A", "B"];
+  const rowsCount = db.settings.rows;
+  const colsCount = db.settings.cols;
+  const tiersCount = 6; // Always 6 tiers high
+  
+  let count = 0;
+  for (const lobby of lobbies) {
+    for (let r = 1; r <= rowsCount; r++) {
+      const rowName = `Dãy ${r}`;
+      for (let c = 1; c <= colsCount; c++) {
+        for (let t = tiersCount; t >= 1; t--) {
+          count++;
+          if (count > 1000) break;
+          
+          const id = `${lobby}-R${r}-C${c}-T${t}`;
+          const formattedNumber = String(count).padStart(2, '0');
+          
+          const existing = oldLockers.find(l => l.id === id);
+          if (existing) {
+            existing.number = formattedNumber;
+            newLockers.push(existing);
+          } else {
+            newLockers.push({
+              id: id,
+              lobby: lobby,
+              row: rowName,
+              col: c,
+              tier: t,
+              number: formattedNumber,
+              status: "available", // available, in_use, broken, error, maintenance
+              userId: null,
+              notes: "",
+              assignedAt: null // Timestamp when locker was assigned
+            });
+          }
+        }
+        if (count > 1000) break;
+      }
+      if (count > 1000) break;
+    }
+    if (count > 1000) break;
+  }
+  db.lockers = newLockers;
+}
+
+function seedHistory() {
+  db.history = [
+    {
+      id: "hist-1",
+      lockerId: "A-R1-C1-T6",
+      lockerNumber: "01",
+      lobbyName: "Sảnh A",
+      action: "Cấp tủ",
+      userId: "annan",
+      username: "annan",
+      fullname: "Nguyễn Văn An",
+      departmentName: "Kỹ thuật",
+      operatorId: "user-admin",
+      operatorName: "Quản trị viên",
+      timestamp: new Date(Date.now() - 3600000 * 24 * 2).toISOString(), // 2 days ago
+      note: "Cấp phát khi vào làm"
+    },
+    {
+      id: "hist-2",
+      lockerId: "B-R1-C2-T3",
+      lockerNumber: "790",
+      lobbyName: "Sảnh B",
+      action: "Cấp tủ",
+      userId: "binhtran",
+      username: "binhtran",
+      fullname: "Trần Thị Bình",
+      departmentName: "Sản xuất",
+      operatorId: "user-admin",
+      operatorName: "Quản trị viên",
+      timestamp: new Date(Date.now() - 3600000 * 24).toISOString(), // 1 day ago
+      note: "Cấp phát đầu ca"
+    },
+    {
+      id: "hist-3",
+      lockerId: "A-R2-C3-T5",
+      lockerNumber: "92",
+      lobbyName: "Sảnh A",
+      action: "Báo hỏng",
+      userId: null,
+      username: "",
+      fullname: "",
+      departmentName: "",
+      operatorId: "user-an",
+      operatorName: "Nguyễn Văn An",
+      timestamp: new Date(Date.now() - 3600000 * 5).toISOString(), // 5 hours ago
+      note: "Kẹt khóa không mở được bằng chìa"
+    }
+  ];
+  
+  // Set the statuses of seeded lockers
+  const anLocker = db.lockers.find(l => l.id === "A-R1-C1-T6");
+  if (anLocker) {
+    anLocker.status = "in_use";
+    anLocker.userId = "user-an";
+    anLocker.assignedAt = new Date(Date.now() - 3600000 * 24 * 2).toISOString();
+  }
+  
+  const binhLocker = db.lockers.find(l => l.id === "B-R1-C2-T3");
+  if (binhLocker) {
+    binhLocker.status = "in_use";
+    binhLocker.userId = "user-binh";
+    binhLocker.assignedAt = new Date(Date.now() - 3600000 * 24).toISOString();
+  }
+  
+  const brokenLocker = db.lockers.find(l => l.id === "A-R2-C3-T5");
+  if (brokenLocker) {
+    brokenLocker.status = "broken";
+    brokenLocker.notes = "Kẹt khóa không mở được bằng chìa";
+    brokenLocker.assignedAt = null;
+  }
+}
+
+// Log a transaction in history
+function logTransaction(lockerId, action, userId, note = "") {
+  const locker = db.lockers.find(l => l.id === lockerId);
+  const emp = db.employees ? db.employees.find(e => e.code === userId) : null;
+  const sysUser = !emp ? db.users.find(u => u.id === userId || u.username === userId) : null;
+  
+  const deptId = emp ? emp.departmentId : (sysUser ? sysUser.departmentId : null);
+  const dept = deptId ? db.departments.find(d => d.id === deptId) : null;
+  const operator = db.currentUser;
+  
+  const lobbyDisplayName = locker ? (db.lobbyNames[locker.lobby] || `Sảnh ${locker.lobby}`) : "Hệ thống";
+  const numberText = locker ? locker.number : "-";
+  
+  const entry = {
+    id: "hist-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+    lockerId: locker ? locker.id : lockerId,
+    lockerNumber: numberText,
+    lobbyName: lobbyDisplayName,
+    action: action,
+    userId: emp ? emp.code : (sysUser ? sysUser.id : userId),
+    username: emp ? emp.code : (sysUser ? sysUser.username : ""),
+    fullname: emp ? emp.fullname : (sysUser ? sysUser.fullname : ""),
+    departmentName: dept ? dept.name : "",
+    operatorId: operator ? operator.id : "system",
+    operatorName: operator ? operator.fullname : "Hệ thống",
+    timestamp: new Date().toISOString(),
+    note: note
+  };
+  
+  db.history.unshift(entry); // Add to beginning of log
+  saveDatabase();
+  renderHistory();
+  renderStatistics();
+}
+
+// ==========================================
+// SPA NAVIGATION
+// ==========================================
+
+function setupNavigation() {
+  const navItems = document.querySelectorAll(".nav-item");
+  navItems.forEach(item => {
+    item.addEventListener("click", () => {
+      const viewName = item.dataset.view;
+      
+      // Update sidebar active menu
+      navItems.forEach(nav => nav.classList.remove("active"));
+      item.classList.add("active");
+      
+      // Update visible view
+      const views = document.querySelectorAll(".app-view");
+      views.forEach(view => view.classList.remove("active"));
+      
+      const targetView = document.getElementById(`view-${viewName}`);
+      if (targetView) {
+        targetView.classList.add("active");
+      }
+      
+      // Refresh views accordingly on tab switch
+      if (viewName === "statistics") {
+        renderStatistics();
+      } else if (viewName === "locker-list") {
+        lockerListCurrentPage = 1;
+        renderLockerList();
+      }
+    });
+  });
+}
+
+// ==========================================
+// AUTH & PERMISSIONS ROLE-BASED ACCESS CONTROL (RBAC)
+// ==========================================
+
+function applyPermissions() {
+  if (!db.currentUser) return;
+  const isLockerAdmin = db.currentUser.role === "admin";
+  
+  // Show / Hide admin elements
+  const adminElements = document.querySelectorAll(".admin-only");
+  adminElements.forEach(el => {
+    if (isLockerAdmin) {
+      el.classList.remove("hidden");
+      if (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "BUTTON") {
+        el.removeAttribute("disabled");
+      }
+    } else {
+      el.classList.add("hidden");
+      if (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "BUTTON") {
+        el.setAttribute("disabled", "true");
+      }
+    }
+  });
+
+  // Update UI sidebar user badge
+  const roleBadge = document.getElementById("current-user-role-badge");
+  const roleIcon = document.getElementById("current-user-role-icon");
+  const fullNameLabel = document.getElementById("current-user-fullname");
+  
+  fullNameLabel.innerText = db.currentUser.fullname;
+  roleBadge.innerText = db.currentUser.role === "admin" ? "Quản trị" : "Nhân viên";
+  roleBadge.className = `role-badge ${db.currentUser.role}`;
+  
+  if (db.currentUser.role === "admin") {
+    roleIcon.className = "fa-solid fa-user-shield text-blue";
+  } else {
+    roleIcon.className = "fa-solid fa-user text-green";
+  }
+}
+
+// ==========================================
+// RENDER VIEWS
+// ==========================================
+
+// Global state variables for layout view
+let activeLobby = "A";
+let selectedLockerIdForModal = null;
+let mapSearchQuery = "";
+
+// 1. LOCKER MAP GRID RENDER
+function renderLockerMap() {
+  const container = document.getElementById("lockers-grid-container");
+  container.innerHTML = "";
+  
+  const lobbyLockers = db.lockers.filter(l => l.lobby === activeLobby);
+  
+  // Group by row
+  const rows = {};
+  lobbyLockers.forEach(l => {
+    if (!rows[l.row]) rows[l.row] = [];
+    rows[l.row].push(l);
+  });
+  
+  // Sort row keys (e.g. Dãy 1, Dãy 2, ..., Dãy 10) numerically or alphabetically
+  const sortedRowKeys = Object.keys(rows).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+  
+  if (sortedRowKeys.length === 0) {
+    container.innerHTML = `
+      <div class="glass-card text-center" style="padding: 40px;">
+        <i class="fa-solid fa-box-open" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 12px;"></i>
+        <p style="color: var(--text-secondary);">Chưa có dữ liệu tủ đồ ở sảnh này. Vui lòng bấm "Thêm Tủ Đồ" để khởi tạo.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Display stats count summary for this lobby
+  updateLobbyStatsSummary(lobbyLockers);
+  
+  // Render rows
+  sortedRowKeys.forEach(rowKey => {
+    const rowLockers = rows[rowKey];
+    
+    // Find unique columns in this row
+    const cols = {};
+    rowLockers.forEach(l => {
+      if (!cols[l.col]) cols[l.col] = [];
+      cols[l.col].push(l);
+    });
+    const sortedColKeys = Object.keys(cols).sort((a,b) => Number(a) - Number(b));
+    
+    const rowElement = document.createElement("div");
+    rowElement.className = "locker-row";
+    rowElement.innerHTML = `
+      <div class="locker-row-header">
+        <h3 class="locker-row-title"><i class="fa-solid fa-layer-group"></i> ${rowKey}</h3>
+        <span class="badge" style="font-size: 0.7rem; font-weight:600;">Tổng số: ${rowLockers.length} tủ</span>
+      </div>
+    `;
+    
+    const colsContainer = document.createElement("div");
+    colsContainer.className = "locker-row-cols";
+    
+    // Render columns
+    sortedColKeys.forEach(colKey => {
+      const colLockers = cols[colKey];
+      
+      const colElement = document.createElement("div");
+      colElement.className = "locker-col";
+      colElement.innerHTML = `<div class="locker-col-label">Cột ${colKey}</div>`;
+      
+      // Sort lockers in column: Tier 6 (top) down to Tier 1 (bottom)
+      const sortedTiers = colLockers.sort((a,b) => b.tier - a.tier);
+      
+      sortedTiers.forEach(locker => {
+        const cell = document.createElement("div");
+        
+        let searchClass = "";
+        if (mapSearchQuery) {
+          const isMatch = isLockerMatch(locker, mapSearchQuery);
+          searchClass = isMatch ? " highlighted" : " dimmed";
+        }
+        
+        cell.className = `locker-cell state-${locker.status}${searchClass}`;
+        cell.dataset.id = locker.id;
+        
+        let holderName = "";
+        let employeeCode = "";
+        if (locker.status === "in_use" && locker.userId) {
+          const emp = db.employees.find(e => e.code === locker.userId);
+          holderName = emp ? emp.fullname : "Không rõ";
+          employeeCode = emp ? emp.code : locker.userId;
+        } else if (locker.status === "broken") {
+          holderName = "HỎNG";
+        } else if (locker.status === "error") {
+          holderName = "LỖI";
+        } else if (locker.status === "maintenance") {
+          holderName = "BẢO TRÌ";
+        } else {
+          holderName = "Trống";
+        }
+        
+        let cornerText = "";
+        if (locker.status === "in_use" && employeeCode) {
+          cornerText = employeeCode.toUpperCase();
+        }
+        
+        cell.innerHTML = `
+          <div class="locker-cell-number" title="${locker.number}">${locker.number}</div>
+          <div class="locker-cell-holder" title="${holderName}">${holderName}</div>
+          <div class="locker-cell-tier" style="font-size: 0.65rem; font-weight: 700;">${cornerText}</div>
+        `;
+        
+        cell.addEventListener("click", () => openLockerModal(locker.id));
+        colElement.appendChild(cell);
+      });
+      
+      colsContainer.appendChild(colElement);
+    });
+    
+    rowElement.appendChild(colsContainer);
+    container.appendChild(rowElement);
+  });
+}
+
+function updateLobbyStatsSummary(lobbyLockers) {
+  const total = lobbyLockers.length;
+  const available = lobbyLockers.filter(l => l.status === "available").length;
+  const inUse = lobbyLockers.filter(l => l.status === "in_use").length;
+  const broken = lobbyLockers.filter(l => ["broken", "error", "maintenance"].includes(l.status)).length;
+  
+  const currentLobbyName = db.lobbyNames[activeLobby] || `Sảnh ${activeLobby}`;
+  document.getElementById("lobby-stats-summary").innerText = 
+    `${currentLobbyName} - Tổng: ${total} | Trống: ${available} | Đang dùng: ${inUse} | Sự cố: ${broken}`;
+  
+  document.getElementById("input-lobby-rename").value = currentLobbyName;
+  
+  // Update dashboard quick stats cards (for the entire system, i.e., all lobbies)
+  const systemTotal = db.lockers.length;
+  const systemAvailable = db.lockers.filter(l => l.status === "available").length;
+  const systemInUse = db.lockers.filter(l => l.status === "in_use").length;
+  const systemBroken = db.lockers.filter(l => ["broken", "error", "maintenance"].includes(l.status)).length;
+  
+  const elTotal = document.getElementById("map-stats-total");
+  const elAvailable = document.getElementById("map-stats-available");
+  const elInUse = document.getElementById("map-stats-in-use");
+  const elBroken = document.getElementById("map-stats-broken");
+  
+  if (elTotal) elTotal.innerText = systemTotal;
+  if (elAvailable) elAvailable.innerText = systemAvailable;
+  if (elInUse) elInUse.innerText = systemInUse;
+  if (elBroken) elBroken.innerText = systemBroken;
+}
+
+// 2. DEPARTMENTS CRUD RENDER
+function renderDepartments() {
+  const tbody = document.getElementById("department-table-body");
+  tbody.innerHTML = "";
+  
+  if (!db.currentUser) return;
+  const isAdmin = db.currentUser.role === "admin";
+  
+  if (db.departments.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 3 : 2}" class="text-center" style="color: var(--text-secondary); padding: 24px;">Chưa có bộ phận nào.</td></tr>`;
+    return;
+  }
+  
+  db.departments.forEach(dept => {
+    const employeeCount = db.employees ? db.employees.filter(e => e.departmentId === dept.id).length : 0;
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(dept.name)}</strong> <span class="badge" style="font-size: 0.65rem; margin-left: 6px;">${employeeCount} nhân sự</span></td>
+      <td style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(dept.description || "Không có mô tả")}</td>
+      ${isAdmin ? `
+        <td class="text-center">
+          <div class="table-actions">
+            <button class="btn-icon btn-edit-dept" data-id="${dept.id}" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button class="btn-icon delete btn-delete-dept" data-id="${dept.id}" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      ` : ""}
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  if (isAdmin) {
+    tbody.querySelectorAll(".btn-edit-dept").forEach(btn => {
+      btn.addEventListener("click", () => editDepartment(btn.dataset.id));
+    });
+    tbody.querySelectorAll(".btn-delete-dept").forEach(btn => {
+      btn.addEventListener("click", () => deleteDepartment(btn.dataset.id));
+    });
+  }
+}
+
+// 3. USERS CRUD RENDER (ACCOUNT MANAGEMENT)
+function renderUsers() {
+  const tbody = document.getElementById("user-table-body");
+  tbody.innerHTML = "";
+  
+  if (!db.currentUser) return;
+  const filterDeptId = document.getElementById("filter-user-dept").value;
+  const isAdmin = db.currentUser.role === "admin";
+  
+  // Only display system operators (admin and manager) in the accounts view
+  let filteredUsers = db.users.filter(u => u.role === "admin" || u.role === "manager");
+  if (filterDeptId) {
+    filteredUsers = filteredUsers.filter(u => u.departmentId === filterDeptId);
+  }
+  
+  if (filteredUsers.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" class="text-center" style="color: var(--text-secondary); padding: 24px;">Không tìm thấy tài khoản quản trị/quản lý nào.</td></tr>`;
+    return;
+  }
+  
+  filteredUsers.forEach(user => {
+    const dept = db.departments.find(d => d.id === user.departmentId);
+    const deptName = dept ? dept.name : "Không rõ";
+    
+    let roleText = "Người dùng";
+    let roleClass = "badge";
+    if (user.role === "admin") {
+      roleText = "Quản trị";
+      roleClass = "badge status-badge-Cập";
+    } else if (user.role === "manager") {
+      roleText = "Quản lý";
+      roleClass = "badge status-badge-Báo";
+    }
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight: 700;">${escapeHtml(user.fullname)}</div>
+      </td>
+      <td style="font-family: monospace; color: var(--accent-blue); font-weight: 700;">${escapeHtml(user.username.toUpperCase())}</td>
+      <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(user.password || "123456")}</td>
+      <td><span class="badge" style="background: rgba(255,255,255,0.02);">${escapeHtml(deptName)}</span></td>
+      <td><span class="${roleClass}">${roleText}</span></td>
+      ${isAdmin ? `
+        <td class="text-center">
+          <div class="table-actions">
+            <button class="btn-icon btn-edit-user" data-id="${user.id}" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button class="btn-icon delete btn-delete-user" data-id="${user.id}" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      ` : ""}
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  if (isAdmin) {
+    tbody.querySelectorAll(".btn-edit-user").forEach(btn => {
+      btn.addEventListener("click", () => editUser(btn.dataset.id));
+    });
+    tbody.querySelectorAll(".btn-delete-user").forEach(btn => {
+      btn.addEventListener("click", () => deleteUser(btn.dataset.id));
+    });
+  }
+}
+
+// 3.5. LOCKER LIST VIEW WITH PAGINATION (50 ITEMS/PAGE)
+function renderLockerList() {
+  const tbody = document.getElementById("locker-list-table-body");
+  const paginationContainer = document.getElementById("locker-list-pagination");
+  
+  if (!tbody || !paginationContainer) return;
+  tbody.innerHTML = "";
+  paginationContainer.innerHTML = "";
+  
+  if (!db.currentUser) return;
+  const isAdmin = db.currentUser.role === "admin";
+  const searchVal = document.getElementById("locker-list-search").value.toLowerCase().trim();
+  const filterLobby = document.getElementById("locker-list-filter-lobby").value;
+  const filterDept = document.getElementById("locker-list-filter-dept").value;
+  
+  // Filter only lockers that are currently in_use
+  let inUseLockers = db.lockers.filter(l => l.status === "in_use");
+  
+  // Map employees and departments for filtering
+  let lockerListData = inUseLockers.map(l => {
+    const emp = db.employees.find(e => e.code === l.userId);
+    const dept = emp ? db.departments.find(d => d.id === emp.departmentId) : null;
+    return {
+      locker: l,
+      user: emp ? { id: emp.code, username: emp.code, fullname: emp.fullname, departmentId: emp.departmentId } : null,
+      dept: dept,
+      lobbyName: db.lobbyNames[l.lobby] || `Sảnh ${l.lobby}`
+    };
+  });
+  
+  // Apply Search (search locker number, user fullname, username, dept name, row)
+  if (searchVal) {
+    lockerListData = lockerListData.filter(item => 
+      item.locker.number.toLowerCase().includes(searchVal) ||
+      (item.user && item.user.fullname.toLowerCase().includes(searchVal)) ||
+      (item.user && item.user.username.toLowerCase().includes(searchVal)) ||
+      (item.dept && item.dept.name.toLowerCase().includes(searchVal)) ||
+      item.locker.row.toLowerCase().includes(searchVal)
+    );
+  }
+  
+  // Apply Lobby Filter
+  if (filterLobby) {
+    lockerListData = lockerListData.filter(item => item.locker.lobby === filterLobby);
+  }
+  
+  // Apply Department Filter
+  if (filterDept) {
+    lockerListData = lockerListData.filter(item => item.user && item.user.departmentId === filterDept);
+  }
+  
+  const totalItems = lockerListData.length;
+  document.getElementById("locker-list-total-badge").innerText = `Tổng số: ${totalItems} tủ đang dùng`;
+  
+  if (totalItems === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="color: var(--text-secondary); padding: 24px;">Không tìm thấy tủ đồ nào đang cấp phát phù hợp.</td></tr>`;
+    return;
+  }
+  
+  // Calculate Pagination
+  const totalPages = Math.max(1, Math.ceil(totalItems / lockerListItemsPerPage));
+  if (lockerListCurrentPage > totalPages) {
+    lockerListCurrentPage = totalPages;
+  }
+  if (lockerListCurrentPage < 1) {
+    lockerListCurrentPage = 1;
+  }
+  
+  const startIndex = (lockerListCurrentPage - 1) * lockerListItemsPerPage;
+  const endIndex = Math.min(startIndex + lockerListItemsPerPage, totalItems);
+  const paginatedItems = lockerListData.slice(startIndex, endIndex);
+  
+  // Render Table Rows
+  paginatedItems.forEach((item, index) => {
+    const rowNo = startIndex + index + 1;
+    const l = item.locker;
+    const user = item.user;
+    const dept = item.dept;
+    
+    const timeStr = l.assignedAt ? formatDateTime(l.assignedAt) : "Không rõ";
+    
+    // All logged-in system operators (admin/manager) have permission to return lockers
+    const canReturn = true;
+    
+    const tr = document.createElement("tr");
+    const displayUsername = user ? user.username.toUpperCase() : "-";
+    tr.innerHTML = `
+      <td>${rowNo}</td>
+      <td style="font-family: monospace; font-weight: 700; color: var(--accent-blue);">${escapeHtml(displayUsername)}</td>
+      <td><strong>${escapeHtml(user ? user.fullname : "Không rõ")}</strong></td>
+      <td><span class="badge" style="background: rgba(255,255,255,0.02);">${escapeHtml(dept ? dept.name : "-")}</span></td>
+      <td><span style="font-family: monospace; font-weight:700;">${escapeHtml(l.number)}</span></td>
+      <td>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">
+          ${escapeHtml(item.lobbyName)} - ${escapeHtml(l.row)} - Cột ${l.col} - Tầng ${l.tier}
+        </span>
+      </td>
+      <td style="font-size:0.8rem; color: var(--text-secondary);">${timeStr}</td>
+      <td class="text-center">
+        ${canReturn ? `
+          <button class="btn-secondary btn-sm btn-quick-return" data-id="${l.id}" style="color: var(--accent-blue); border-color: rgba(59,130,246,0.2); padding: 4px 8px; font-size: 0.75rem; width: auto;">
+            <i class="fa-solid fa-right-from-bracket"></i> Trả tủ
+          </button>
+        ` : `<span style="font-size:0.75rem; color: var(--text-secondary);">-</span>`}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  // Attach quick return action click handler
+  tbody.querySelectorAll(".btn-quick-return").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const lid = btn.dataset.id;
+      quickReturnLocker(lid);
+    });
+  });
+  
+  // Render Pagination Info & Buttons
+  // Left side info
+  const infoDiv = document.createElement("div");
+  infoDiv.className = "pagination-info";
+  infoDiv.innerText = `Hiển thị ${startIndex + 1} - ${endIndex} trong tổng số ${totalItems} tủ đang sử dụng`;
+  paginationContainer.appendChild(infoDiv);
+  
+  // Right side controls
+  const controlsDiv = document.createElement("div");
+  controlsDiv.className = "pagination-controls";
+  
+  // First page button
+  const firstBtn = document.createElement("button");
+  firstBtn.className = "page-btn";
+  firstBtn.innerHTML = '<i class="fa-solid fa-angles-left"></i>';
+  firstBtn.disabled = lockerListCurrentPage === 1;
+  firstBtn.addEventListener("click", () => {
+    lockerListCurrentPage = 1;
+    renderLockerList();
+  });
+  controlsDiv.appendChild(firstBtn);
+  
+  // Previous page button
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "page-btn";
+  prevBtn.innerHTML = '<i class="fa-solid fa-angle-left"></i>';
+  prevBtn.disabled = lockerListCurrentPage === 1;
+  prevBtn.addEventListener("click", () => {
+    if (lockerListCurrentPage > 1) {
+      lockerListCurrentPage--;
+      renderLockerList();
+    }
+  });
+  controlsDiv.appendChild(prevBtn);
+  
+  // Render middle page numbers (sliding window of 5 pages)
+  const maxPageVisible = 5;
+  let startPage = Math.max(1, lockerListCurrentPage - 2);
+  let endPage = Math.min(totalPages, startPage + maxPageVisible - 1);
+  
+  if (endPage - startPage < maxPageVisible - 1) {
+    startPage = Math.max(1, endPage - maxPageVisible + 1);
+  }
+  
+  for (let p = startPage; p <= endPage; p++) {
+    const pageBtn = document.createElement("button");
+    pageBtn.className = `page-btn ${p === lockerListCurrentPage ? 'active' : ''}`;
+    pageBtn.innerText = p;
+    pageBtn.addEventListener("click", () => {
+      lockerListCurrentPage = p;
+      renderLockerList();
+    });
+    controlsDiv.appendChild(pageBtn);
+  }
+  
+  // Next page button
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "page-btn";
+  nextBtn.innerHTML = '<i class="fa-solid fa-angle-right"></i>';
+  nextBtn.disabled = lockerListCurrentPage === totalPages;
+  nextBtn.addEventListener("click", () => {
+    if (lockerListCurrentPage < totalPages) {
+      lockerListCurrentPage++;
+      renderLockerList();
+    }
+  });
+  controlsDiv.appendChild(nextBtn);
+  
+  // Last page button
+  const lastBtn = document.createElement("button");
+  lastBtn.className = "page-btn";
+  lastBtn.innerHTML = '<i class="fa-solid fa-angles-right"></i>';
+  lastBtn.disabled = lockerListCurrentPage === totalPages;
+  lastBtn.addEventListener("click", () => {
+    lockerListCurrentPage = totalPages;
+    renderLockerList();
+  });
+  controlsDiv.appendChild(lastBtn);
+  
+  paginationContainer.appendChild(controlsDiv);
+}
+
+function quickReturnLocker(lockerId) {
+  const locker = db.lockers.find(l => l.id === lockerId);
+  if (!locker) return;
+  
+  const oldUserId = locker.userId;
+  const emp = db.employees.find(e => e.code === oldUserId);
+  const userName = emp ? emp.fullname : "Nhân viên";
+  
+  confirmAction(`Bạn có muốn thu hồi tủ đồ ${locker.number} đang được dùng bởi ${userName}?`, () => {
+    const lockerIndex = db.lockers.findIndex(l => l.id === lockerId);
+    if (lockerIndex === -1) return;
+    
+    db.lockers[lockerIndex].status = "available";
+    db.lockers[lockerIndex].userId = null;
+    db.lockers[lockerIndex].notes = "";
+    db.lockers[lockerIndex].assignedAt = null;
+    
+    saveDatabase();
+    logTransaction(lockerId, "Trả tủ", oldUserId, "Đã trả tủ nhanh tại bảng Danh sách");
+    
+    renderLockerList();
+    renderLockerMap();
+    renderUsers();
+    showToast(`Đã trả tủ ${locker.number} thành công`, "success");
+  });
+}
+
+// 4. TRANSACTION LOGS HISTORY RENDER
+function renderHistory() {
+  const tbody = document.getElementById("history-table-body");
+  tbody.innerHTML = "";
+  
+  const searchKeyword = document.getElementById("history-search").value.toLowerCase().trim();
+  const filterLobby = document.getElementById("history-filter-lobby").value;
+  const filterAction = document.getElementById("history-filter-action").value;
+  
+  let filteredLogs = db.history;
+  
+  // Apply Search
+  if (searchKeyword) {
+    filteredLogs = filteredLogs.filter(log => 
+      log.lockerNumber.toLowerCase().includes(searchKeyword) ||
+      log.lobbyName.toLowerCase().includes(searchKeyword) ||
+      log.fullname.toLowerCase().includes(searchKeyword) ||
+      log.username.toLowerCase().includes(searchKeyword) ||
+      log.departmentName.toLowerCase().includes(searchKeyword) ||
+      log.action.toLowerCase().includes(searchKeyword) ||
+      log.note.toLowerCase().includes(searchKeyword)
+    );
+  }
+  
+  // Apply Lobby Filter
+  if (filterLobby) {
+    filteredLogs = filteredLogs.filter(log => {
+      const locker = db.lockers.find(l => l.id === log.lockerId);
+      return locker && locker.lobby === filterLobby;
+    });
+  }
+  
+  // Apply Action Filter
+  if (filterAction) {
+    filteredLogs = filteredLogs.filter(log => log.action === filterAction);
+  }
+  
+  if (filteredLogs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: var(--text-secondary); padding: 24px;">Chưa có bản ghi lịch sử nào phù hợp.</td></tr>`;
+    return;
+  }
+  
+  filteredLogs.forEach(log => {
+    const timeDisplay = formatDateTime(log.timestamp);
+    const actionBadgeClass = `badge status-badge-${log.action.substring(0, 3)}`;
+    
+    let holderDesc = "-";
+    if (log.fullname) {
+      holderDesc = `<strong>${escapeHtml(log.fullname)}</strong><br><span style="font-size:0.75rem; color: var(--text-secondary); font-family: monospace; font-weight: 700;">${escapeHtml(log.username.toUpperCase())}</span>`;
+    }
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-size: 0.8rem; color: var(--text-secondary);">${timeDisplay}</td>
+      <td>${escapeHtml(log.lobbyName)}</td>
+      <td><span style="font-family: monospace; font-weight:700;">${escapeHtml(log.lockerNumber)}</span></td>
+      <td><span class="${actionBadgeClass}">${escapeHtml(log.action)}</span></td>
+      <td>${holderDesc}</td>
+      <td><span class="badge" style="background:rgba(255,255,255,0.02);">${escapeHtml(log.departmentName || "-")}</span></td>
+      <td>
+        <div style="font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(log.note)}">
+          ${escapeHtml(log.note || "-")}
+        </div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">
+          Bởi: ${escapeHtml(log.operatorName)}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// 5. STATISTICS & DASHBOARD RENDER
+function renderStatistics() {
+  const totalCount = db.lockers.length;
+  const availableCount = db.lockers.filter(l => l.status === "available").length;
+  const inUseCount = db.lockers.filter(l => l.status === "in_use").length;
+  const brokenCount = db.lockers.filter(l => ["broken", "error", "maintenance"].includes(l.status)).length;
+  
+  // Write to cards
+  document.getElementById("stats-total-lockers").innerText = totalCount;
+  document.getElementById("stats-available-lockers").innerText = availableCount;
+  document.getElementById("stats-in-use-lockers").innerText = inUseCount;
+  document.getElementById("stats-broken-lockers").innerText = brokenCount;
+  
+  // Lobby breakdown progress bars
+  const lobbyStatsContainer = document.getElementById("lobby-stats-container");
+  lobbyStatsContainer.innerHTML = "";
+  
+  const lobbies = ["A", "B"];
+  lobbies.forEach(lobbyKey => {
+    const lobbyName = db.lobbyNames[lobbyKey] || `Sảnh ${lobbyKey}`;
+    const lockers = db.lockers.filter(l => l.lobby === lobbyKey);
+    const total = lockers.length;
+    
+    if (total === 0) return;
+    
+    const occupied = lockers.filter(l => l.status === "in_use").length;
+    const errors = lockers.filter(l => ["broken", "error", "maintenance"].includes(l.status)).length;
+    
+    const pctOccupied = total > 0 ? Math.round((occupied / total) * 100) : 0;
+    const pctErrors = total > 0 ? Math.round((errors / total) * 100) : 0;
+    const pctAvailable = 100 - pctOccupied - pctErrors;
+    
+    const div = document.createElement("div");
+    div.className = "stat-bar-group";
+    div.innerHTML = `
+      <div class="stat-bar-label">
+        <span>${escapeHtml(lobbyName)} (Tổng: ${total} tủ)</span>
+        <span>Đang dùng: ${pctOccupied}% | Trống: ${pctAvailable}% | Sự cố: ${pctErrors}%</span>
+      </div>
+      <div class="stat-bar-wrapper" style="display: flex;">
+        <div class="stat-bar-fill color-green" style="width: ${pctAvailable}%;" title="Trống: ${pctAvailable}%"></div>
+        <div class="stat-bar-fill" style="width: ${pctOccupied}%;" title="Sử dụng: ${pctOccupied}%"></div>
+        <div class="stat-bar-fill color-red" style="width: ${pctErrors}%;" title="Sự cố: ${pctErrors}%"></div>
+      </div>
+    `;
+    lobbyStatsContainer.appendChild(div);
+  });
+  
+  // Department breakdown progress bars
+  const deptStatsContainer = document.getElementById("dept-stats-container");
+  deptStatsContainer.innerHTML = "";
+  
+  if (db.departments.length === 0) {
+    deptStatsContainer.innerHTML = `<p style="color:var(--text-secondary); text-align:center; padding:16px;">Chưa có dữ liệu bộ phận.</p>`;
+    return;
+  }
+  
+  const totalOccupiedLockers = db.lockers.filter(l => l.status === "in_use" && l.userId).length;
+  
+  db.departments.forEach(dept => {
+    const deptEmployees = db.employees ? db.employees.filter(e => e.departmentId === dept.id) : [];
+    const deptEmployeeCodes = deptEmployees.map(e => e.code);
+    const deptLockerCount = db.lockers.filter(l => l.status === "in_use" && l.userId && deptEmployeeCodes.includes(l.userId)).length;
+    
+    const pct = totalOccupiedLockers > 0 ? Math.round((deptLockerCount / totalOccupiedLockers) * 100) : 0;
+    
+    const div = document.createElement("div");
+    div.className = "stat-bar-group";
+    div.innerHTML = `
+      <div class="stat-bar-label">
+        <span>${escapeHtml(dept.name)}</span>
+        <span>${deptLockerCount} tủ (${pct}%)</span>
+      </div>
+      <div class="stat-bar-wrapper">
+        <div class="stat-bar-fill color-purple" style="width: ${pct}%;"></div>
+      </div>
+    `;
+    deptStatsContainer.appendChild(div);
+  });
+}
+
+// Populate dropdown lists
+function populateDropdowns() {
+  // 1. Department dropdowns
+  const deptSelects = [
+    document.getElementById("user-dept"),
+    document.getElementById("filter-user-dept"),
+    document.getElementById("locker-list-filter-dept"),
+    document.getElementById("assign-user-dept")
+  ];
+  
+  const originalFilterVal = deptSelects[1] ? deptSelects[1].value : "";
+  const originalListFilterVal = deptSelects[2] ? deptSelects[2].value : "";
+  const originalAssignDeptVal = deptSelects[3] ? deptSelects[3].value : "";
+  
+  deptSelects.forEach(select => {
+    if (!select) return;
+    
+    const val = select.value;
+    const firstOpt = select.options[0];
+    select.innerHTML = "";
+    if (firstOpt) select.appendChild(firstOpt);
+    
+    db.departments.forEach(dept => {
+      const opt = document.createElement("option");
+      opt.value = dept.id;
+      opt.innerText = dept.name;
+      select.appendChild(opt);
+    });
+    
+    select.value = val;
+  });
+  
+  if (originalFilterVal && deptSelects[1]) {
+    deptSelects[1].value = originalFilterVal;
+  }
+  if (originalListFilterVal && deptSelects[2]) {
+    deptSelects[2].value = originalListFilterVal;
+  }
+  if (originalAssignDeptVal && deptSelects[3]) {
+    deptSelects[3].value = originalAssignDeptVal;
+  }
+  
+  // 2. User Switcher Dropdown (in sidebar)
+  const switchUserSelect = document.getElementById("switch-user-select");
+  if (switchUserSelect) {
+    switchUserSelect.innerHTML = "";
+    db.users.forEach(user => {
+      const dept = db.departments.find(d => d.id === user.departmentId);
+      const deptText = dept ? ` (${dept.name})` : "";
+      const roleText = user.role === "admin" ? " [ADMIN]" : "";
+      
+      const opt = document.createElement("option");
+      opt.value = user.id;
+      opt.innerText = `${user.fullname}${deptText}${roleText}`;
+      switchUserSelect.appendChild(opt);
+    });
+    
+    if (db.currentUser) {
+      switchUserSelect.value = db.currentUser.id;
+    }
+  }
+}
+
+// ==========================================
+// EVENT LISTENERS & CRUD FUNCTIONS
+// ==========================================
+
+function setupEventListeners() {
+  // Theme Toggle (Light/Dark Mode)
+  const themeToggle = document.getElementById("theme-toggle");
+  themeToggle.addEventListener("click", () => {
+    const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("smart_locker_theme", nextTheme);
+    
+    const icon = themeToggle.querySelector("i");
+    if (nextTheme === "dark") {
+      icon.className = "fa-solid fa-moon";
+      showToast("Đã bật chế độ Tối", "success");
+    } else {
+      icon.className = "fa-solid fa-sun";
+      showToast("Đã bật chế độ Sáng", "success");
+    }
+  });
+  
+  // Load saved theme on load
+  const savedTheme = localStorage.getItem("smart_locker_theme") || "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  themeToggle.querySelector("i").className = savedTheme === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  
+  // Switch Active User Dropdown in sidebar (Simulation)
+  document.getElementById("switch-user-select").addEventListener("change", (e) => {
+    const selectedUserId = e.target.value;
+    const user = db.users.find(u => u.id === selectedUserId);
+    if (user) {
+      db.currentUser = user;
+      saveDatabase();
+      applyPermissions();
+      populateDropdowns();
+      renderLockerMap();
+      renderDepartments();
+      renderUsers();
+      renderLockerList();
+      renderHistory();
+      showToast(`Đã mô phỏng chuyển sang: ${user.fullname}`, "success");
+    }
+  });
+  
+  // Lobby Tab toggle buttons
+  document.getElementById("tab-lobby-a").addEventListener("click", () => switchLobby("A"));
+  document.getElementById("tab-lobby-b").addEventListener("click", () => switchLobby("B"));
+  
+  // Lobby rename action
+  document.getElementById("btn-lobby-rename").addEventListener("click", renameActiveLobby);
+  
+  // Filter user by department change
+  document.getElementById("filter-user-dept").addEventListener("change", renderUsers);
+  
+  // Map Search Input listeners on Main Screen
+  const mapSearchInput = document.getElementById("map-search-input");
+  const btnClearMapSearch = document.getElementById("btn-clear-map-search");
+  
+  if (mapSearchInput) {
+    mapSearchInput.addEventListener("input", (e) => {
+      mapSearchQuery = e.target.value.toLowerCase().trim();
+      
+      if (mapSearchQuery) {
+        if (btnClearMapSearch) btnClearMapSearch.style.display = "block";
+      } else {
+        if (btnClearMapSearch) btnClearMapSearch.style.display = "none";
+      }
+      
+      renderLockerMap();
+      renderMapSearchResults();
+    });
+  }
+  
+  if (btnClearMapSearch) {
+    btnClearMapSearch.addEventListener("click", () => {
+      if (mapSearchInput) mapSearchInput.value = "";
+      btnClearMapSearch.style.display = "none";
+      mapSearchQuery = "";
+      
+      renderLockerMap();
+      renderMapSearchResults();
+    });
+  }
+  
+  // Search & Filter Locker List (New tab)
+  document.getElementById("locker-list-search").addEventListener("input", () => {
+    lockerListCurrentPage = 1;
+    renderLockerList();
+  });
+  document.getElementById("locker-list-filter-lobby").addEventListener("change", () => {
+    lockerListCurrentPage = 1;
+    renderLockerList();
+  });
+  document.getElementById("locker-list-filter-dept").addEventListener("change", () => {
+    lockerListCurrentPage = 1;
+    renderLockerList();
+  });
+
+  // Search & Filter History log
+  document.getElementById("history-search").addEventListener("input", renderHistory);
+  document.getElementById("history-filter-lobby").addEventListener("change", renderHistory);
+  document.getElementById("history-filter-action").addEventListener("change", renderHistory);
+  
+  // Clear history log
+  document.getElementById("btn-clear-history").addEventListener("click", () => {
+    confirmAction("Bạn có chắc muốn xóa tất cả lịch sử? Thao tác này không thể hoàn tác.", () => {
+      db.history = [];
+      saveDatabase();
+      renderHistory();
+      renderStatistics();
+      showToast("Đã xóa sạch lịch sử giao dịch", "success");
+    });
+  });
+  
+  // Layout Config Modal actions (Admin only)
+  document.getElementById("btn-config-layout").addEventListener("click", () => {
+    document.getElementById("cfg-rows").value = db.settings.rows;
+    document.getElementById("cfg-cols").value = db.settings.cols;
+    document.getElementById("config-layout-modal").classList.add("open");
+  });
+  
+  document.getElementById("btn-close-layout-modal").addEventListener("click", () => {
+    document.getElementById("config-layout-modal").classList.remove("open");
+  });
+  document.getElementById("btn-cancel-layout-config").addEventListener("click", () => {
+    document.getElementById("config-layout-modal").classList.remove("open");
+  });
+  document.getElementById("btn-save-layout-config").addEventListener("click", saveLayoutConfig);
+  
+  // UNLIMITED LOCKERS DYNAMIC ADDING MODAL ACTIONS
+  const addLockerModal = document.getElementById("add-locker-modal");
+  document.getElementById("btn-add-locker").addEventListener("click", () => {
+    document.getElementById("add-locker-lobby").value = activeLobby;
+    document.getElementById("add-locker-row").value = `Dãy ${db.settings.rows + 1}`;
+    document.getElementById("add-locker-col").value = 1;
+    document.getElementById("add-locker-tier").value = "all";
+    addLockerModal.classList.add("open");
+  });
+  document.getElementById("btn-close-add-locker-modal").addEventListener("click", () => {
+    addLockerModal.classList.remove("open");
+  });
+  document.getElementById("btn-cancel-add-locker").addEventListener("click", () => {
+    addLockerModal.classList.remove("open");
+  });
+  document.getElementById("form-add-locker").addEventListener("submit", handleAddLockerSubmit);
+  
+  // Department Form Submit
+  document.getElementById("department-form").addEventListener("submit", handleDepartmentSubmit);
+  document.getElementById("btn-cancel-dept-edit").addEventListener("click", resetDepartmentForm);
+  
+  // User Form Submit
+  document.getElementById("user-form").addEventListener("submit", handleUserSubmit);
+  document.getElementById("btn-cancel-user-edit").addEventListener("click", resetUserForm);
+  
+  // Locker detail modal actions
+  document.getElementById("btn-close-locker-modal").addEventListener("click", closeLockerModal);
+  document.getElementById("form-assign-locker").addEventListener("submit", handleAssignLockerSubmit);
+  document.getElementById("btn-return-locker").addEventListener("click", handleReturnLockerClick);
+  document.getElementById("btn-report-broken").addEventListener("click", handleReportBrokenClick);
+  document.getElementById("btn-override-status").addEventListener("click", handleOverrideStatusClick);
+  
+  // Auto-fill locker assignment info if user code exists
+  const assignCodeInput = document.getElementById("assign-user-code");
+  if (assignCodeInput) {
+    assignCodeInput.addEventListener("input", (e) => {
+      const code = e.target.value.trim().toLowerCase();
+      if (!code) return;
+      
+      const emp = db.employees.find(e => e.code === code);
+      if (emp) {
+        document.getElementById("assign-user-name").value = emp.fullname;
+        document.getElementById("assign-user-dept").value = emp.departmentId;
+      }
+    });
+  }
+  
+  // Excel Export action
+  document.getElementById("btn-export-excel").addEventListener("click", exportHistoryToExcel);
+  
+  // Excel Locker List Export, Import & Template actions
+  const btnExportLList = document.getElementById("btn-export-locker-list");
+  if (btnExportLList) {
+    btnExportLList.addEventListener("click", exportLockerListToExcel);
+  }
+  
+  const btnImportLList = document.getElementById("btn-import-locker-list");
+  const fileImportLList = document.getElementById("import-locker-list-file");
+  if (btnImportLList && fileImportLList) {
+    btnImportLList.addEventListener("click", () => fileImportLList.click());
+    fileImportLList.addEventListener("change", handleImportLockerListFile);
+  }
+  
+  const btnDownloadTemp = document.getElementById("btn-download-template");
+  if (btnDownloadTemp) {
+    btnDownloadTemp.addEventListener("click", (e) => {
+      e.preventDefault();
+      downloadLockerListTemplate();
+    });
+  }
+  
+  const btnExportStats = document.getElementById("btn-export-stats-excel");
+  if (btnExportStats) {
+    btnExportStats.addEventListener("click", exportStatisticsToExcel);
+  }
+  
+  // Custom confirmation modal bindings
+  document.getElementById("btn-confirm-cancel").addEventListener("click", () => {
+    document.getElementById("confirm-modal").classList.remove("open");
+    confirmCallback = null;
+  });
+  
+  document.getElementById("btn-confirm-ok").addEventListener("click", () => {
+    document.getElementById("confirm-modal").classList.remove("open");
+    if (confirmCallback) confirmCallback();
+    confirmCallback = null;
+  });
+}
+
+function switchLobby(lobbyKey) {
+  activeLobby = lobbyKey;
+  document.querySelectorAll(".lobby-tab-btn").forEach(btn => {
+    btn.classList.remove("active");
+  });
+  document.getElementById(`tab-lobby-${lobbyKey.toLowerCase()}`).classList.add("active");
+  renderLockerMap();
+}
+
+function renameActiveLobby() {
+  const newName = document.getElementById("input-lobby-rename").value.trim();
+  if (!newName) {
+    showToast("Tên sảnh không được để trống!", "error");
+    return;
+  }
+  
+  const oldName = db.lobbyNames[activeLobby];
+  db.lobbyNames[activeLobby] = newName;
+  saveDatabase();
+  
+  document.getElementById(`tab-lobby-${activeLobby.toLowerCase()}`).innerText = newName;
+  
+  renderLockerMap();
+  renderLockerList();
+  renderHistory();
+  renderStatistics();
+  
+  showToast(`Đã đổi tên ${oldName} thành: ${newName}`, "success");
+}
+
+// ------------------------------------------
+// DEPARTMENTS CRUD ACTIONS
+// ------------------------------------------
+
+function handleDepartmentSubmit(e) {
+  e.preventDefault();
+  
+  const idInput = document.getElementById("dept-edit-id").value;
+  const nameInput = document.getElementById("dept-name").value.trim();
+  const descInput = document.getElementById("dept-desc").value.trim();
+  
+  if (!nameInput) return;
+  
+  if (idInput) {
+    const deptIndex = db.departments.findIndex(d => d.id === idInput);
+    if (deptIndex !== -1) {
+      db.departments[deptIndex].name = nameInput;
+      db.departments[deptIndex].description = descInput;
+      showToast(`Đã cập nhật bộ phận: ${nameInput}`, "success");
+    }
+  } else {
+    const newId = "dept-" + Date.now();
+    db.departments.push({
+      id: newId,
+      name: nameInput,
+      description: descInput
+    });
+    showToast(`Đã thêm bộ phận mới: ${nameInput}`, "success");
+  }
+  
+  saveDatabase();
+  resetDepartmentForm();
+  renderDepartments();
+  populateDropdowns();
+  renderUsers();
+  renderLockerList();
+}
+
+function editDepartment(id) {
+  const dept = db.departments.find(d => d.id === id);
+  if (!dept) return;
+  
+  document.getElementById("dept-edit-id").value = dept.id;
+  document.getElementById("dept-name").value = dept.name;
+  document.getElementById("dept-desc").value = dept.description || "";
+  
+  document.getElementById("dept-form-title").innerText = "Sửa Bộ Phận";
+  document.getElementById("btn-cancel-dept-edit").classList.remove("hidden");
+}
+
+function deleteDepartment(id) {
+  const dept = db.departments.find(d => d.id === id);
+  if (!dept) return;
+  
+  const employeeCount = db.employees ? db.employees.filter(e => e.departmentId === id).length : 0;
+  if (employeeCount > 0) {
+    showToast(`Không thể xóa bộ phận '${dept.name}' vì đang có ${employeeCount} nhân viên thuộc bộ phận này!`, "error");
+    return;
+  }
+  
+  confirmAction(`Bạn có chắc muốn xóa bộ phận '${dept.name}'?`, () => {
+    db.departments = db.departments.filter(d => d.id !== id);
+    saveDatabase();
+    renderDepartments();
+    populateDropdowns();
+    showToast(`Đã xóa bộ phận: ${dept.name}`, "success");
+  });
+}
+
+function resetDepartmentForm() {
+  document.getElementById("dept-edit-id").value = "";
+  document.getElementById("dept-name").value = "";
+  document.getElementById("dept-desc").value = "";
+  
+  document.getElementById("dept-form-title").innerText = "Thêm Bộ Phận Mới";
+  document.getElementById("btn-cancel-dept-edit").classList.add("hidden");
+}
+
+// ------------------------------------------
+// EMPLOYEES / USERS (ACCOUNT MANAGEMENT) CRUD ACTIONS
+// ------------------------------------------
+
+function handleUserSubmit(e) {
+  e.preventDefault();
+  
+  const idInput = document.getElementById("user-edit-id").value;
+  const fullNameInput = document.getElementById("user-fullname").value.trim();
+  const userNameInput = document.getElementById("user-username").value.trim().toLowerCase();
+  const passwordInput = document.getElementById("user-password").value.trim();
+  const deptInput = document.getElementById("user-dept").value;
+  const roleInput = document.getElementById("user-role").value;
+  
+  if (!fullNameInput || !userNameInput || !passwordInput || !deptInput || !roleInput) return;
+  
+  const duplicate = db.users.find(u => u.username === userNameInput && u.id !== idInput);
+  if (duplicate) {
+    showToast(`Tên đăng nhập @${userNameInput} đã tồn tại! Vui lòng chọn tên khác.`, "error");
+    return;
+  }
+  
+  if (idInput) {
+    const userIndex = db.users.findIndex(u => u.id === idInput);
+    if (userIndex !== -1) {
+      db.users[userIndex].fullname = fullNameInput;
+      db.users[userIndex].username = userNameInput;
+      db.users[userIndex].password = passwordInput;
+      db.users[userIndex].departmentId = deptInput;
+      db.users[userIndex].role = roleInput;
+      
+      showToast(`Đã cập nhật tài khoản: ${fullNameInput}`, "success");
+    }
+  } else {
+    const newId = "user-" + Date.now();
+    db.users.push({
+      id: newId,
+      username: userNameInput,
+      fullname: fullNameInput,
+      password: passwordInput,
+      departmentId: deptInput,
+      role: roleInput
+    });
+    showToast(`Đã thêm tài khoản: ${fullNameInput}`, "success");
+  }
+  
+  saveDatabase();
+  resetUserForm();
+  renderUsers();
+  populateDropdowns();
+  applyPermissions();
+  renderLockerMap();
+  renderLockerList();
+}
+
+function editUser(id) {
+  const user = db.users.find(u => u.id === id);
+  if (!user) return;
+  
+  document.getElementById("user-edit-id").value = user.id;
+  document.getElementById("user-fullname").value = user.fullname;
+  document.getElementById("user-username").value = user.username;
+  document.getElementById("user-password").value = user.password || "123456";
+  document.getElementById("user-dept").value = user.departmentId;
+  document.getElementById("user-role").value = user.role;
+  
+  document.getElementById("user-form-title").innerText = "Sửa Tài Khoản";
+  document.getElementById("btn-cancel-user-edit").classList.remove("hidden");
+}
+
+function deleteUser(id) {
+  const user = db.users.find(u => u.id === id);
+  if (!user) return;
+  
+  if (user.id === db.currentUser.id) {
+    showToast("Không thể tự xóa tài khoản của chính bạn đang đăng nhập!", "error");
+    return;
+  }
+  
+  const holdingLocker = db.lockers.find(l => l.status === "in_use" && l.userId === id);
+  if (holdingLocker) {
+    showToast(`Không thể xóa tài khoản '${user.fullname}' vì họ đang giữ tủ ${holdingLocker.number}! Vui lòng thu hồi tủ trước.`, "error");
+    return;
+  }
+  
+  confirmAction(`Bạn có chắc chắn muốn xóa tài khoản của '${user.fullname}'?`, () => {
+    db.users = db.users.filter(u => u.id !== id);
+    saveDatabase();
+    renderUsers();
+    populateDropdowns();
+    showToast(`Đã xóa tài khoản: ${user.fullname}`, "success");
+  });
+}
+
+function resetUserForm() {
+  document.getElementById("user-edit-id").value = "";
+  document.getElementById("user-fullname").value = "";
+  document.getElementById("user-username").value = "";
+  document.getElementById("user-password").value = "";
+  document.getElementById("user-dept").value = "";
+  document.getElementById("user-role").value = "user";
+  
+  document.getElementById("user-form-title").innerText = "Tạo Tài Khoản Mới";
+  document.getElementById("btn-cancel-user-edit").classList.add("hidden");
+}
+
+// ------------------------------------------
+// LOCKER LAYOUT SETUP CONFIG ACTION
+// ------------------------------------------
+
+function saveLayoutConfig() {
+  const newRows = parseInt(document.getElementById("cfg-rows").value);
+  const newCols = parseInt(document.getElementById("cfg-cols").value);
+  
+  if (isNaN(newRows) || newRows < 1 || newRows > 50 || isNaN(newCols) || newCols < 1 || newCols > 50) {
+    showToast("Số dãy (1-50) và số cột (1-50) không hợp lệ!", "error");
+    return;
+  }
+  
+  confirmAction("Thay đổi này sẽ tái cấu trúc lưới tủ đồ sảnh A và B. Bạn có chắc muốn tiếp tục?", () => {
+    db.settings.rows = newRows;
+    db.settings.cols = newCols;
+    
+    generateLockers();
+    saveDatabase();
+    
+    document.getElementById("config-layout-modal").classList.remove("open");
+    renderLockerMap();
+    renderLockerList();
+    renderStatistics();
+    showToast("Đã cập nhật cấu trúc tủ đồ thành công!", "success");
+  });
+}
+
+// ------------------------------------------
+// DYNAMIC UNLIMITED LOCKER ADDING
+// ------------------------------------------
+
+function handleAddLockerSubmit(e) {
+  e.preventDefault();
+  
+  const lobby = document.getElementById("add-locker-lobby").value;
+  const rowName = document.getElementById("add-locker-row").value.trim();
+  const colVal = parseInt(document.getElementById("add-locker-col").value);
+  const tierVal = document.getElementById("add-locker-tier").value;
+  
+  if (!rowName || isNaN(colVal) || colVal < 1) {
+    showToast("Thông tin dãy hoặc cột không hợp lệ!", "error");
+    return;
+  }
+  
+  const tiersToAdd = [];
+  if (tierVal === "all") {
+    for (let t = 1; t <= 6; t++) tiersToAdd.push(t);
+  } else {
+    tiersToAdd.push(parseInt(tierVal));
+  }
+  
+  let addedCount = 0;
+  let skippedCount = 0;
+  
+  tiersToAdd.forEach(t => {
+    const cleanRowName = rowName.replace(/\s+/g, '_');
+    const id = `${lobby}-R_${cleanRowName}-C${colVal}-T${t}`;
+    
+    const duplicate = db.lockers.find(l => l.id === id);
+    if (duplicate) {
+      skippedCount++;
+    } else {
+      const displayName = `${lobby}-${rowName}-C${colVal}-T${t}`;
+      db.lockers.push({
+        id: id,
+        lobby: lobby,
+        row: rowName,
+        col: colVal,
+        tier: t,
+        number: displayName,
+        status: "available",
+        userId: null,
+        notes: "",
+        assignedAt: null
+      });
+      addedCount++;
+    }
+  });
+  
+  if (addedCount > 0) {
+    saveDatabase();
+    
+    const descNote = `Thêm mới ${addedCount} tủ tại ${lobby === "A" ? db.lobbyNames.A : db.lobbyNames.B}, ${rowName}, Cột ${colVal}`;
+    const refLockerId = `${lobby}-R_${rowName.replace(/\s+/g, '_')}-C${colVal}-T${tiersToAdd[0]}`;
+    logTransaction(refLockerId, "Thêm tủ mới", null, descNote);
+    
+    document.getElementById("add-locker-modal").classList.remove("open");
+    renderLockerMap();
+    renderStatistics();
+    
+    if (skippedCount > 0) {
+      showToast(`Đã thêm thành công ${addedCount} tủ. Bỏ qua ${skippedCount} tủ bị trùng vị trí.`, "warning");
+    } else {
+      showToast(`Đã thêm thành công ${addedCount} tủ đồ mới!`, "success");
+    }
+  } else {
+    showToast("Thêm thất bại! Vị trí tủ đồ đã tồn tại từ trước.", "error");
+  }
+}
+
+// ==========================================
+// LOCKER DETAIL ACTION MODAL LOGIC
+// ==========================================
+
+function openLockerModal(id) {
+  selectedLockerIdForModal = id;
+  const locker = db.lockers.find(l => l.id === id);
+  if (!locker) return;
+  
+  const modal = document.getElementById("locker-action-modal");
+  const modalTitle = document.getElementById("modal-locker-number");
+  
+  const lobbyName = db.lobbyNames[locker.lobby] || `Sảnh ${locker.lobby}`;
+  modalTitle.innerText = `${locker.number} (${lobbyName} - ${locker.row} - Cột ${locker.col} - Tầng ${locker.tier})`;
+  
+  const dot = document.getElementById("locker-modal-dot");
+  const stateText = document.getElementById("locker-modal-status-text");
+  const stateDesc = document.getElementById("locker-modal-status-desc");
+  
+  dot.className = `state-dot status-${locker.status}`;
+  
+  const holderSection = document.getElementById("locker-holder-info");
+  const formAssign = document.getElementById("form-assign-locker");
+  const btnReturn = document.getElementById("btn-return-locker");
+  const btnReportBroken = document.getElementById("btn-report-broken");
+  const overrideSelect = document.getElementById("override-status-select");
+  const overrideNoteInput = document.getElementById("override-note");
+  
+  holderSection.classList.add("hidden");
+  formAssign.classList.add("hidden");
+  btnReturn.classList.add("hidden");
+  btnReportBroken.classList.add("hidden");
+  
+  if (locker.status === "available") {
+    document.getElementById("assign-user-code").value = "";
+    document.getElementById("assign-user-name").value = "";
+    document.getElementById("assign-user-dept").value = "";
+  }
+  document.getElementById("assign-note").value = "";
+  overrideNoteInput.value = "";
+  overrideSelect.value = locker.status;
+  
+  const isAdmin = db.currentUser.role === "admin";
+  const currentUserId = db.currentUser.id;
+  
+  let lockerHistory = db.history.filter(h => h.lockerId === locker.id && h.action === "Cấp tủ");
+  let lastAssign = lockerHistory.length > 0 ? lockerHistory[0] : null;
+  
+  if (locker.status === "available") {
+    stateText.innerText = "Trống";
+    stateDesc.innerText = "Sẵn sàng cấp phát cho nhân viên sử dụng.";
+    formAssign.classList.remove("hidden");
+    populateDropdowns(); 
+    
+  } else if (locker.status === "in_use") {
+    stateText.innerText = "Đang sử dụng";
+    stateDesc.innerText = "Tủ đang được niêm phong khóa và sử dụng.";
+    holderSection.classList.remove("hidden");
+    
+    const emp = db.employees.find(e => e.code === locker.userId);
+    if (emp) {
+      const dept = db.departments.find(d => d.id === emp.departmentId);
+      document.getElementById("locker-holder-name").innerText = emp.fullname;
+      document.getElementById("locker-holder-meta").innerText = `${dept ? dept.name : "Không rõ"} - ${emp.code.toUpperCase()}`;
+    } else {
+      document.getElementById("locker-holder-name").innerText = "Không rõ";
+      document.getElementById("locker-holder-meta").innerText = "-";
+    }
+    
+    document.getElementById("locker-holder-time").innerText = lastAssign ? `Thời gian cấp: ${formatDateTime(lastAssign.timestamp)}` : "Thời gian cấp: --";
+    document.getElementById("locker-issue-notes-group").classList.add("hidden");
+    
+    // Admins and managers can return or report defect on lockers
+    const canManage = isAdmin || db.currentUser.role === "manager";
+    if (canManage) {
+      btnReturn.classList.remove("hidden");
+      btnReportBroken.classList.remove("hidden");
+    }
+    
+  } else {
+    const statusMap = {
+      broken: { text: "Hỏng", desc: "Tủ bị hỏng nặng kết cấu, ngăn kéo, hoặc ổ khóa cần thay thế." },
+      error: { text: "Lỗi kỹ thuật", desc: "Lỗi kẹt khóa, thất lạc khóa cơ, cần hỗ trợ mở tủ." },
+      maintenance: { text: "Đang bảo trì", desc: "Tủ đang được vệ sinh hoặc kiểm tra định kỳ." }
+    };
+    
+    stateText.innerText = statusMap[locker.status].text;
+    stateDesc.innerText = statusMap[locker.status].desc;
+    
+    holderSection.classList.remove("hidden");
+    document.getElementById("locker-holder-name").innerText = "Hệ thống bảo trì";
+    document.getElementById("locker-holder-meta").innerText = "Chờ xử lý";
+    document.getElementById("locker-holder-time").innerText = "";
+    
+    const lastIssueLog = db.history.find(h => h.lockerId === locker.id && ["Báo hỏng", "Bảo trì"].includes(h.action));
+    document.getElementById("locker-issue-notes-group").classList.remove("hidden");
+    document.getElementById("locker-modal-issue-notes").innerText = locker.notes || (lastIssueLog ? lastIssueLog.note : "Không có ghi chú chi tiết.");
+  }
+  
+  modal.classList.add("open");
+}
+
+function closeLockerModal() {
+  document.getElementById("locker-action-modal").classList.remove("open");
+  selectedLockerIdForModal = null;
+}
+
+// Handler: Assign Locker
+function handleAssignLockerSubmit(e) {
+  e.preventDefault();
+  
+  if (!selectedLockerIdForModal) return;
+  
+  const code = document.getElementById("assign-user-code").value.trim().toLowerCase();
+  const name = document.getElementById("assign-user-name").value.trim();
+  const deptId = document.getElementById("assign-user-dept").value;
+  const note = document.getElementById("assign-note").value.trim();
+  
+  if (!code || !name || !deptId) {
+    showToast("Vui lòng điền đầy đủ thông tin nhân viên!", "error");
+    return;
+  }
+  
+  const lockerIndex = db.lockers.findIndex(l => l.id === selectedLockerIdForModal);
+  if (lockerIndex === -1) return;
+  
+  // Find or dynamically create employee (locker user)
+  let emp = db.employees.find(e => e.code === code);
+  
+  if (emp) {
+    // Check if this existing employee is already holding a locker
+    const existingLocker = db.lockers.find(l => l.status === "in_use" && l.userId === code);
+    if (existingLocker) {
+      showToast(`Nhân viên '${emp.fullname}' đang giữ tủ ${existingLocker.number}! Vui lòng trả tủ đó trước.`, "error");
+      return;
+    }
+    
+    // Optionally update employee name or department if they changed
+    emp.fullname = name;
+    emp.departmentId = deptId;
+  } else {
+    // Dynamically create new employee
+    emp = {
+      code: code,
+      fullname: name,
+      departmentId: deptId
+    };
+    db.employees.push(emp);
+    showToast(`Đã thêm nhân viên ${name} vào danh sách nhân sự`, "info");
+  }
+  
+  db.lockers[lockerIndex].status = "in_use";
+  db.lockers[lockerIndex].userId = code;
+  db.lockers[lockerIndex].notes = note;
+  db.lockers[lockerIndex].assignedAt = new Date().toISOString();
+  
+  saveDatabase();
+  logTransaction(selectedLockerIdForModal, "Cấp tủ", code, note || "Cấp tủ mới");
+  
+  closeLockerModal();
+  renderLockerMap();
+  renderLockerList();
+  renderUsers();
+  showToast(`Đã cấp tủ ${db.lockers[lockerIndex].number} cho: ${emp.fullname}`, "success");
+}
+
+// Handler: Return Locker
+function handleReturnLockerClick() {
+  if (!selectedLockerIdForModal) return;
+  
+  const lockerIndex = db.lockers.findIndex(l => l.id === selectedLockerIdForModal);
+  if (lockerIndex === -1) return;
+  
+  const locker = db.lockers[lockerIndex];
+  const oldUserId = locker.userId;
+  const emp = db.employees.find(e => e.code === oldUserId);
+  const userName = emp ? emp.fullname : "Nhân viên";
+  
+  confirmAction(`Bạn có muốn thu hồi / nhận lại tủ đồ ${locker.number} đang được dùng bởi ${userName}?`, () => {
+    db.lockers[lockerIndex].status = "available";
+    db.lockers[lockerIndex].userId = null;
+    db.lockers[lockerIndex].notes = "";
+    db.lockers[lockerIndex].assignedAt = null;
+    
+    saveDatabase();
+    logTransaction(selectedLockerIdForModal, "Trả tủ", oldUserId, "Đã trả tủ lại kho trống");
+    
+    closeLockerModal();
+    renderLockerMap();
+    renderLockerList();
+    renderUsers();
+    showToast(`Đã trả tủ ${locker.number} thành công`, "success");
+  });
+}
+
+// Handler: Report Broken
+function handleReportBrokenClick() {
+  if (!selectedLockerIdForModal) return;
+  
+  const lockerIndex = db.lockers.findIndex(l => l.id === selectedLockerIdForModal);
+  if (lockerIndex === -1) return;
+  
+  const locker = db.lockers[lockerIndex];
+  const oldUserId = locker.userId;
+  
+  const reason = prompt("Nhập lý lý do báo lỗi / hỏng tủ:", "Ổ khóa bị kẹt không vặn được");
+  if (reason === null) return; 
+  
+  const finalReason = reason.trim() || "Báo hỏng không rõ nguyên nhân";
+  
+  db.lockers[lockerIndex].status = "broken";
+  db.lockers[lockerIndex].userId = null;
+  db.lockers[lockerIndex].notes = finalReason;
+  db.lockers[lockerIndex].assignedAt = null;
+  
+  saveDatabase();
+  logTransaction(selectedLockerIdForModal, "Báo hỏng", oldUserId, `Sự cố: ${finalReason}`);
+  
+  closeLockerModal();
+  renderLockerMap();
+  renderLockerList();
+  renderUsers();
+  showToast(`Đã ghi nhận sự cố tủ ${locker.number}`, "warning");
+}
+
+// Handler: Override status directly (Admin only)
+function handleOverrideStatusClick() {
+  if (!selectedLockerIdForModal) return;
+  
+  const lockerIndex = db.lockers.findIndex(l => l.id === selectedLockerIdForModal);
+  if (lockerIndex === -1) return;
+  
+  const locker = db.lockers[lockerIndex];
+  const nextStatus = document.getElementById("override-status-select").value;
+  const note = document.getElementById("override-note").value.trim();
+  
+  if (locker.status === nextStatus) {
+    showToast("Trạng thái mới trùng với trạng thái hiện tại!", "warning");
+    return;
+  }
+  
+  let oldUserId = locker.userId;
+  if (nextStatus !== "in_use") {
+    db.lockers[lockerIndex].userId = null;
+    db.lockers[lockerIndex].assignedAt = null;
+  } else {
+    // If override status to in_use, we should keep/make a timestamp
+    db.lockers[lockerIndex].assignedAt = db.lockers[lockerIndex].assignedAt || new Date().toISOString();
+  }
+  
+  db.lockers[lockerIndex].status = nextStatus;
+  db.lockers[lockerIndex].notes = note;
+  saveDatabase();
+  
+  let actionName = "Thay đổi";
+  if (nextStatus === "available") actionName = "Sửa xong";
+  else if (nextStatus === "broken") actionName = "Báo hỏng";
+  else if (nextStatus === "maintenance") actionName = "Bảo trì";
+  
+  logTransaction(selectedLockerIdForModal, actionName, oldUserId, note || `Cập nhật sang: ${nextStatus}`);
+  
+  closeLockerModal();
+  renderLockerMap();
+  renderLockerList();
+  renderUsers();
+  showToast(`Đã thay đổi trạng thái tủ ${locker.number}`, "success");
+}
+
+// ==========================================
+// EXCEL EXPORT SERVICE
+// ==========================================
+
+function exportHistoryToExcel() {
+  if (typeof XLSX === "undefined") {
+    showToast("Lỗi: Không tìm thấy thư viện SheetJS (xlsx.full.min.js)!", "error");
+    return;
+  }
+  
+  try {
+    const logs = db.history;
+    if (logs.length === 0) {
+      showToast("Không có lịch sử giao dịch nào để xuất!", "warning");
+      return;
+    }
+    
+    const sheetData = logs.map((log, index) => {
+      return {
+        "STT": index + 1,
+        "Thời Gian": formatDateTime(log.timestamp),
+        "Sảnh": log.lobbyName,
+        "Mã Tủ Đồ": log.lockerNumber,
+        "Hành Động": log.action,
+        "Nhân Viên Sử Dụng": log.fullname ? `${log.fullname} (${log.username})` : "-",
+        "Bộ Phận": log.departmentName || "-",
+        "Ghi Chú Chi Tiết": log.note || "-",
+        "Người Thực Hiện": log.operatorName || "Hệ thống"
+      };
+    });
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    
+    const wscols = [
+      { wch: 6 },  // STT
+      { wch: 22 }, // Thời gian
+      { wch: 15 }, // Sảnh
+      { wch: 15 }, // Mã tủ
+      { wch: 15 }, // Hành động
+      { wch: 25 }, // Nhân viên sử dụng
+      { wch: 18 }, // Bộ phận
+      { wch: 35 }, // Ghi chú
+      { wch: 20 }  // Người thực hiện
+    ];
+    ws["!cols"] = wscols;
+    
+    XLSX.utils.book_append_sheet(wb, ws, "Lịch sử cấp trả tủ đồ");
+    
+    const timestampStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const fileName = `Lich_Su_Cap_Tra_Tu_Do_${timestampStr}.xlsx`;
+    
+    XLSX.writeFile(wb, fileName);
+    showToast(`Đã xuất và tải về file Excel: ${fileName}`, "success");
+    
+  } catch (err) {
+    console.error("Export error: ", err);
+    showToast(`Lỗi xuất Excel: ${err.message}`, "error");
+  }
+}
+
+// ==========================================
+// TOAST NOTIFICATIONS SERVICE
+// ==========================================
+
+function showToast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+  
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  
+  let iconClass = "fa-solid fa-circle-info";
+  if (type === "success") iconClass = "fa-solid fa-circle-check";
+  else if (type === "error") iconClass = "fa-solid fa-triangle-exclamation";
+  else if (type === "warning") iconClass = "fa-solid fa-circle-exclamation";
+  
+  toast.innerHTML = `
+    <i class="${iconClass}"></i>
+    <span>${message}</span>
+  `;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add("fade-out");
+    toast.addEventListener("animationend", () => {
+      toast.remove();
+    });
+  }, 4000);
+}
+
+// ==========================================
+// CONFIRMATION POPUP SYSTEM
+// ==========================================
+
+let confirmCallback = null;
+
+function confirmAction(message, callback, title = "Xác nhận thao tác") {
+  confirmCallback = callback;
+  
+  const modal = document.getElementById("confirm-modal");
+  document.getElementById("confirm-modal-title").innerText = title;
+  document.getElementById("confirm-modal-message").innerText = message;
+  
+  modal.classList.add("open");
+}
+
+// ==========================================
+// FORMATTING HELPER FUNCTIONS
+// ==========================================
+
+function formatDateTime(isoString) {
+  if (!isoString) return "-";
+  try {
+    const d = new Date(isoString);
+    const dateStr = d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const timeStr = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    return `${dateStr} ${timeStr}`;
+  } catch (e) {
+    return isoString;
+  }
+}
+
+function escapeHtml(unsafe) {
+  if (!unsafe) return "";
+  return unsafe
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ==========================================
+// EXCEL EXPORT & IMPORT FOR ASSIGNED LOCKERS
+// ==========================================
+
+function exportLockerListToExcel() {
+  if (typeof XLSX === "undefined") {
+    showToast("Lỗi: Không tìm thấy thư viện SheetJS (xlsx.full.min.js)!", "error");
+    return;
+  }
+  
+  try {
+    const inUseLockers = db.lockers.filter(l => l.status === "in_use");
+    if (inUseLockers.length === 0) {
+      showToast("Không có danh sách nhân viên sử dụng tủ nào để xuất!", "warning");
+      return;
+    }
+    
+    const sheetData = inUseLockers.map((l, index) => {
+      const emp = db.employees.find(e => e.code === l.userId);
+      const dept = emp ? db.departments.find(d => d.id === emp.departmentId) : null;
+      const lobbyName = db.lobbyNames[l.lobby] || `Sảnh ${l.lobby}`;
+      
+      return {
+        "STT": index + 1,
+        "Mã nhân viên": emp ? emp.code.toUpperCase() : "-",
+        "Họ và tên": emp ? emp.fullname : "Không rõ",
+        "Bộ phận": dept ? dept.name : "-",
+        "Số tủ đồ": l.number,
+        "Khu vực tủ": `${lobbyName} - ${l.row} - Cột ${l.col} - Tầng ${l.tier}`,
+        "Ngày cấp bàn giao": formatDateTime(l.assignedAt),
+        "Ghi chú cấp phát": l.notes || ""
+      };
+    });
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    
+    const wscols = [
+      { wch: 6 },  // STT
+      { wch: 15 }, // Mã nhân viên
+      { wch: 22 }, // Họ và tên
+      { wch: 18 }, // Bộ phận
+      { wch: 12 }, // Số tủ đồ
+      { wch: 30 }, // Khu vực tủ
+      { wch: 22 }, // Ngày cấp bàn giao
+      { wch: 25 }  // Ghi chú cấp phát
+    ];
+    ws["!cols"] = wscols;
+    
+    XLSX.utils.book_append_sheet(wb, ws, "Nhân viên sử dụng tủ");
+    
+    const timestampStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const fileName = `Nhan_Vien_Su_Dung_Tu_Do_${timestampStr}.xlsx`;
+    
+    XLSX.writeFile(wb, fileName);
+    showToast(`Đã xuất và tải về danh sách sử dụng: ${fileName}`, "success");
+    
+  } catch (err) {
+    console.error("Export error: ", err);
+    showToast(`Lỗi xuất Excel: ${err.message}`, "error");
+  }
+}
+
+function handleImportLockerListFile(e) {
+  if (typeof XLSX === "undefined") {
+    showToast("Lỗi: Không tìm thấy thư viện SheetJS!", "error");
+    return;
+  }
+  
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+  
+  const file = files[0];
+  const reader = new FileReader();
+  
+  reader.onload = function(evt) {
+    try {
+      const data = evt.target.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Parse JSON (rows of objects)
+      const rows = XLSX.utils.sheet_to_json(worksheet);
+      if (rows.length === 0) {
+        showToast("Không tìm thấy dòng dữ liệu nào trong file Excel!", "error");
+        return;
+      }
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      // Process rows
+      for (const row of rows) {
+        // Support multiple Vietnamese/English column names flexibly
+        const codeKey = Object.keys(row).find(k => k.toLowerCase() === "mã nhân viên" || k.toLowerCase() === "ma nhan vien" || k.toLowerCase() === "employee id" || k.toLowerCase() === "manhanvien");
+        const nameKey = Object.keys(row).find(k => k.toLowerCase() === "họ và tên" || k.toLowerCase() === "ho va ten" || k.toLowerCase() === "fullname" || k.toLowerCase() === "tên nhân viên" || k.toLowerCase() === "ten nhan vien");
+        const deptKey = Object.keys(row).find(k => k.toLowerCase() === "bộ phận" || k.toLowerCase() === "bo phan" || k.toLowerCase() === "department" || k.toLowerCase() === "bophan");
+        const numberKey = Object.keys(row).find(k => k.toLowerCase() === "số tủ đồ" || k.toLowerCase() === "so tu do" || k.toLowerCase() === "số tủ" || k.toLowerCase() === "so tu" || k.toLowerCase() === "locker number" || k.toLowerCase() === "sotudo");
+        const dateKey = Object.keys(row).find(k => k.toLowerCase() === "ngày cấp bàn giao" || k.toLowerCase() === "ngay cap ban giao" || k.toLowerCase() === "ngay cap" || k.toLowerCase() === "ngày cấp");
+        const noteKey = Object.keys(row).find(k => k.toLowerCase() === "ghi chú cấp phát" || k.toLowerCase() === "ghi chu" || k.toLowerCase() === "ghi chú" || k.toLowerCase() === "note");
+        
+        if (!codeKey || !nameKey || !numberKey) {
+          continue; // Skip invalid rows that don't have basic columns
+        }
+        
+        const rawCode = String(row[codeKey]).trim();
+        const rawName = String(row[nameKey]).trim();
+        const rawDept = deptKey ? String(row[deptKey]).trim() : "Mặc định";
+        const rawNumber = String(row[numberKey]).trim();
+        const rawNote = noteKey ? String(row[noteKey]).trim() : "Nạp tự động từ Excel";
+        
+        if (!rawCode || !rawName || !rawNumber) {
+          errorCount++;
+          continue;
+        }
+        
+        // Format locker number to at least 2 digits (e.g. 5 -> "05")
+        let formattedNumber = rawNumber;
+        if (!isNaN(rawNumber)) {
+          formattedNumber = String(parseInt(rawNumber)).padStart(2, '0');
+        }
+        
+        // Find matching locker in database
+        const locker = db.lockers.find(l => l.number === formattedNumber);
+        if (!locker) {
+          errorCount++;
+          console.warn(`Locker number ${formattedNumber} not found in database.`);
+          continue;
+        }
+        
+        // Resolve department
+        let dept = db.departments.find(d => d.name.toLowerCase() === rawDept.toLowerCase());
+        if (!dept) {
+          // Dynamically create a new department if it doesn't exist
+          const newDeptId = "dept-" + Date.now() + "-" + Math.floor(Math.random() * 100);
+          dept = {
+            id: newDeptId,
+            name: rawDept,
+            description: "Tạo tự động khi nạp file Excel"
+          };
+          db.departments.push(dept);
+        }
+        
+        // Resolve employee: find by code (Employee Code)
+        const username = rawCode.toLowerCase();
+        let emp = db.employees.find(e => e.code === username);
+        if (!emp) {
+          // Auto create employee
+          emp = {
+            code: username,
+            fullname: rawName,
+            departmentId: dept.id
+          };
+          db.employees.push(emp);
+        } else {
+          // Update employee details
+          emp.fullname = rawName;
+          emp.departmentId = dept.id;
+        }
+        
+        // Release previous holder of this locker if any
+        if (locker.status === "in_use" && locker.userId !== username) {
+          const oldUserId = locker.userId;
+          logTransaction(locker.id, "Trả tủ", oldUserId, "Thu hồi tự động để cấp lại qua nạp Excel");
+        }
+        
+        // Release employee's old locker if they already hold one elsewhere
+        const oldLocker = db.lockers.find(l => l.status === "in_use" && l.userId === username && l.id !== locker.id);
+        if (oldLocker) {
+          oldLocker.status = "available";
+          oldLocker.userId = null;
+          oldLocker.notes = "";
+          oldLocker.assignedAt = null;
+          logTransaction(oldLocker.id, "Trả tủ", username, "Giải phóng tủ cũ để chuyển sang tủ mới qua nạp Excel");
+        }
+        
+        // Handle assignment date parsing
+        let assignDate = new Date().toISOString();
+        if (dateKey && row[dateKey]) {
+          try {
+            const parsedDate = new Date(row[dateKey]);
+            if (!isNaN(parsedDate.getTime())) {
+              assignDate = parsedDate.toISOString();
+            }
+          } catch (e) {
+            // fallback to current
+          }
+        }
+        
+        // Assign the locker
+        locker.status = "in_use";
+        locker.userId = username;
+        locker.notes = rawNote;
+        locker.assignedAt = assignDate;
+        
+        // Log transaction
+        logTransaction(locker.id, "Cấp tủ", username, rawNote);
+        successCount++;
+      }
+      
+      if (successCount > 0) {
+        saveDatabase();
+        populateDropdowns();
+        renderLockerMap();
+        renderLockerList();
+        renderUsers();
+        renderHistory();
+        renderStatistics();
+        showToast(`Nạp thành công ${successCount} vị trí cấp tủ!`, "success");
+      }
+      
+      if (errorCount > 0) {
+        showToast(`Có ${errorCount} dòng dữ liệu bị lỗi hoặc không khớp số tủ đồ!`, "warning");
+      }
+      
+    } catch (err) {
+      console.error("Read Excel file error: ", err);
+      showToast(`Không thể đọc file Excel: ${err.message}`, "error");
+    } finally {
+      // Clear input so the same file can be selected again
+      e.target.value = "";
+    }
+  };
+  
+  reader.readAsBinaryString(file);
+}
+
+function downloadLockerListTemplate() {
+  if (typeof XLSX === "undefined") {
+    showToast("Lỗi: Không tìm thấy thư viện SheetJS!", "error");
+    return;
+  }
+  
+  try {
+    const headers = ["Mã nhân viên", "Họ và tên", "Bộ phận", "Số tủ đồ", "Ghi chú cấp phát"];
+    const samples = [
+      ["NV001", "Nguyễn Văn Thịnh", "Kỹ thuật", "09", "Cấp tủ đồ làm việc"],
+      ["NV002", "Lê Thị Thu Trang", "Nhân sự", "12", "Cấp khóa tủ tạm thời"],
+      ["NV003", "Trần Hữu Nam", "Sản xuất", "845", "Cấp đầu ca"]
+    ];
+    
+    const sheetData = [headers, ...samples];
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    
+    ws["!cols"] = [
+      { wch: 15 }, // Mã nhân viên
+      { wch: 22 }, // Họ và tên
+      { wch: 18 }, // Bộ phận
+      { wch: 12 }, // Số tủ đồ
+      { wch: 25 }  // Ghi chú cấp phát
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, "File mẫu cấp tủ");
+    
+    const fileName = "Mau_Nap_Nhan_Vien_Su_Dung_Tu.xlsx";
+    XLSX.writeFile(wb, fileName);
+    showToast("Đã tải xuống file Excel mẫu để nạp!", "success");
+    
+  } catch (err) {
+    console.error("Template download error: ", err);
+    showToast(`Lỗi tạo file mẫu: ${err.message}`, "error");
+  }
+}
+
+function exportStatisticsToExcel() {
+  if (typeof XLSX === "undefined") {
+    showToast("Lỗi: Không tìm thấy thư viện SheetJS!", "error");
+    return;
+  }
+  
+  try {
+    const total = db.lockers.length;
+    const avail = db.lockers.filter(l => l.status === "available").length;
+    const inuse = db.lockers.filter(l => l.status === "in_use").length;
+    const broken = db.lockers.filter(l => l.status === "broken" || l.status === "error").length;
+    
+    const getLobbyStats = (lobbyKey) => {
+      const list = db.lockers.filter(l => l.lobby === lobbyKey);
+      return {
+        total: list.length,
+        avail: list.filter(l => l.status === "available").length,
+        inuse: list.filter(l => l.status === "in_use").length,
+        broken: list.filter(l => l.status === "broken" || l.status === "error").length
+      };
+    };
+    
+    const lobbyA = getLobbyStats("A");
+    const lobbyB = getLobbyStats("B");
+    
+    const wb = XLSX.utils.book_new();
+    
+    // Sheet 1: General Summary
+    const summaryData = [
+      ["BÁO CÁO TỔNG QUAN HỆ THỐNG TỦ ĐỒ (SMARTLOCKER)"],
+      ["Thời gian xuất báo cáo:", formatDateTime(new Date().toISOString())],
+      [],
+      ["1. TÌNH TRẠNG CHUNG"],
+      ["Chỉ số", "Số lượng", "Tỷ lệ %"],
+      ["Tổng số tủ đồ", total, "100%"],
+      ["Tủ trống khả dụng", avail, total > 0 ? ((avail / total) * 100).toFixed(1) + "%" : "0%"],
+      ["Tủ đang sử dụng", inuse, total > 0 ? ((inuse / total) * 100).toFixed(1) + "%" : "0%"],
+      ["Tủ lỗi / hỏng", broken, total > 0 ? ((broken / total) * 100).toFixed(1) + "%" : "0%"],
+      [],
+      ["2. PHÂN BỔ THEO KHU VỰC SẢNH"],
+      ["Sảnh", "Tổng số tủ", "Tủ trống", "Tủ đang sử dụng", "Tủ lỗi / hỏng"],
+      ["Sảnh A", lobbyA.total, lobbyA.avail, lobbyA.inuse, lobbyA.broken],
+      ["Sảnh B", lobbyB.total, lobbyB.avail, lobbyB.inuse, lobbyB.broken]
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Tổng quan");
+    
+    // Sheet 2: Department Occupancy
+    const deptHeaders = [
+      ["TÌNH HÌNH PHÂN BỔ TỦ ĐỒ THEO BỘ PHẬN"],
+      ["Thời gian xuất báo cáo:", formatDateTime(new Date().toISOString())],
+      [],
+      ["Tên Bộ Phận", "Số Nhân Sự", "Tủ Đang Sử Dụng", "Tỷ Lệ Sở Hữu"]
+    ];
+    
+    const deptRows = db.departments.map(d => {
+      const employeeCount = db.employees ? db.employees.filter(e => e.departmentId === d.id).length : 0;
+      // Get lockers in use belonging to employees of this department
+      const lockersInUse = db.lockers.filter(l => {
+        if (l.status !== "in_use") return false;
+        const emp = db.employees ? db.employees.find(e => e.code === l.userId) : null;
+        return emp && emp.departmentId === d.id;
+      }).length;
+      const rate = employeeCount > 0 ? ((lockersInUse / employeeCount) * 100).toFixed(1) + "%" : "0%";
+      return [d.name, employeeCount, lockersInUse, rate];
+    });
+    
+    const deptData = [...deptHeaders, ...deptRows];
+    const wsDept = XLSX.utils.aoa_to_sheet(deptData);
+    wsDept["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 18 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, wsDept, "Phân bổ Bộ phận");
+    
+    const timestampStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const fileName = `Bao_Cao_Thong_Ke_Tu_Do_${timestampStr}.xlsx`;
+    
+    XLSX.writeFile(wb, fileName);
+    showToast(`Đã xuất báo cáo thống kê: ${fileName}`, "success");
+    
+  } catch (err) {
+    console.error("Export statistics error: ", err);
+    showToast(`Lỗi xuất Excel thống kê: ${err.message}`, "error");
+  }
+}
+
+// ==========================================
+// LOCKER MAP SEARCH SERVICE
+// ==========================================
+
+function isLockerMatch(locker, query) {
+  if (!query) return true;
+  
+  // 1. Check locker number
+  if (locker.number.toLowerCase().includes(query)) return true;
+  
+  // 2. Check row
+  if (locker.row.toLowerCase().includes(query)) return true;
+  
+  // 3. Check column/tier
+  if (`cột ${locker.col}`.includes(query) || `tầng ${locker.tier}`.includes(query)) return true;
+  if (`c${locker.col}`.includes(query) || `t${locker.tier}`.includes(query)) return true;
+  
+  // 4. Check status matching (with Vietnamese aliases)
+  let statusText = "";
+  if (locker.status === "available") statusText = "trống khả dụng";
+  else if (locker.status === "in_use") statusText = "đang sử dụng dùng";
+  else if (locker.status === "broken") statusText = "hỏng sự cố lỗi";
+  else if (locker.status === "error") statusText = "lỗi kẹt hỏng";
+  else if (locker.status === "maintenance") statusText = "bảo trì";
+  
+  if (statusText.includes(query)) return true;
+  
+  // 5. Check occupant details
+  if (locker.status === "in_use" && locker.userId) {
+    if (locker.userId.toLowerCase().includes(query)) return true;
+    
+    const emp = db.employees.find(e => e.code === locker.userId);
+    if (emp) {
+      if (emp.fullname.toLowerCase().includes(query)) return true;
+      
+      const dept = db.departments.find(d => d.id === emp.departmentId);
+      if (dept && dept.name.toLowerCase().includes(query)) return true;
+    }
+  }
+  
+  return false;
+}
+
+function renderMapSearchResults() {
+  const container = document.getElementById("map-search-results");
+  if (!container) return;
+  
+  if (!mapSearchQuery) {
+    container.classList.add("hidden");
+    container.innerHTML = "";
+    return;
+  }
+  
+  const matches = db.lockers.filter(l => isLockerMatch(l, mapSearchQuery));
+  container.classList.remove("hidden");
+  
+  if (matches.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 12px; color: var(--text-secondary); font-size: 0.9rem;">
+        <i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy tủ đồ hoặc nhân viên phù hợp.
+      </div>
+    `;
+    return;
+  }
+  
+  const maxResults = 10;
+  const displayedMatches = matches.slice(0, maxResults);
+  
+  let html = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-blue);">
+        Tìm thấy ${matches.length} tủ khớp (Hiển thị tối đa ${maxResults})
+      </span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+  `;
+  
+  displayedMatches.forEach(locker => {
+    const lobbyName = db.lobbyNames[locker.lobby] || `Sảnh ${locker.lobby}`;
+    let holderText = "Trống";
+    let subText = `${lobbyName} — ${locker.row} — Cột ${locker.col} — Tầng ${locker.tier}`;
+    
+    if (locker.status === "in_use" && locker.userId) {
+      const emp = db.employees.find(e => e.code === locker.userId);
+      const dept = emp ? db.departments.find(d => d.id === emp.departmentId) : null;
+      holderText = emp ? `${emp.fullname} (${emp.code.toUpperCase()})` : `Mã: ${locker.userId.toUpperCase()}`;
+      if (dept) {
+        subText += ` | Bộ phận: ${dept.name}`;
+      }
+    } else if (locker.status === "broken") {
+      holderText = "Sự cố / Hỏng";
+    } else if (locker.status === "error") {
+      holderText = "Lỗi kẹt khóa";
+    } else if (locker.status === "maintenance") {
+      holderText = "Bảo trì";
+    }
+    
+    const actionButtons = [];
+    
+    // Quick Return button if locker in use
+    if (locker.status === "in_use") {
+      actionButtons.push(`
+        <button class="btn-primary btn-sm btn-quick-return-search" data-id="${locker.id}" style="background: var(--accent-blue); padding: 6px 12px; font-size: 0.75rem; width: auto; font-weight: 700; border-radius: var(--border-radius-sm);">
+          <i class="fa-solid fa-right-from-bracket"></i> Trả nhanh
+        </button>
+      `);
+    }
+    
+    // Detail button
+    actionButtons.push(`
+      <button class="btn-secondary btn-sm btn-detail-search" data-id="${locker.id}" data-lobby="${locker.lobby}" style="padding: 6px 12px; font-size: 0.75rem; width: auto; border-radius: var(--border-radius-sm);">
+        Chi tiết
+      </button>
+    `);
+    
+    html += `
+      <div class="search-result-item">
+        <div class="search-result-info">
+          <div class="search-result-info-title">
+            Tủ <span style="color: var(--accent-blue); font-family: monospace; font-size: 0.95rem;">${locker.number}</span> — ${holderText}
+          </div>
+          <div class="search-result-info-sub">
+            ${subText}
+          </div>
+        </div>
+        <div class="search-result-actions">
+          ${actionButtons.join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  container.innerHTML = html;
+  
+  // Attach event handlers
+  container.querySelectorAll(".btn-quick-return-search").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      quickReturnLockerFromSearch(id);
+    });
+  });
+  
+  container.querySelectorAll(".btn-detail-search").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const lobby = btn.dataset.lobby;
+      
+      // Auto switch lobby first
+      if (activeLobby !== lobby) {
+        switchLobby(lobby);
+      }
+      
+      // Open modal
+      openLockerModal(id);
+    });
+  });
+}
+
+function quickReturnLockerFromSearch(lockerId) {
+  const locker = db.lockers.find(l => l.id === lockerId);
+  if (!locker) return;
+  
+  const oldUserId = locker.userId;
+  const emp = db.employees.find(e => e.code === oldUserId);
+  const userName = emp ? emp.fullname : "Nhân viên";
+  
+  confirmAction(`Bạn có muốn thu hồi tủ đồ ${locker.number} đang được dùng bởi ${userName}?`, () => {
+    const lockerIndex = db.lockers.findIndex(l => l.id === lockerId);
+    if (lockerIndex === -1) return;
+    
+    db.lockers[lockerIndex].status = "available";
+    db.lockers[lockerIndex].userId = null;
+    db.lockers[lockerIndex].notes = "";
+    db.lockers[lockerIndex].assignedAt = null;
+    
+    saveDatabase();
+    logTransaction(lockerId, "Trả tủ", oldUserId, "Đã trả tủ nhanh từ thanh Tìm kiếm màn hình chính");
+    
+    // Update UI components
+    renderLockerMap();
+    renderMapSearchResults();
+    renderLockerList();
+    renderUsers();
+    
+    showToast(`Đã trả tủ ${locker.number} thành công`, "success");
+  });
+}

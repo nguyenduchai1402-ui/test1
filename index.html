@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Quản Lý Tủ Đồ Thông Minh</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Local Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- SheetJS local library for offline Excel export -->
+  <script src="xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN (Lock app before verification) -->
+  <div class="login-container" id="login-container">
+    <div class="login-card glass-card">
+      <div class="login-header">
+        <h2><i class="fa-solid fa-table-cells text-blue"></i> SmartLocker</h2>
+        <p>Hệ thống Quản lý Tủ đồ Thông minh</p>
+      </div>
+      <form id="login-form" style="margin-top: 16px;">
+        <div class="form-group">
+          <label for="login-username">Tên đăng nhập <span class="required">*</span></label>
+          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập..." required>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Mật khẩu <span class="required">*</span></label>
+          <input type="password" id="login-password" placeholder="Nhập mật khẩu..." required>
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top: 16px; font-weight: 700;">
+          <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
+        </button>
+      </form>
+      <div class="login-footer" style="margin-top: 24px; text-align: center; font-size: 0.8rem; color: var(--text-secondary);">
+        <p>Tài khoản mặc định: <strong style="color: var(--text-primary);">admin</strong> | Mật khẩu: <strong style="color: var(--text-primary);">admin</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container hidden" id="app-container">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fa-solid fa-table-cells"></i> SmartLocker</h2>
+        <button id="theme-toggle" class="btn-icon" title="Chuyển chế độ Sáng/Tối">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+      
+      <!-- USER/AUTH BAR -->
+      <div class="user-auth-bar">
+        <div class="user-info">
+          <i class="fa-solid fa-user-shield" id="current-user-role-icon"></i>
+          <div>
+            <div class="fullname" id="current-user-fullname">Đang tải...</div>
+            <div class="role-badge" id="current-user-role-badge">Admin</div>
+          </div>
+          <button id="btn-logout" class="btn-logout-header" title="Đăng xuất">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+        <div class="form-group" style="margin-top: 8px;">
+          <label for="switch-user-select" style="font-size: 0.75rem;">Chuyển nhanh tài khoản</label>
+          <select id="switch-user-select" class="select-sm">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+      
+      <!-- NAVIGATION MENU -->
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item active" data-view="locker-map">
+            <i class="fa-solid fa-grip"></i> Sơ đồ tủ đồ
+          </li>
+          <li class="nav-item" data-view="departments">
+            <i class="fa-solid fa-sitemap"></i> Bộ Phận
+          </li>
+          <li class="nav-item" data-view="users">
+            <i class="fa-solid fa-users"></i> Tài khoản
+          </li>
+          <li class="nav-item" data-view="locker-list">
+            <i class="fa-solid fa-list-check"></i> Nhân viên sử dụng tủ
+          </li>
+          <li class="nav-item" data-view="history">
+            <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
+          </li>
+          <li class="nav-item" data-view="statistics">
+            <i class="fa-solid fa-chart-pie"></i> Báo cáo
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="version-tag">Phiên bản 2.6.0</div>
+      </div>
+    </aside>
+    
+    <!-- MAIN WORKSPACE -->
+    <main class="main-content">
+      
+      <!-- VIEW: LOCKER MAP -->
+      <div id="view-locker-map" class="app-view active">
+        <header class="view-header">
+          <div class="header-title">
+            <h1>Sơ Đồ Tủ Đồ</h1>
+            <p>Hiển thị trực quan trạng thái tủ đồ 6 tầng theo từng sảnh</p>
+          </div>
+          <div class="header-controls">
+            <!-- Dynamic unlimited locker adding -->
+            <button id="btn-add-locker" class="btn-primary admin-only" style="width: auto; background: var(--accent-green);">
+              <i class="fa-solid fa-plus"></i> Thêm Tủ Đồ
+            </button>
+            <!-- Quick edit layout config -->
+            <button id="btn-config-layout" class="btn-secondary admin-only" style="width: auto;">
+              <i class="fa-solid fa-sliders"></i> Cấu hình Dãy/Cột
+            </button>
+          </div>
+        </header>
+
+        <!-- Combined Stats & Legend Bar -->
+        <div class="glass-card" style="margin-bottom: 12px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <!-- Left: Stats -->
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-door-closed" style="color: var(--accent-blue); font-size: 0.85rem;"></i>
+              <span style="font-size: 0.775rem; font-weight: 600; color: var(--text-secondary);">Tổng số tủ:</span>
+              <span id="map-stats-total" style="font-size: 0.95rem; font-weight: 800; color: var(--accent-blue);">-</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-circle-check" style="color: var(--accent-green); font-size: 0.85rem;"></i>
+              <span style="font-size: 0.775rem; font-weight: 600; color: var(--text-secondary);">Trống:</span>
+              <span id="map-stats-available" style="font-size: 0.95rem; font-weight: 800; color: var(--accent-green);">-</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-user-lock" style="color: var(--accent-amber); font-size: 0.85rem;"></i>
+              <span style="font-size: 0.775rem; font-weight: 600; color: var(--text-secondary);">Đang sử dụng:</span>
+              <span id="map-stats-in-use" style="font-size: 0.95rem; font-weight: 800; color: var(--accent-amber);">-</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent-red); font-size: 0.85rem;"></i>
+              <span style="font-size: 0.775rem; font-weight: 600; color: var(--text-secondary);">Sự cố:</span>
+              <span id="map-stats-broken" style="font-size: 0.95rem; font-weight: 800; color: var(--accent-red);">-</span>
+            </div>
+          </div>
+          
+          <!-- Right: Legend Details -->
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div class="legend-item" style="font-size: 0.725rem; margin-bottom: 0;"><span class="color-dot status-available" style="width: 6px; height: 6px;"></span><span>Trống</span></div>
+            <div class="legend-item" style="font-size: 0.725rem; margin-bottom: 0;"><span class="color-dot status-in_use" style="width: 6px; height: 6px;"></span><span>Đang dùng</span></div>
+            <div class="legend-item" style="font-size: 0.725rem; margin-bottom: 0;"><span class="color-dot status-broken" style="width: 6px; height: 6px;"></span><span>Hỏng</span></div>
+            <div class="legend-item" style="font-size: 0.725rem; margin-bottom: 0;"><span class="color-dot status-error" style="width: 6px; height: 6px;"></span><span>Lỗi</span></div>
+            <div class="legend-item" style="font-size: 0.725rem; margin-bottom: 0;"><span class="color-dot status-maintenance" style="width: 6px; height: 6px;"></span><span>Bảo trì</span></div>
+            
+            <!-- Quick stats badge for current sảnh -->
+            <span class="badge" id="lobby-stats-summary" style="padding: 4px 8px; font-size: 0.725rem; font-weight: 600; background: rgba(255,255,255,0.05); margin-left: 8px;">-</span>
+          </div>
+        </div>
+
+        <!-- SEARCH BAR ON MAIN SCREEN -->
+        <section class="glass-card search-card" style="margin-bottom: 12px; padding: 10px 16px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="map-search-input" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-secondary);">
+              <i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm nhanh tủ đồ hoặc nhân viên
+            </label>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="position: relative; flex-grow: 1;">
+                <input type="text" id="map-search-input" placeholder="Nhập số tủ, tên nhân viên, mã nhân viên hoặc bộ phận cần tìm..." style="padding-left: 36px; width: 100%;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+              </div>
+              <button id="btn-clear-map-search" class="btn-secondary" style="width: auto; padding: 10px 16px; display: none;">
+                <i class="fa-solid fa-xmark"></i> Xóa
+              </button>
+            </div>
+          </div>
+          
+          <!-- Container chứa danh sách kết quả tìm nhanh -->
+          <div id="map-search-results" class="map-search-results hidden" style="margin-top: 12px; border-top: 1px solid var(--glass-border); padding-top: 12px;">
+            <!-- Dữ liệu được render động từ Javascript -->
+          </div>
+        </section>
+        
+
+        <!-- LOBBY TABS & RENAME INPUT -->
+        <div class="lobby-control-bar">
+          <div class="lobby-tabs">
+            <button class="lobby-tab-btn active" data-lobby="A" id="tab-lobby-a">Sảnh A</button>
+            <button class="lobby-tab-btn" data-lobby="B" id="tab-lobby-b">Sảnh B</button>
+          </div>
+          <div class="lobby-rename-group admin-only">
+            <input type="text" id="input-lobby-rename" placeholder="Đổi tên sảnh hiện tại" maxlength="30">
+            <button id="btn-lobby-rename" class="btn-primary" style="width: auto;"><i class="fa-solid fa-pen"></i> Đổi tên</button>
+          </div>
+        </div>
+        
+        <!-- LOCKERS GRID CONTAINER -->
+        <div id="lockers-grid-container" class="lockers-grid-container">
+          <!-- Dynamically populated rows and 6-tier columns -->
+        </div>
+      </div>
+      
+      <!-- VIEW: DEPARTMENTS -->
+      <div id="view-departments" class="app-view">
+        <header class="view-header">
+          <div class="header-title">
+            <h1>Bộ Phận</h1>
+            <p>Thêm, sửa và xóa danh mục bộ phận trong công ty</p>
+          </div>
+        </header>
+        
+        <div class="grid-2-col">
+          <!-- Form Card (Admin only) -->
+          <div class="glass-card form-card admin-only">
+            <h2 id="dept-form-title">Thêm Bộ Phận Mới</h2>
+            <form id="department-form" style="margin-top: 16px;">
+              <input type="hidden" id="dept-edit-id">
+              <div class="form-group">
+                <label for="dept-name">Tên bộ phận <span class="required">*</span></label>
+                <input type="text" id="dept-name" placeholder="Ví dụ: Kỹ thuật, Nhân sự, Sản xuất..." required>
+              </div>
+              <div class="form-group">
+                <label for="dept-desc">Mô tả bộ phận</label>
+                <textarea id="dept-desc" rows="4" placeholder="Nhập mô tả nhiệm vụ bộ phận..."></textarea>
+              </div>
+              <div class="form-actions" style="margin-top: 16px;">
+                <button type="button" id="btn-cancel-dept-edit" class="btn-secondary hidden">Hủy bỏ</button>
+                <button type="submit" class="btn-primary">Lưu Bộ Phận</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- List Card -->
+          <div class="glass-card list-card">
+            <h2>Danh Sách Bộ Phận</h2>
+            <div class="table-wrapper" style="margin-top: 16px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tên Bộ Phận</th>
+                    <th>Mô Tả</th>
+                    <th width="120" class="text-center admin-only">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="department-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- VIEW: USERS (ACCOUNT MANAGEMENT & RBAC) -->
+      <div id="view-users" class="app-view">
+        <header class="view-header">
+          <div class="header-title">
+            <h1>Tài khoản</h1>
+            <p>Quản lý tài khoản truy cập, thông tin nhân viên, mật khẩu và vai trò phân quyền</p>
+          </div>
+        </header>
+        
+        <div class="grid-2-col">
+          <!-- Form Card -->
+          <div class="glass-card form-card admin-only">
+            <h2 id="user-form-title">Tạo Tài Khoản Mới</h2>
+            <form id="user-form" style="margin-top: 16px;">
+              <input type="hidden" id="user-edit-id">
+              <div class="form-group">
+                <label for="user-fullname">Họ và tên <span class="required">*</span></label>
+                <input type="text" id="user-fullname" placeholder="Nguyễn Văn A" required>
+              </div>
+              <div class="form-group">
+                <label for="user-username">Tên đăng nhập <span class="required">*</span></label>
+                <input type="text" id="user-username" placeholder="nguyenvana" required>
+              </div>
+              <div class="form-group">
+                <label for="user-password">Mật khẩu <span class="required">*</span></label>
+                <input type="text" id="user-password" placeholder="Nhập mật khẩu..." required>
+              </div>
+              <div class="form-group">
+                <label for="user-dept">Bộ phận <span class="required">*</span></label>
+                <select id="user-dept" required>
+                  <!-- Dynamically populated -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="user-role">Quyền hạn <span class="required">*</span></label>
+                <select id="user-role" required>
+                  <option value="manager">Người quản lý (Cấp/trả tủ đồ cho nhân viên)</option>
+                  <option value="admin">Quản trị viên (Toàn quyền hệ thống)</option>
+                </select>
+              </div>
+              <div class="form-actions" style="margin-top: 16px;">
+                <button type="button" id="btn-cancel-user-edit" class="btn-secondary hidden">Hủy bỏ</button>
+                <button type="submit" class="btn-primary">Lưu Tài Khoản</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- List Card -->
+          <div class="glass-card list-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <h2>Danh Sách Tài Khoản</h2>
+              <div style="display: flex; gap: 8px;">
+                <select id="filter-user-dept" class="select-sm" style="width: auto;">
+                  <option value="">Tất cả bộ phận</option>
+                  <!-- Dynamically populated -->
+                </select>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Họ và Tên</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Mật khẩu</th>
+                    <th>Bộ Phận</th>
+                    <th>Quyền Hạn</th>
+                    <th width="120" class="text-center admin-only">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="user-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- VIEW: LOCKER LIST -->
+      <div id="view-locker-list" class="app-view">
+        <header class="view-header">
+          <div class="header-title">
+            <h1>Nhân Viên Sử Dụng Tủ</h1>
+            <p>Danh sách chi tiết toàn bộ nhân sự đang được cấp phát sử dụng tủ đồ</p>
+          </div>
+          <div class="header-controls" style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-import-locker-list" class="btn-secondary" style="color: var(--accent-blue); border-color: rgba(59,130,246,0.2); width: auto;">
+              <i class="fa-solid fa-file-import"></i> Nạp từ Excel
+            </button>
+            <button id="btn-download-template" class="btn-secondary" style="color: var(--accent-blue); border-color: rgba(59,130,246,0.2); width: auto;">
+              <i class="fa-solid fa-download"></i> Tải file mẫu
+            </button>
+            <button id="btn-export-locker-list" class="btn-primary" style="background: var(--accent-green); width: auto;">
+              <i class="fa-solid fa-file-excel"></i> Xuất Excel
+            </button>
+          </div>
+        </header>
+
+        <!-- Filters Card -->
+        <section class="glass-card filter-card">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label for="locker-list-search">Tìm kiếm (Tên, mã tủ, bộ phận...)</label>
+              <input type="text" id="locker-list-search" placeholder="Nhập từ khóa cần tìm...">
+            </div>
+            <div class="form-group">
+              <label for="locker-list-filter-lobby">Sảnh</label>
+              <select id="locker-list-filter-lobby">
+                <option value="">Tất cả</option>
+                <option value="A">Sảnh A</option>
+                <option value="B">Sảnh B</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="locker-list-filter-dept">Bộ phận</label>
+              <select id="locker-list-filter-dept">
+                <option value="">Tất cả bộ phận</option>
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Table Card -->
+        <section class="glass-card table-card" style="margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2>Bảng Theo Dõi Sử Dụng</h2>
+            <span class="badge" id="locker-list-total-badge">Tổng số: 0 tủ</span>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th width="6%">STT</th>
+                  <th width="12%">Mã nhân viên</th>
+                  <th width="18%">Họ và tên</th>
+                  <th width="14%">Bộ phận</th>
+                  <th width="12%">Số tủ đồ</th>
+                  <th width="20%">Khu vực tủ</th>
+                  <th width="18%">Ngày cấp bàn giao</th>
+                  <th width="10%" class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="locker-list-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-container" id="locker-list-pagination">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+      </div>
+
+      <!-- VIEW: HISTORY -->
+      <div id="view-history" class="app-view">
+        <header class="view-header">
+          <div class="header-title">
+            <h1>Lịch sử</h1>
+            <p>Nhật ký cấp phát tủ, trả tủ, báo hỏng và thay đổi trạng thái tủ đồ</p>
+          </div>
+          <div class="header-controls">
+            <button id="btn-export-excel" class="btn-primary" style="background: var(--accent-green); width: auto;">
+              <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo Excel
+            </button>
+          </div>
+        </header>
+        
+        <!-- Filters Card -->
+        <section class="glass-card filter-card">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label for="history-search">Tìm kiếm (Tên, mã tủ, bộ phận...)</label>
+              <input type="text" id="history-search" placeholder="Nhập từ khóa cần tìm...">
+            </div>
+            <div class="form-group">
+              <label for="history-filter-lobby">Sảnh</label>
+              <select id="history-filter-lobby">
+                <option value="">Tất cả</option>
+                <option value="A">Sảnh A</option>
+                <option value="B">Sảnh B</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="history-filter-action">Hành động</label>
+              <select id="history-filter-action">
+                <option value="">Tất cả</option>
+                <option value="Cấp tủ">Cấp tủ</option>
+                <option value="Trả tủ">Trả tủ</option>
+                <option value="Báo hỏng">Báo hỏng</option>
+                <option value="Bảo trì">Bảo trì</option>
+                <option value="Sửa xong">Sửa xong</option>
+                <option value="Thêm tủ mới">Thêm tủ mới</option>
+                <option value="Xóa tủ">Xóa tủ</option>
+              </select>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Logs Card -->
+        <section class="glass-card table-card" style="margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2>Nhật Ký Hệ Thống</h2>
+            <button id="btn-clear-history" class="btn-secondary btn-sm admin-only" style="color: var(--accent-red); border-color: rgba(239, 68, 68, 0.2); width: auto;">
+              <i class="fa-solid fa-trash-can"></i> Xóa lịch sử
+            </button>
+          </div>
+          
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th width="16%">Thời Gian</th>
+                  <th width="10%">Sảnh</th>
+                  <th width="12%">Mã Tủ</th>
+                  <th width="12%">Hành Động</th>
+                  <th width="18%">Nhân Viên Sử Dụng</th>
+                  <th width="14%">Bộ Phận</th>
+                  <th width="18%">Ghi Chú</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      
+      <!-- VIEW: STATISTICS -->
+      <div id="view-statistics" class="app-view">
+        <header class="view-header">
+          <div class="header-title">
+            <h1>Báo cáo</h1>
+            <p>Số liệu tổng hợp về tình trạng sử dụng và phân bổ tủ đồ</p>
+          </div>
+          <div class="header-controls">
+            <button id="btn-export-stats-excel" class="btn-primary" style="background: var(--accent-green); width: auto;">
+              <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo Excel
+            </button>
+          </div>
+        </header>
+        
+        <!-- Quick stats cards -->
+        <div class="stats-grid">
+          <div class="stats-card glass-card">
+            <div class="stats-icon text-blue"><i class="fa-solid fa-door-closed"></i></div>
+            <div class="stats-info">
+              <span class="label">Tổng số tủ</span>
+              <span class="val" id="stats-total-lockers">-</span>
+            </div>
+          </div>
+          <div class="stats-card glass-card">
+            <div class="stats-icon text-green"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stats-info">
+              <span class="label">Tủ trống khả dụng</span>
+              <span class="val" id="stats-available-lockers">-</span>
+            </div>
+          </div>
+          <div class="stats-card glass-card">
+            <div class="stats-icon text-orange"><i class="fa-solid fa-user-lock"></i></div>
+            <div class="stats-info">
+              <span class="label">Tủ đang sử dụng</span>
+              <span class="val" id="stats-in-use-lockers">-</span>
+            </div>
+          </div>
+          <div class="stats-card glass-card">
+            <div class="stats-icon text-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stats-info">
+              <span class="label">Tủ lỗi / hỏng</span>
+              <span class="val" id="stats-broken-lockers">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid-2-col" style="margin-top: 24px;">
+          <!-- Hall breakdown -->
+          <div class="glass-card">
+            <h2>Phân Bổ Theo Sảnh</h2>
+            <div id="lobby-stats-container" style="margin-top: 24px;">
+              <!-- Dynamically populated progress bars for A and B -->
+            </div>
+          </div>
+          
+          <!-- Department occupancy -->
+          <div class="glass-card">
+            <h2>Tỷ Lệ Sở Hữu Theo Bộ Phận</h2>
+            <div id="dept-stats-container" style="margin-top: 24px;">
+              <!-- Dynamically populated progress bars for departments -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </main>
+  </div>
+  
+  <!-- LOCKER ACTION MODAL -->
+  <div class="modal" id="locker-action-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-door-closed"></i> Thông Tin Tủ Đồ <span id="modal-locker-number">A-1-1</span></h3>
+        <button id="btn-close-locker-modal" class="btn-icon" style="font-size: 1.25rem;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Display Locker state -->
+        <div class="locker-state-summary card-accent" id="locker-modal-summary">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="state-dot status-available" id="locker-modal-dot"></div>
+            <div>
+              <div class="state-title" id="locker-modal-status-text">Trống</div>
+              <div class="state-desc" id="locker-modal-status-desc">Có thể cấp phát cho nhân viên sử dụng.</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User assigned to this locker info -->
+        <div id="locker-holder-info" class="locker-holder-section hidden">
+          <h4>Nhân viên đang sử dụng</h4>
+          <div class="holder-card">
+            <div class="holder-avatar"><i class="fa-solid fa-user"></i></div>
+            <div class="holder-details">
+              <div class="holder-name" id="locker-holder-name">Nguyễn Văn A</div>
+              <div class="holder-meta" id="locker-holder-meta">Kỹ thuật - @nguyenvana</div>
+              <div class="holder-time" id="locker-holder-time">Thời gian cấp: --</div>
+            </div>
+          </div>
+          
+          <!-- Note/Issue description -->
+          <div class="form-group" style="margin-top: 12px;" id="locker-issue-notes-group">
+            <label>Ghi chú / Mô tả lỗi</label>
+            <p id="locker-modal-issue-notes" class="issue-notes-box">Chưa có ghi chú nào.</p>
+          </div>
+        </div>
+        
+        <!-- ACTIONS & FORMS -->
+        <!-- Form 1: Assign Locker (Cấp tủ) -->
+        <form id="form-assign-locker" class="hidden" style="margin-top: 16px;">
+          <h4>Cấp tủ đồ này</h4>
+          <div class="form-group" style="margin-top: 8px;">
+            <label for="assign-user-code">Mã nhân viên <span class="required">*</span></label>
+            <input type="text" id="assign-user-code" placeholder="Nhập mã nhân viên..." required>
+          </div>
+          <div class="form-group">
+            <label for="assign-user-name">Họ và tên <span class="required">*</span></label>
+            <input type="text" id="assign-user-name" placeholder="Nhập họ và tên..." required>
+          </div>
+          <div class="form-group">
+            <label for="assign-user-dept">Bộ phận <span class="required">*</span></label>
+            <select id="assign-user-dept" required>
+              <!-- Dynamically populated with departments -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="assign-note">Ghi chú cấp tủ</label>
+            <input type="text" id="assign-note" placeholder="Ví dụ: Cấp làm việc dự án A, cấp mới...">
+          </div>
+          <button type="submit" class="btn-primary" style="margin-top: 12px;">Xác nhận cấp tủ</button>
+        </form>
+        
+        <!-- Action buttons (Return locker, Report Broken, Repair, etc) -->
+        <div class="locker-action-buttons" style="margin-top: 16px;">
+          <!-- Active for users who have this locker, or admin -->
+          <button id="btn-return-locker" class="btn-primary hidden" style="background: var(--accent-blue);">
+            <i class="fa-solid fa-right-from-bracket"></i> Trả tủ (Thu hồi)
+          </button>
+          
+          <!-- Active for admin, or user who is reporting a defect -->
+          <button id="btn-report-broken" class="btn-secondary hidden" style="color: var(--accent-red); border-color: rgba(239, 68, 68, 0.2);">
+            <i class="fa-solid fa-triangle-exclamation"></i> Báo Hỏng / Báo Lỗi
+          </button>
+        </div>
+        
+        <!-- Admin-only Status overrides -->
+        <div class="admin-only" style="margin-top: 16px; border-top: 1px solid var(--glass-border); padding-top: 12px;" id="admin-status-override-section">
+          <h4>Thay đổi trạng thái tủ (Quyền Admin)</h4>
+          <div class="form-group" style="margin-top: 8px;">
+            <label for="override-status-select">Chọn trạng thái trực tiếp</label>
+            <select id="override-status-select">
+              <option value="available">Trống (Sẵn sàng dùng)</option>
+              <option value="broken">Hỏng (Cần sửa chữa lớn)</option>
+              <option value="error">Lỗi (Kẹt khóa, không mở được)</option>
+              <option value="maintenance">Đang bảo trì</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="override-note">Ghi chú nguyên nhân / trạng thái</label>
+            <input type="text" id="override-note" placeholder="Nhập ghi chú thay đổi trạng thái...">
+          </div>
+          <button id="btn-override-status" class="btn-secondary" style="margin-top: 8px;">Cập nhật trạng thái</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ADD INDIVIDUAL LOCKER MODAL (Admin Only) -->
+  <div class="modal" id="add-locker-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus"></i> Thêm Tủ Đồ Mới</h3>
+        <button id="btn-close-add-locker-modal" class="btn-icon" style="font-size: 1.25rem;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-add-locker">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="add-locker-lobby">Chọn sảnh đặt tủ <span class="required">*</span></label>
+            <select id="add-locker-lobby" required>
+              <option value="A">Sảnh A</option>
+              <option value="B">Sảnh B</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="add-locker-row">Tên dãy tủ (Ví dụ: Dãy 1, Dãy 2, Dãy C...) <span class="required">*</span></label>
+            <input type="text" id="add-locker-row" placeholder="Dãy 11" required>
+          </div>
+          <div class="form-group">
+            <label for="add-locker-col">Số cột (Cột ngang) <span class="required">*</span></label>
+            <input type="number" id="add-locker-col" min="1" max="100" placeholder="6" required>
+          </div>
+          <div class="form-group">
+            <label for="add-locker-tier">Tầng tủ (Chiều cao) <span class="required">*</span></label>
+            <select id="add-locker-tier" required>
+              <option value="6">Tầng 6 (Cao nhất)</option>
+              <option value="5">Tầng 5</option>
+              <option value="4">Tầng 4</option>
+              <option value="3">Tầng 3</option>
+              <option value="2">Tầng 2</option>
+              <option value="1">Tầng 1 (Thấp nhất)</option>
+            </select>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;">
+            * Hệ thống tự động tạo mã định danh tủ từ tọa độ để quản lý và hiển thị.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-add-locker" class="btn-secondary">Hủy bỏ</button>
+          <button type="submit" class="btn-primary">Xác nhận thêm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONFIG LAYOUT MODAL -->
+  <div class="modal" id="config-layout-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-sliders"></i> Cấu hình số Dãy và Cột</h3>
+        <button id="btn-close-layout-modal" class="btn-icon" style="font-size: 1.25rem;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="warning-alert" style="margin-bottom: 12px; color: var(--accent-amber); font-size: 0.85rem;">
+          <i class="fa-solid fa-triangle-exclamation"></i> <strong>Lưu ý:</strong> Việc thiết lập lại sẽ xóa các tủ nằm ngoài vùng tọa độ cấu hình mới. Hãy sao lưu/xuất Excel trước khi thay đổi.
+        </p>
+        <div class="form-group">
+          <label for="cfg-rows">Số dãy tủ đồ (Mặc định: 10)</label>
+          <input type="number" id="cfg-rows" min="1" max="50" value="10">
+        </div>
+        <div class="form-group">
+          <label for="cfg-cols">Số cột tủ của mỗi dãy</label>
+          <input type="number" id="cfg-cols" min="1" max="50" value="5">
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">* Mỗi cột của dãy tủ sẽ mặc định cao đúng 6 tầng xếp từ tầng 6 xuống tầng 1.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-layout-config" class="btn-secondary">Hủy bỏ</button>
+        <button id="btn-save-layout-config" class="btn-primary">Áp dụng & Thiết lập lại</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div class="modal" id="confirm-modal" style="z-index: 1200;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <div class="modal-body" style="padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <i class="fa-solid fa-circle-question" style="font-size: 3.5rem; color: var(--accent-amber);"></i>
+        <div>
+          <h3 id="confirm-modal-title" style="margin-bottom: 8px; font-size: 1.25rem;">Xác nhận thao tác</h3>
+          <p id="confirm-modal-message" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.4;">Bạn có chắc chắn?</p>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: 16px; border-top: none; padding-top: 8px;">
+        <button id="btn-confirm-cancel" class="btn-secondary" style="min-width: 120px;">Hủy bỏ</button>
+        <button id="btn-confirm-ok" class="btn-primary" style="background: var(--accent-red); min-width: 120px;">Đồng ý</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TOAST CONTAINER FOR NOTIFICATIONS -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Hidden Excel Input file for Locker List assignments upload -->
+  <input type="file" id="import-locker-list-file" accept=".xlsx, .xls" style="display: none;">
+
+  <!-- Business Logic Script -->
+  <script src="app.js?v=2.6.0"></script>
+</body>
+</html>
