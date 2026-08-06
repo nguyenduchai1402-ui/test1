@@ -39,7 +39,7 @@ const DEFAULT_EMPLOYEES = [
 
 // Pagination Configuration for Locker List view
 let lockerListCurrentPage = 1;
-const lockerListItemsPerPage = 50;
+const lockerListItemsPerPage = 20;
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", () => {
@@ -659,7 +659,7 @@ function renderUsers() {
   }
 }
 
-// 3.5. LOCKER LIST VIEW WITH PAGINATION (50 ITEMS/PAGE)
+// 3.5. LOCKER LIST VIEW WITH PAGINATION (20 ITEMS/PAGE)
 function renderLockerList() {
   const tbody = document.getElementById("locker-list-table-body");
   const paginationContainer = document.getElementById("locker-list-pagination");
@@ -1459,6 +1459,10 @@ function handleUserSubmit(e) {
       db.users[userIndex].password = passwordInput;
       db.users[userIndex].departmentId = deptInput;
       db.users[userIndex].role = roleInput;
+      
+      if (db.currentUser && db.currentUser.id === idInput) {
+        db.currentUser = db.users[userIndex];
+      }
       
       showToast(`Đã cập nhật tài khoản: ${fullNameInput}`, "success");
     }
