@@ -1693,6 +1693,12 @@ function setupEventListeners() {
   document.getElementById("tab-lobby-a").addEventListener("click", () => switchLobby("A"));
   document.getElementById("tab-lobby-b").addEventListener("click", () => switchLobby("B"));
   
+  // Manual Re-index button listener
+  const btnManualReindex = document.getElementById("btn-manual-reindex");
+  if (btnManualReindex) {
+    btnManualReindex.addEventListener("click", handleManualReindexClick);
+  }
+  
   // Lobby rename action
   document.getElementById("btn-lobby-rename").addEventListener("click", renameActiveLobby);
   
@@ -3653,5 +3659,30 @@ async function syncLockersDb(oldLockers) {
     console.error("Error syncing lockers to Supabase:", err);
     showToast("Lỗi đồng bộ sơ đồ tủ đồ lên đám mây!", "error");
   }
+}
+
+// Manual re-indexing triggered by Admin
+async function handleManualReindexClick() {
+  if (!db.currentUser || db.currentUser.role !== "admin") {
+    showToast("Chỉ có tài khoản Admin mới có quyền sắp xếp lại thứ tự tủ đồ!", "error");
+    return;
+  }
+  
+  confirmAction("Bạn có chắc chắn muốn sắp xếp lại toàn bộ thứ tự các tủ đồ theo trình tự vật lý (Dãy, Cột, Tầng) và đánh lại số liên tục? Thao tác này sẽ tự động lưu và đồng bộ lên Supabase.", async () => {
+    const oldLockers = [...db.lockers];
+    
+    // Re-index remaining lockers to keep them seamless
+    reindexLockers();
+    saveDatabase();
+    
+    // Sync database
+    showToast("Đang sắp xếp lại và đồng bộ sơ đồ tủ đồ...", "info");
+    await syncLockersDb(oldLockers);
+    showToast("Đã sắp xếp lại thứ tự các tủ đồ và đồng bộ thành công!", "success");
+    
+    renderLockerMap();
+    renderLockerList();
+    renderStatistics();
+  }, "Sắp xếp lại thứ tự tủ");
 }
 
