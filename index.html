@@ -26,8 +26,8 @@
       </div>
       <form id="login-form" style="margin-top: 16px;">
         <div class="form-group">
-          <label for="login-username">Email đăng nhập <span class="required">*</span></label>
-          <input type="email" id="login-username" placeholder="example@example.com" required>
+          <label for="login-username">Tên đăng nhập <span class="required">*</span></label>
+          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập..." required>
         </div>
         <div class="form-group">
           <label for="login-password">Mật khẩu <span class="required">*</span></label>
@@ -38,7 +38,7 @@
         </button>
       </form>
       <div class="login-footer" style="margin-top: 24px; text-align: center; font-size: 0.8rem; color: var(--text-secondary);">
-        <p>Tài khoản mặc định: <strong style="color: var(--text-primary);">admin@example.com</strong> | Mật khẩu: <strong style="color: var(--text-primary);">admin123</strong></p>
+        <p>Tài khoản mặc định: <strong style="color: var(--text-primary);">admin</strong> | Mật khẩu: <strong style="color: var(--text-primary);">admin</strong></p>
       </div>
     </div>
   </div>
@@ -278,8 +278,8 @@
                 <input type="text" id="user-fullname" placeholder="Nguyễn Văn A" required>
               </div>
               <div class="form-group">
-                <label for="user-username">Email tài khoản <span class="required">*</span></label>
-                <input type="email" id="user-username" placeholder="nguyenvana@example.com" required>
+                <label for="user-username">Tên đăng nhập <span class="required">*</span></label>
+                <input type="text" id="user-username" placeholder="nguyenvana" required>
               </div>
               <div class="form-group">
                 <label for="user-password">Mật khẩu <span class="required">*</span></label>
@@ -471,15 +471,21 @@
         <section class="glass-card table-card" style="margin-top: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2>Nhật Ký Hệ Thống</h2>
-            <button id="btn-clear-history" class="btn-secondary btn-sm admin-only" style="color: var(--accent-red); border-color: rgba(239, 68, 68, 0.2); width: auto;">
-              <i class="fa-solid fa-trash-can"></i> Xóa lịch sử
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="btn-delete-selected-history" class="btn-danger btn-sm" style="background: var(--accent-red); color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; display: none; gap: 6px; align-items: center; cursor: pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-trash"></i> Xóa dòng đã chọn (<span id="delete-selected-history-count">0</span>)
+              </button>
+              <button id="btn-clear-history" class="btn-secondary btn-sm admin-only" style="color: var(--accent-red); border-color: rgba(239, 68, 68, 0.2); width: auto;">
+                <i class="fa-solid fa-trash-can"></i> Xóa sạch lịch sử
+              </button>
+            </div>
           </div>
           
           <div class="table-wrapper">
             <table class="data-table">
               <thead>
                 <tr>
+                  <th width="4%"><input type="checkbox" id="history-select-all"></th>
                   <th width="16%">Thời Gian</th>
                   <th width="10%">Sảnh</th>
                   <th width="12%">Mã Tủ</th>
@@ -493,6 +499,11 @@
                 <!-- Dynamically populated -->
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Bar for History -->
+          <div class="pagination-container" id="history-pagination" style="margin-top: 16px;">
+            <!-- Dynamically populated -->
           </div>
         </section>
       </div>

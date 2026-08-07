@@ -46,6 +46,10 @@ const DEFAULT_EMPLOYEES = [
 let lockerListCurrentPage = 1;
 const lockerListItemsPerPage = 20;
 
+// Pagination Configuration for History view
+let historyCurrentPage = 1;
+const historyItemsPerPage = 20;
+
 // PERSISTENCE HELPER FUNCTIONS FOR SUPABASE SYNC
 async function supabaseSync(table, idValue, data) {
   try {
@@ -114,10 +118,10 @@ async function seedSupabaseUsers() {
     if (data.length === 0) {
       console.log("Seeding default users to Supabase...");
       
-      // Sign up default admin
+      // Sign up default admin (username: admin, password: admin)
       const { error: adminErr } = await supabaseClient.auth.signUp({
-        email: 'admin@example.com',
-        password: 'admin123',
+        email: 'admin@internal.locker',
+        password: 'admin',
         options: {
           data: {
             fullname: 'Quản trị viên',
@@ -128,9 +132,9 @@ async function seedSupabaseUsers() {
       });
       if (adminErr) console.error("Error seeding admin:", adminErr);
       
-      // Sign up default manager
+      // Sign up default manager (username: manager, password: admin123)
       const { error: managerErr } = await supabaseClient.auth.signUp({
-        email: 'manager@example.com',
+        email: 'manager@internal.locker',
         password: 'admin123',
         options: {
           data: {
@@ -192,12 +196,17 @@ function setupAuth() {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       
-      const emailInput = document.getElementById("login-username").value.trim().toLowerCase();
+      let emailInput = document.getElementById("login-username").value.trim().toLowerCase();
       const passwordInput = document.getElementById("login-password").value.trim();
       
       if (!emailInput || !passwordInput) {
-        showToast("Vui lòng điền đầy đủ email và mật khẩu!", "error");
+        showToast("Vui lòng điền đầy đủ tên đăng nhập và mật khẩu!", "error");
         return;
+      }
+      
+      // Auto-append domain if simple username is entered
+      if (!emailInput.includes("@")) {
+        emailInput = emailInput + "@internal.locker";
       }
       
       const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -206,7 +215,7 @@ function setupAuth() {
       });
       
       if (error) {
-        showToast("Sai email hoặc mật khẩu!", "error");
+        showToast("Sai tên đăng nhập hoặc mật khẩu!", "error");
         return;
       }
       
@@ -1190,7 +1199,11 @@ function quickReturnLocker(lockerId) {
 // 4. TRANSACTION LOGS HISTORY RENDER
 function renderHistory() {
   const tbody = document.getElementById("history-table-body");
+  const paginationContainer = document.getElementById("history-pagination");
+  if (!tbody || !paginationContainer) return;
+  
   tbody.innerHTML = "";
+  paginationContainer.innerHTML = "";
   
   const searchKeyword = document.getElementById("history-search").value.toLowerCase().trim();
   const filterLobby = document.getElementById("history-filter-lobby").value;
@@ -1224,12 +1237,27 @@ function renderHistory() {
     filteredLogs = filteredLogs.filter(log => log.action === filterAction);
   }
   
-  if (filteredLogs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: var(--text-secondary); padding: 24px;">Chưa có bản ghi lịch sử nào phù hợp.</td></tr>`;
+  const totalItems = filteredLogs.length;
+  
+  if (totalItems === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="color: var(--text-secondary); padding: 24px;">Chưa có bản ghi lịch sử nào phù hợp.</td></tr>`;
     return;
   }
   
-  filteredLogs.forEach(log => {
+  // Calculate Pagination
+  const totalPages = Math.max(1, Math.ceil(totalItems / historyItemsPerPage));
+  if (historyCurrentPage > totalPages) {
+    historyCurrentPage = totalPages;
+  }
+  if (historyCurrentPage < 1) {
+    historyCurrentPage = 1;
+  }
+  
+  const startIndex = (historyCurrentPage - 1) * historyItemsPerPage;
+  const endIndex = Math.min(startIndex + historyItemsPerPage, totalItems);
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+  
+  paginatedLogs.forEach(log => {
     const timeDisplay = formatDateTime(log.timestamp);
     const actionBadgeClass = `badge status-badge-${log.action.substring(0, 3)}`;
     
@@ -1240,6 +1268,7 @@ function renderHistory() {
     
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td><input type="checkbox" class="history-item-checkbox" data-id="${escapeHtml(log.id)}"></td>
       <td style="font-size: 0.8rem; color: var(--text-secondary);">${timeDisplay}</td>
       <td>${escapeHtml(log.lobbyName)}</td>
       <td><span style="font-family: monospace; font-weight:700;">${escapeHtml(log.lockerNumber)}</span></td>
@@ -1256,6 +1285,148 @@ function renderHistory() {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  // Handle Select All checkbox
+  const selectAllCheckbox = document.getElementById("history-select-all");
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      tbody.querySelectorAll(".history-item-checkbox").forEach(cb => {
+        cb.checked = checked;
+      });
+      updateDeleteSelectedHistoryButtonState();
+    });
+  }
+
+  // Handle individual checkbox change
+  tbody.querySelectorAll(".history-item-checkbox").forEach(cb => {
+    cb.addEventListener("change", () => {
+      updateDeleteSelectedHistoryButtonState();
+    });
+  });
+  
+  updateDeleteSelectedHistoryButtonState();
+
+  // Render History Pagination Controls
+  // Left side info
+  const infoDiv = document.createElement("div");
+  infoDiv.className = "pagination-info";
+  infoDiv.innerText = `Hiển thị ${startIndex + 1} - ${endIndex} trong tổng số ${totalItems} lịch sử`;
+  paginationContainer.appendChild(infoDiv);
+  
+  // Right side controls
+  const controlsDiv = document.createElement("div");
+  controlsDiv.className = "pagination-controls";
+  
+  // First page button
+  const firstBtn = document.createElement("button");
+  firstBtn.className = "page-btn";
+  firstBtn.innerHTML = '<i class="fa-solid fa-angles-left"></i>';
+  firstBtn.disabled = historyCurrentPage === 1;
+  firstBtn.addEventListener("click", () => {
+    historyCurrentPage = 1;
+    renderHistory();
+  });
+  controlsDiv.appendChild(firstBtn);
+  
+  // Previous page button
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "page-btn";
+  prevBtn.innerHTML = '<i class="fa-solid fa-angle-left"></i>';
+  prevBtn.disabled = historyCurrentPage === 1;
+  prevBtn.addEventListener("click", () => {
+    if (historyCurrentPage > 1) {
+      historyCurrentPage--;
+      renderHistory();
+    }
+  });
+  controlsDiv.appendChild(prevBtn);
+  
+  // Render middle page numbers
+  const maxPageVisible = 5;
+  let startPage = Math.max(1, historyCurrentPage - 2);
+  let endPage = Math.min(totalPages, startPage + maxPageVisible - 1);
+  if (endPage - startPage < maxPageVisible - 1) {
+    startPage = Math.max(1, endPage - maxPageVisible + 1);
+  }
+  
+  for (let p = startPage; p <= endPage; p++) {
+    const pageBtn = document.createElement("button");
+    pageBtn.className = `page-btn ${p === historyCurrentPage ? 'active' : ''}`;
+    pageBtn.innerText = p;
+    pageBtn.addEventListener("click", () => {
+      historyCurrentPage = p;
+      renderHistory();
+    });
+    controlsDiv.appendChild(pageBtn);
+  }
+  
+  // Next page button
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "page-btn";
+  nextBtn.innerHTML = '<i class="fa-solid fa-angle-right"></i>';
+  nextBtn.disabled = historyCurrentPage === totalPages;
+  nextBtn.addEventListener("click", () => {
+    if (historyCurrentPage < totalPages) {
+      historyCurrentPage++;
+      renderHistory();
+    }
+  });
+  controlsDiv.appendChild(nextBtn);
+  
+  // Last page button
+  const lastBtn = document.createElement("button");
+  lastBtn.className = "page-btn";
+  lastBtn.innerHTML = '<i class="fa-solid fa-angles-right"></i>';
+  lastBtn.disabled = historyCurrentPage === totalPages;
+  lastBtn.addEventListener("click", () => {
+    historyCurrentPage = totalPages;
+    renderHistory();
+  });
+  controlsDiv.appendChild(lastBtn);
+  
+  paginationContainer.appendChild(controlsDiv);
+}
+
+function updateDeleteSelectedHistoryButtonState() {
+  const checkboxes = document.querySelectorAll(".history-item-checkbox:checked");
+  const deleteBtn = document.getElementById("btn-delete-selected-history");
+  const countSpan = document.getElementById("delete-selected-history-count");
+  if (deleteBtn && countSpan) {
+    if (checkboxes.length > 0) {
+      deleteBtn.style.display = "inline-flex";
+      countSpan.innerText = checkboxes.length;
+    } else {
+      deleteBtn.style.display = "none";
+    }
+  }
+}
+
+async function deleteSelectedHistory() {
+  const checkedBoxes = document.querySelectorAll(".history-item-checkbox:checked");
+  const logIds = Array.from(checkedBoxes).map(cb => cb.dataset.id).filter(id => id);
+  
+  if (logIds.length === 0) return;
+  
+  confirmAction(`Bạn có chắc chắn muốn xóa ${logIds.length} bản ghi lịch sử đã chọn?`, async () => {
+    const { error } = await supabaseClient.from('history').delete().in('id', logIds);
+    if (error) {
+      showToast("Lỗi xóa lịch sử trên đám mây: " + error.message, "error");
+      return;
+    }
+    
+    db.history = db.history.filter(h => !logIds.includes(h.id));
+    saveDatabase();
+    
+    showToast(`Đã xóa thành công ${logIds.length} lịch sử!`, "success");
+    
+    const selectAllCheckbox = document.getElementById("history-select-all");
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    updateDeleteSelectedHistoryButtonState();
+    
+    renderHistory();
   });
 }
 
@@ -1510,9 +1681,24 @@ function setupEventListeners() {
   }
 
   // Search & Filter History log
-  document.getElementById("history-search").addEventListener("input", renderHistory);
-  document.getElementById("history-filter-lobby").addEventListener("change", renderHistory);
-  document.getElementById("history-filter-action").addEventListener("change", renderHistory);
+  document.getElementById("history-search").addEventListener("input", () => {
+    historyCurrentPage = 1;
+    renderHistory();
+  });
+  document.getElementById("history-filter-lobby").addEventListener("change", () => {
+    historyCurrentPage = 1;
+    renderHistory();
+  });
+  document.getElementById("history-filter-action").addEventListener("change", () => {
+    historyCurrentPage = 1;
+    renderHistory();
+  });
+  
+  // Bulk Delete Selected History Listener
+  const bulkDeleteHistBtn = document.getElementById("btn-delete-selected-history");
+  if (bulkDeleteHistBtn) {
+    bulkDeleteHistBtn.addEventListener("click", deleteSelectedHistory);
+  }
   
   // Clear history log
   document.getElementById("btn-clear-history").addEventListener("click", () => {
@@ -1764,7 +1950,7 @@ async function handleUserSubmit(e) {
   
   const duplicate = db.users.find(u => u.username === userNameInput && u.id !== idInput);
   if (duplicate) {
-    showToast(`Email tài khoản @${userNameInput} đã tồn tại! Vui lòng chọn email khác.`, "error");
+    showToast(`Tên đăng nhập @${userNameInput} đã tồn tại! Vui lòng chọn tên khác.`, "error");
     return;
   }
   
@@ -1794,9 +1980,15 @@ async function handleUserSubmit(e) {
     }
     showToast(`Đã cập nhật tài khoản: ${fullNameInput}`, "success");
   } else {
-    // 3. Register user using RPC (admin_create_user)
+    // 3. Auto-append email domain if only username is provided
+    let emailInput = userNameInput;
+    if (!emailInput.includes("@")) {
+      emailInput = emailInput + "@internal.locker";
+    }
+
+    // 4. Register user using RPC (admin_create_user)
     const { data: newId, error: signUpErr } = await supabaseClient.rpc('admin_create_user', {
-      email_val: userNameInput,
+      email_val: emailInput,
       password_val: passwordInput,
       fullname_val: fullNameInput,
       role_val: roleInput,
@@ -2634,7 +2826,13 @@ function handleImportLockerListFile(e) {
       }
       
       if (successCount > 0) {
-        // Bulk upsert all lockers and employees to Supabase
+        // Bulk upsert all departments, lockers and employees to Supabase
+        const deptsToUpsert = db.departments.map(d => ({
+          id: d.id,
+          name: d.name,
+          description: d.description || ""
+        }));
+
         const empsToUpsert = db.employees.map(e => ({
           code: e.code,
           fullname: e.fullname,
@@ -2654,23 +2852,31 @@ function handleImportLockerListFile(e) {
           assigned_at: l.assignedAt
         }));
 
-        Promise.all([
-          supabaseClient.from('employees').upsert(empsToUpsert),
-          supabaseClient.from('lockers').upsert(lockersToUpsert)
-        ]).then(() => {
-          showToast(`Đã đồng bộ ${successCount} bản ghi nhập từ Excel lên Supabase!`, "success");
-        }).catch(err => {
-          console.error("Error bulk upserting from Excel:", err);
-          showToast("Lỗi đồng bộ dữ liệu Excel lên Supabase!", "error");
-        });
+        supabaseClient.from('departments').upsert(deptsToUpsert)
+          .then(() => {
+            return Promise.all([
+              supabaseClient.from('employees').upsert(empsToUpsert),
+              supabaseClient.from('lockers').upsert(lockersToUpsert)
+            ]);
+          })
+          .then(() => {
+            showToast(`Đã đồng bộ ${successCount} bản ghi nhập từ Excel lên Supabase!`, "success");
+            // Refresh database from Supabase and render
+            loadDatabase().then(() => {
+              populateDropdowns();
+              renderLockerMap();
+              renderLockerList();
+              renderUsers();
+              renderHistory();
+              renderStatistics();
+            });
+          })
+          .catch(err => {
+            console.error("Error bulk upserting from Excel:", err);
+            showToast("Lỗi đồng bộ dữ liệu Excel lên Supabase!", "error");
+          });
 
         saveDatabase();
-        populateDropdowns();
-        renderLockerMap();
-        renderLockerList();
-        renderUsers();
-        renderHistory();
-        renderStatistics();
         showToast(`Nạp thành công ${successCount} vị trí cấp tủ!`, "success");
       }
       
