@@ -3394,21 +3394,19 @@ async function deleteRow(rowName) {
       }
     });
     
-    const idsToDelete = rowLockers.map(l => l.id);
+    const oldLockers = [...db.lockers];
     
     // 2. Filter out deleted lockers locally
     db.lockers = db.lockers.filter(l => !(l.lobby === activeLobby && l.row === rowName));
+    
+    // 3. Re-index remaining lockers to keep them seamless
+    reindexLockers();
     saveDatabase();
     
-    // 3. Delete from Supabase
-    try {
-      const { error } = await supabaseClient.from('lockers').delete().in('id', idsToDelete);
-      if (error) throw error;
-      showToast(`Đã xóa thành công ${rowName}!`, "success");
-    } catch (err) {
-      console.error("Error deleting row lockers:", err);
-      showToast("Có lỗi xảy ra khi xóa dữ liệu dãy trên Supabase!", "error");
-    }
+    // 4. Sync changes to Supabase
+    showToast("Đang đồng bộ thay đổi sơ đồ tủ đồ...", "info");
+    await syncLockersDb(oldLockers);
+    showToast(`Đã xóa thành công ${rowName} và sắp xếp lại liền mạch!`, "success");
     
     renderLockerMap();
     renderLockerList();
@@ -3440,23 +3438,139 @@ async function handleDeleteLockerClick() {
       logTransaction(locker.id, "Trả tủ", locker.userId, "Thu hồi tự động khi xóa tủ");
     }
     
-    // 2. Delete from Supabase
-    try {
-      await supabaseDelete('lockers', locker.id);
-      showToast(`Đã xóa tủ số ${locker.number} thành công!`, "success");
-    } catch (err) {
-      console.error("Error deleting locker:", err);
-      showToast("Lỗi khi xóa tủ trên Supabase!", "error");
-    }
+    const oldLockers = [...db.lockers];
     
-    // 3. Remove locally
+    // 2. Remove locally
     db.lockers = db.lockers.filter(l => l.id !== selectedLockerIdForModal);
+    
+    // 3. Re-index remaining lockers
+    reindexLockers();
     saveDatabase();
+    
+    // 4. Sync database
+    showToast("Đang đồng bộ thay đổi sơ đồ tủ đồ...", "info");
+    await syncLockersDb(oldLockers);
+    showToast(`Đã xóa tủ số ${locker.number} thành công và sắp xếp lại liền mạch!`, "success");
     
     closeLockerModal();
     renderLockerMap();
     renderLockerList();
     renderStatistics();
   }, "Xóa Tủ Đồ");
+}
+
+// Re-index remaining lockers sequentially, filling any empty positions and re-assigning numbers consecutively
+function reindexLockers() {
+  const sortedLockers = [...db.lockers].sort((a, b) => {
+    if (a.lobby !== b.lobby) {
+      return a.lobby.localeCompare(b.lobby);
+    }
+    const numA = parseInt(a.number) || 0;
+    const numB = parseInt(b.number) || 0;
+    if (numA !== numB) return numA - numB;
+    return a.id.localeCompare(b.id);
+  });
+  
+  const lobbyALockers = sortedLockers.filter(l => l.lobby === "A");
+  const lobbyBLockers = sortedLockers.filter(l => l.lobby === "B");
+  
+  // Ensure layout capacity has enough rows to cover the current locker count
+  let neededRows = db.settings.rows;
+  while (neededRows * db.settings.cols * 6 < Math.max(lobbyALockers.length, lobbyBLockers.length)) {
+    neededRows++;
+  }
+  db.settings.rows = neededRows;
+  
+  const getSeqCoords = (lobby, maxCount, rowsCount, colsCount) => {
+    const coords = [];
+    const tiersCount = 6;
+    let count = 0;
+    for (let r = 1; r <= rowsCount; r++) {
+      const rowName = `Dãy ${r}`;
+      for (let c = 1; c <= colsCount; c++) {
+        for (let t = tiersCount; t >= 1; t--) {
+          count++;
+          coords.push({
+            id: `${lobby}-R${r}-C${c}-T${t}`,
+            row: rowName,
+            col: c,
+            tier: t
+          });
+          if (count >= maxCount) return coords;
+        }
+      }
+    }
+    return coords;
+  };
+  
+  const lobbyACoords = getSeqCoords("A", lobbyALockers.length, db.settings.rows, db.settings.cols);
+  const lobbyBCoords = getSeqCoords("B", lobbyBLockers.length, db.settings.rows, db.settings.cols);
+  
+  const reindexedLockers = [];
+  let globalCount = 0;
+  
+  lobbyALockers.forEach((locker, index) => {
+    globalCount++;
+    const coord = lobbyACoords[index];
+    locker.id = coord.id;
+    locker.row = coord.row;
+    locker.col = coord.col;
+    locker.tier = coord.tier;
+    locker.number = String(globalCount).padStart(2, '0');
+    reindexedLockers.push(locker);
+  });
+  
+  lobbyBLockers.forEach((locker, index) => {
+    globalCount++;
+    const coord = lobbyBCoords[index];
+    locker.id = coord.id;
+    locker.row = coord.row;
+    locker.col = coord.col;
+    locker.tier = coord.tier;
+    locker.number = String(globalCount).padStart(2, '0');
+    reindexedLockers.push(locker);
+  });
+  
+  db.lockers = reindexedLockers;
+}
+
+// Cleanly synchronize new locker configurations to Supabase, deleting leftover IDs
+async function syncLockersDb(oldLockers) {
+  const oldLockerIds = oldLockers.map(l => l.id);
+  const newLockerIds = new Set(db.lockers.map(l => l.id));
+  const idsToDelete = oldLockerIds.filter(id => !newLockerIds.has(id));
+  
+  const lockersToUpsert = db.lockers.map(l => ({
+    id: l.id,
+    lobby: l.lobby,
+    row: l.row,
+    col: l.col,
+    tier: l.tier,
+    number: l.number,
+    status: l.status,
+    user_id: l.userId,
+    notes: l.notes || '',
+    assigned_at: l.assignedAt
+  }));
+  
+  try {
+    // 1. Delete removed IDs in batches
+    if (idsToDelete.length > 0) {
+      for (let i = 0; i < idsToDelete.length; i += 100) {
+        const batch = idsToDelete.slice(i, i + 100);
+        await supabaseClient.from('lockers').delete().in('id', batch);
+      }
+    }
+    
+    // 2. Upsert all current lockers in batches
+    for (let i = 0; i < lockersToUpsert.length; i += 150) {
+      const batch = lockersToUpsert.slice(i, i + 150);
+      const { error } = await supabaseClient.from('lockers').upsert(batch);
+      if (error) throw error;
+    }
+  } catch (err) {
+    console.error("Error syncing lockers to Supabase:", err);
+    showToast("Lỗi đồng bộ sơ đồ tủ đồ lên đám mây!", "error");
+  }
 }
 
