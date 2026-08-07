@@ -669,7 +669,10 @@
             <label for="override-note">Ghi chú nguyên nhân / trạng thái</label>
             <input type="text" id="override-note" placeholder="Nhập ghi chú thay đổi trạng thái...">
           </div>
-          <button id="btn-override-status" class="btn-secondary" style="margin-top: 8px;">Cập nhật trạng thái</button>
+          <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <button id="btn-override-status" class="btn-secondary" style="margin-top: 0; flex-grow: 1;">Cập nhật trạng thái</button>
+            <button id="btn-delete-locker" class="btn-secondary" style="margin-top: 0; background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border-color: rgba(239, 68, 68, 0.3); width: auto; flex-shrink: 0;"><i class="fa-solid fa-trash"></i> Xóa tủ này</button>
+          </div>
         </div>
       </div>
     </div>

@@ -676,6 +676,7 @@ function renderLockerMap() {
   const container = document.getElementById("lockers-grid-container");
   container.innerHTML = "";
   
+  const isAdmin = db.currentUser && db.currentUser.role === "admin";
   const lobbyLockers = db.lockers.filter(l => l.lobby === activeLobby);
   
   // Group by row
@@ -717,7 +718,14 @@ function renderLockerMap() {
     rowElement.className = "locker-row";
     rowElement.innerHTML = `
       <div class="locker-row-header">
-        <h3 class="locker-row-title"><i class="fa-solid fa-layer-group"></i> ${rowKey}</h3>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h3 class="locker-row-title"><i class="fa-solid fa-layer-group"></i> ${rowKey}</h3>
+          ${isAdmin ? `
+            <button class="btn-icon delete btn-delete-row" data-row="${rowKey}" title="Xóa dãy" style="color: var(--accent-red); font-size: 0.75rem; display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--border-radius-sm); border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); cursor: pointer;">
+              <i class="fa-solid fa-trash"></i> Xóa Dãy
+            </button>
+          ` : ""}
+        </div>
         <span class="badge" style="font-size: 0.7rem; font-weight:600;">Tổng số: ${rowLockers.length} tủ</span>
       </div>
     `;
@@ -785,6 +793,17 @@ function renderLockerMap() {
     rowElement.appendChild(colsContainer);
     container.appendChild(rowElement);
   });
+
+  // Attach event handlers for deleting rows
+  if (isAdmin) {
+    container.querySelectorAll(".btn-delete-row").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const rowName = btn.dataset.row;
+        deleteRow(rowName);
+      });
+    });
+  }
 }
 
 function updateLobbyStatsSummary(lobbyLockers) {
@@ -1810,6 +1829,7 @@ function setupEventListeners() {
   document.getElementById("btn-return-locker").addEventListener("click", handleReturnLockerClick);
   document.getElementById("btn-report-broken").addEventListener("click", handleReportBrokenClick);
   document.getElementById("btn-override-status").addEventListener("click", handleOverrideStatusClick);
+  document.getElementById("btn-delete-locker").addEventListener("click", handleDeleteLockerClick);
   
   // Auto-fill locker assignment info if user code exists
   const assignCodeInput = document.getElementById("assign-user-code");
@@ -3349,3 +3369,94 @@ function quickReturnLockerFromSearch(lockerId) {
     showToast(`Đã trả tủ ${locker.number} thành công`, "success");
   });
 }
+
+// Admin-only row deletion logic
+async function deleteRow(rowName) {
+  if (!db.currentUser || db.currentUser.role !== "admin") {
+    showToast("Chỉ có tài khoản Admin mới có quyền xóa dãy tủ!", "error");
+    return;
+  }
+  
+  const rowLockers = db.lockers.filter(l => l.lobby === activeLobby && l.row === rowName);
+  if (rowLockers.length === 0) return;
+  
+  const inUseCount = rowLockers.filter(l => l.status === "in_use").length;
+  let confirmMessage = `Bạn có chắc chắn muốn xóa toàn bộ ${rowName} tại sảnh ${activeLobby === 'A' ? 'A' : 'B'} (${rowLockers.length} tủ)?`;
+  if (inUseCount > 0) {
+    confirmMessage += `\nCẢNH BÁO: Hiện có ${inUseCount} tủ đang sử dụng trong dãy này. Nếu xóa, các tủ này sẽ bị thu hồi và giải phóng!`;
+  }
+  
+  confirmAction(confirmMessage, async () => {
+    // 1. Release in-use lockers and log transactions
+    rowLockers.forEach(l => {
+      if (l.status === "in_use" && l.userId) {
+        logTransaction(l.id, "Trả tủ", l.userId, "Thu hồi tự động khi xóa dãy tủ");
+      }
+    });
+    
+    const idsToDelete = rowLockers.map(l => l.id);
+    
+    // 2. Filter out deleted lockers locally
+    db.lockers = db.lockers.filter(l => !(l.lobby === activeLobby && l.row === rowName));
+    saveDatabase();
+    
+    // 3. Delete from Supabase
+    try {
+      const { error } = await supabaseClient.from('lockers').delete().in('id', idsToDelete);
+      if (error) throw error;
+      showToast(`Đã xóa thành công ${rowName}!`, "success");
+    } catch (err) {
+      console.error("Error deleting row lockers:", err);
+      showToast("Có lỗi xảy ra khi xóa dữ liệu dãy trên Supabase!", "error");
+    }
+    
+    renderLockerMap();
+    renderLockerList();
+    renderStatistics();
+  }, "Xóa Dãy Tủ");
+}
+
+// Admin-only locker deletion logic
+async function handleDeleteLockerClick() {
+  if (!selectedLockerIdForModal) return;
+  if (!db.currentUser || db.currentUser.role !== "admin") {
+    showToast("Chỉ có tài khoản Admin mới có quyền xóa tủ!", "error");
+    return;
+  }
+  
+  const locker = db.lockers.find(l => l.id === selectedLockerIdForModal);
+  if (!locker) return;
+  
+  let confirmMessage = `Bạn có chắc chắn muốn xóa tủ ${locker.number} khỏi hệ thống?`;
+  if (locker.status === "in_use" && locker.userId) {
+    const emp = db.employees.find(e => e.code === locker.userId);
+    const userName = emp ? emp.fullname : "Nhân viên";
+    confirmMessage += `\nCẢNH BÁO: Tủ này đang được sử dụng bởi ${userName}. Nếu xóa, tủ sẽ bị thu hồi tự động!`;
+  }
+  
+  confirmAction(confirmMessage, async () => {
+    // 1. Log transaction if in use
+    if (locker.status === "in_use" && locker.userId) {
+      logTransaction(locker.id, "Trả tủ", locker.userId, "Thu hồi tự động khi xóa tủ");
+    }
+    
+    // 2. Delete from Supabase
+    try {
+      await supabaseDelete('lockers', locker.id);
+      showToast(`Đã xóa tủ số ${locker.number} thành công!`, "success");
+    } catch (err) {
+      console.error("Error deleting locker:", err);
+      showToast("Lỗi khi xóa tủ trên Supabase!", "error");
+    }
+    
+    // 3. Remove locally
+    db.lockers = db.lockers.filter(l => l.id !== selectedLockerIdForModal);
+    saveDatabase();
+    
+    closeLockerModal();
+    renderLockerMap();
+    renderLockerList();
+    renderStatistics();
+  }, "Xóa Tủ Đồ");
+}
+
