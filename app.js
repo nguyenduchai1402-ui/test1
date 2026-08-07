@@ -2386,10 +2386,11 @@ function handleAssignLockerSubmit(e) {
   let emp = db.employees.find(e => e.code === code);
   
   if (emp) {
-    // Check if this existing employee is already holding a locker
-    const existingLocker = db.lockers.find(l => l.status === "in_use" && l.userId === code);
-    if (existingLocker) {
-      showToast(`Nhân viên '${emp.fullname}' đang giữ tủ ${existingLocker.number}! Vui lòng trả tủ đó trước.`, "error");
+    // Check if this existing employee is already holding 3 lockers
+    const holdingLockers = db.lockers.filter(l => l.status === "in_use" && l.userId === code);
+    if (holdingLockers.length >= 3) {
+      const lockerNumbersStr = holdingLockers.map(l => l.number).join(", ");
+      showToast(`Nhân viên '${emp.fullname}' đang giữ tối đa 3 tủ (${lockerNumbersStr})! Không thể cấp thêm.`, "error");
       return;
     }
     
@@ -2841,14 +2842,18 @@ function handleImportLockerListFile(e) {
           logTransaction(locker.id, "Trả tủ", oldUserId, "Thu hồi tự động để cấp lại qua nạp Excel");
         }
         
-        // Release employee's old locker if they already hold one elsewhere
-        const oldLocker = db.lockers.find(l => l.status === "in_use" && l.userId === username && l.id !== locker.id);
-        if (oldLocker) {
-          oldLocker.status = "available";
-          oldLocker.userId = null;
-          oldLocker.notes = "";
-          oldLocker.assignedAt = null;
-          logTransaction(oldLocker.id, "Trả tủ", username, "Giải phóng tủ cũ để chuyển sang tủ mới qua nạp Excel");
+        // Check if employee already holds 3 lockers elsewhere
+        const holdingLockers = db.lockers.filter(l => l.status === "in_use" && l.userId === username && l.id !== locker.id);
+        if (holdingLockers.length >= 3) {
+          // Sort holdingLockers by assignedAt ascending (oldest first) to release the oldest one
+          holdingLockers.sort((a, b) => new Date(a.assignedAt || 0) - new Date(b.assignedAt || 0));
+          const oldestLocker = holdingLockers[0];
+          
+          oldestLocker.status = "available";
+          oldestLocker.userId = null;
+          oldestLocker.notes = "";
+          oldestLocker.assignedAt = null;
+          logTransaction(oldestLocker.id, "Trả tủ", username, "Thu hồi tự động tủ cũ nhất do vượt quá hạn mức 3 tủ khi nạp Excel");
         }
         
         // Handle assignment date parsing
