@@ -1,3 +1,8 @@
+// Supabase Client Initialization
+const SUPABASE_URL = "https://xdxdeggyrdifnrcyaqmu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkeGRlZ2d5cmRpZm5yY3lhcW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjc4NDUsImV4cCI6MjEwMTY0Mzg0NX0.9T8L9azWQMTRHxqubLcwjvbni9IIIWS-OHptiJmlJ1g";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // State Management for Locker Webapp
 let db = {
   departments: [],
@@ -41,21 +46,138 @@ const DEFAULT_EMPLOYEES = [
 let lockerListCurrentPage = 1;
 const lockerListItemsPerPage = 20;
 
+// PERSISTENCE HELPER FUNCTIONS FOR SUPABASE SYNC
+async function supabaseSync(table, idValue, data) {
+  try {
+    if (table === 'lockers') {
+      const { error } = await supabaseClient.from('lockers').update({
+        status: data.status,
+        user_id: data.userId,
+        notes: data.notes,
+        assigned_at: data.assignedAt
+      }).eq('id', idValue);
+      if (error) throw error;
+    } else if (table === 'employees') {
+      const { error } = await supabaseClient.from('employees').upsert({
+        code: idValue,
+        fullname: data.fullname,
+        department_id: data.departmentId
+      });
+      if (error) throw error;
+    } else if (table === 'departments') {
+      const { error } = await supabaseClient.from('departments').upsert({
+        id: idValue,
+        name: data.name,
+        description: data.description
+      });
+      if (error) throw error;
+    } else if (table === 'profiles') {
+      const { error } = await supabaseClient.from('profiles').update({
+        fullname: data.fullname,
+        username: data.username,
+        department_id: data.departmentId,
+        role: data.role
+      }).eq('id', idValue);
+      if (error) throw error;
+    } else if (table === 'settings') {
+      const { error } = await supabaseClient.from('settings').upsert({
+        id: 'global',
+        rows: data.rows,
+        cols: data.cols
+      });
+      if (error) throw error;
+    }
+  } catch (err) {
+    console.error(`Error syncing ${table} (${idValue}) to Supabase:`, err);
+    showToast("Lỗi đồng bộ dữ liệu lên Supabase!", "error");
+  }
+}
+
+async function supabaseDelete(table, idValue) {
+  try {
+    const idColumn = table === 'employees' ? 'code' : 'id';
+    const { error } = await supabaseClient.from(table).delete().eq(idColumn, idValue);
+    if (error) throw error;
+  } catch (err) {
+    console.error(`Error deleting from ${table} (${idValue}):`, err);
+    showToast("Lỗi xóa dữ liệu trên Supabase!", "error");
+  }
+}
+
+async function seedSupabaseUsers() {
+  try {
+    const { data, error } = await supabaseClient.from('profiles').select('id').limit(1);
+    if (error) {
+      console.error("Error checking profiles:", error);
+      return;
+    }
+    if (data.length === 0) {
+      console.log("Seeding default users to Supabase...");
+      
+      // Sign up default admin
+      const { error: adminErr } = await supabaseClient.auth.signUp({
+        email: 'admin@example.com',
+        password: 'admin123',
+        options: {
+          data: {
+            fullname: 'Quản trị viên',
+            role: 'admin',
+            department_id: 'dept-ns'
+          }
+        }
+      });
+      if (adminErr) console.error("Error seeding admin:", adminErr);
+      
+      // Sign up default manager
+      const { error: managerErr } = await supabaseClient.auth.signUp({
+        email: 'manager@example.com',
+        password: 'admin123',
+        options: {
+          data: {
+            fullname: 'Người quản lý',
+            role: 'manager',
+            department_id: 'dept-ns'
+          }
+        }
+      });
+      if (managerErr) console.error("Error seeding manager:", managerErr);
+
+      await supabaseClient.auth.signOut();
+    }
+  } catch (err) {
+    console.error("Seeding exception:", err);
+  }
+}
+
 // Initialize Application
 document.addEventListener("DOMContentLoaded", () => {
   init();
 });
 
-function init() {
-  loadDatabase();
+async function init() {
+  await seedSupabaseUsers();
+  await loadDatabase();
   setupAuth();
   setupNavigation();
   setupEventListeners();
   populateDropdowns();
   
-  if (db.isLoggedIn && db.currentUser) {
+  // Check active Supabase session
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session && session.user) {
+    db.isLoggedIn = true;
+    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+    db.currentUser = {
+      id: session.user.id,
+      email: session.user.email,
+      fullname: profile ? profile.fullname : 'Người dùng',
+      role: profile ? profile.role : 'manager',
+      departmentId: profile ? profile.department_id : null
+    };
     showAppScreen();
   } else {
+    db.isLoggedIn = false;
+    db.currentUser = null;
     showLoginScreen();
   }
 }
@@ -67,33 +189,51 @@ function init() {
 function setupAuth() {
   const loginForm = document.getElementById("login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       
-      const usernameInput = document.getElementById("login-username").value.trim().toLowerCase();
+      const emailInput = document.getElementById("login-username").value.trim().toLowerCase();
       const passwordInput = document.getElementById("login-password").value.trim();
       
-      if (!usernameInput || !passwordInput) {
-        showToast("Vui lòng điền đầy đủ tên đăng nhập và mật khẩu!", "error");
+      if (!emailInput || !passwordInput) {
+        showToast("Vui lòng điền đầy đủ email và mật khẩu!", "error");
         return;
       }
       
-      // Find matching user
-      const user = db.users.find(u => u.username === usernameInput && u.password === passwordInput);
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: emailInput,
+        password: passwordInput
+      });
       
-      if (user) {
-        db.isLoggedIn = true;
-        db.currentUser = user;
-        saveDatabase();
+      if (error) {
+        showToast("Sai email hoặc mật khẩu!", "error");
+        return;
+      }
+      
+      const { user } = data;
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
         
-        // Reset login form fields
+      if (profile) {
+        db.isLoggedIn = true;
+        db.currentUser = {
+          id: user.id,
+          email: user.email,
+          fullname: profile.fullname,
+          role: profile.role,
+          departmentId: profile.department_id
+        };
         document.getElementById("login-username").value = "";
         document.getElementById("login-password").value = "";
         
+        await loadDatabase();
         showAppScreen();
-        showToast(`Đăng nhập thành công! Chào mừng ${user.fullname}`, "success");
+        showToast(`Đăng nhập thành công! Chào mừng ${profile.fullname}`, "success");
       } else {
-        showToast("Sai tên đăng nhập hoặc mật khẩu!", "error");
+        showToast("Không tìm thấy thông tin tài khoản!", "error");
       }
     });
   }
@@ -101,7 +241,8 @@ function setupAuth() {
   const logoutBtn = document.getElementById("btn-logout");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
-      confirmAction("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?", () => {
+      confirmAction("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?", async () => {
+        await supabaseClient.auth.signOut();
         db.isLoggedIn = false;
         db.currentUser = null;
         saveDatabase();
@@ -124,7 +265,6 @@ function showAppScreen() {
   applyPermissions();
   populateDropdowns();
   
-  // Render current views
   renderLockerMap();
   renderDepartments();
   renderUsers();
@@ -134,32 +274,78 @@ function showAppScreen() {
 }
 
 // ==========================================
-// MOCK DATABASE OPERATIONS
+// DATABASE OPERATIONS
 // ==========================================
 
-function loadDatabase() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (data) {
-    db = JSON.parse(data);
-    if (!db.settings) {
-      db.settings = { rows: 10, cols: 13 };
-    }
-    if (!db.employees) {
-      db.employees = [...DEFAULT_EMPLOYEES];
-    }
-  } else {
-    // Seed default database
-    db.departments = [...DEFAULT_DEPARTMENTS];
-    db.users = [...DEFAULT_USERS];
-    db.employees = [...DEFAULT_EMPLOYEES];
-    db.lobbyNames = { A: "Sảnh A", B: "Sảnh B" };
-    db.settings = { rows: 10, cols: 13 }; 
-    db.currentUser = null;
-    db.isLoggedIn = false;
+async function loadDatabase() {
+  try {
+    const { data: depts, error: deptErr } = await supabaseClient.from('departments').select('*');
+    if (deptErr) throw deptErr;
+    db.departments = depts || [];
     
-    generateLockers();
-    seedHistory();
-    saveDatabase();
+    const { data: profiles, error: profErr } = await supabaseClient.from('profiles').select('*');
+    if (profErr) throw profErr;
+    db.users = (profiles || []).map(p => ({
+      id: p.id,
+      username: p.username || '',
+      fullname: p.fullname,
+      departmentId: p.department_id,
+      role: p.role,
+      password: '***'
+    }));
+
+    const { data: emps, error: empErr } = await supabaseClient.from('employees').select('*');
+    if (empErr) throw empErr;
+    db.employees = (emps || []).map(e => ({
+      code: e.code,
+      fullname: e.fullname,
+      departmentId: e.department_id
+    }));
+
+    const { data: lockers, error: lockErr } = await supabaseClient.from('lockers').select('*');
+    if (lockErr) throw lockErr;
+    db.lockers = (lockers || []).map(l => ({
+      id: l.id,
+      lobby: l.lobby,
+      row: l.row,
+      col: l.col,
+      tier: l.tier,
+      number: l.number,
+      status: l.status,
+      userId: l.user_id,
+      notes: l.notes || '',
+      assignedAt: l.assigned_at
+    }));
+
+    const { data: history, error: histErr } = await supabaseClient.from('history').select('*').order('timestamp', { ascending: false });
+    if (histErr) throw histErr;
+    db.history = (history || []).map(h => ({
+      id: h.id,
+      lockerId: h.locker_id,
+      lockerNumber: h.locker_number,
+      lobbyName: h.lobby_name,
+      action: h.action,
+      userId: h.user_id,
+      username: h.username,
+      fullname: h.fullname,
+      departmentName: h.department_name,
+      operatorId: h.operator_id,
+      operatorName: h.operator_name,
+      timestamp: h.timestamp,
+      note: h.note || ''
+    }));
+
+    const { data: settings, error: settErr } = await supabaseClient.from('settings').select('*').eq('id', 'global').single();
+    if (settErr && settErr.code !== 'PGRST116') throw settErr;
+    if (settings) {
+      db.settings = {
+        rows: settings.rows,
+        cols: settings.cols
+      };
+    }
+  } catch (err) {
+    console.error("Error loading database from Supabase:", err);
+    showToast("Không thể kết nối cơ sở dữ liệu Supabase!", "error");
   }
 }
 
@@ -320,6 +506,25 @@ function logTransaction(lockerId, action, userId, note = "") {
   
   db.history.unshift(entry); // Add to beginning of log
   saveDatabase();
+  
+  // Asynchronously insert into Supabase history
+  supabaseClient.from('history').insert({
+    locker_id: entry.lockerId,
+    locker_number: entry.lockerNumber,
+    lobby_name: entry.lobbyName,
+    action: entry.action,
+    user_id: entry.userId,
+    username: entry.username,
+    fullname: entry.fullname,
+    department_name: entry.departmentName,
+    operator_id: (entry.operatorId && entry.operatorId !== 'system') ? entry.operatorId : null,
+    operator_name: entry.operatorName,
+    timestamp: entry.timestamp,
+    note: entry.note
+  }).then(({error}) => {
+    if (error) console.error("Error inserting history:", error);
+  });
+
   renderHistory();
   renderStatistics();
 }
@@ -875,6 +1080,7 @@ function quickReturnLocker(lockerId) {
     db.lockers[lockerIndex].notes = "";
     db.lockers[lockerIndex].assignedAt = null;
     
+    supabaseSync('lockers', lockerId, db.lockers[lockerIndex]);
     saveDatabase();
     logTransaction(lockerId, "Trả tủ", oldUserId, "Đã trả tủ nhanh tại bảng Danh sách");
     
@@ -1211,6 +1417,9 @@ function setupEventListeners() {
     confirmAction("Bạn có chắc muốn xóa tất cả lịch sử? Thao tác này không thể hoàn tác.", () => {
       db.history = [];
       saveDatabase();
+      supabaseClient.from('history').delete().gt('timestamp', '1970-01-01T00:00:00Z').then(({error}) => {
+        if (error) console.error("Error clearing history:", error);
+      });
       renderHistory();
       renderStatistics();
       showToast("Đã xóa sạch lịch sử giao dịch", "success");
@@ -1364,6 +1573,7 @@ function handleDepartmentSubmit(e) {
   
   if (!nameInput) return;
   
+  let targetId = idInput;
   if (idInput) {
     const deptIndex = db.departments.findIndex(d => d.id === idInput);
     if (deptIndex !== -1) {
@@ -1372,14 +1582,18 @@ function handleDepartmentSubmit(e) {
       showToast(`Đã cập nhật bộ phận: ${nameInput}`, "success");
     }
   } else {
-    const newId = "dept-" + Date.now();
+    targetId = "dept-" + Date.now();
     db.departments.push({
-      id: newId,
+      id: targetId,
       name: nameInput,
       description: descInput
     });
     showToast(`Đã thêm bộ phận mới: ${nameInput}`, "success");
   }
+  
+  // Sync to Supabase
+  const deptObj = db.departments.find(d => d.id === targetId);
+  supabaseSync('departments', targetId, deptObj);
   
   saveDatabase();
   resetDepartmentForm();
@@ -1413,6 +1627,7 @@ function deleteDepartment(id) {
   
   confirmAction(`Bạn có chắc muốn xóa bộ phận '${dept.name}'?`, () => {
     db.departments = db.departments.filter(d => d.id !== id);
+    supabaseDelete('departments', id);
     saveDatabase();
     renderDepartments();
     populateDropdowns();
@@ -1433,7 +1648,7 @@ function resetDepartmentForm() {
 // EMPLOYEES / USERS (ACCOUNT MANAGEMENT) CRUD ACTIONS
 // ------------------------------------------
 
-function handleUserSubmit(e) {
+async function handleUserSubmit(e) {
   e.preventDefault();
   
   const idInput = document.getElementById("user-edit-id").value;
@@ -1447,39 +1662,53 @@ function handleUserSubmit(e) {
   
   const duplicate = db.users.find(u => u.username === userNameInput && u.id !== idInput);
   if (duplicate) {
-    showToast(`Tên đăng nhập @${userNameInput} đã tồn tại! Vui lòng chọn tên khác.`, "error");
+    showToast(`Email tài khoản @${userNameInput} đã tồn tại! Vui lòng chọn email khác.`, "error");
     return;
   }
   
   if (idInput) {
-    const userIndex = db.users.findIndex(u => u.id === idInput);
-    if (userIndex !== -1) {
-      db.users[userIndex].fullname = fullNameInput;
-      db.users[userIndex].username = userNameInput;
-      db.users[userIndex].password = passwordInput;
-      db.users[userIndex].departmentId = deptInput;
-      db.users[userIndex].role = roleInput;
-      
-      if (db.currentUser && db.currentUser.id === idInput) {
-        db.currentUser = db.users[userIndex];
-      }
-      
-      showToast(`Đã cập nhật tài khoản: ${fullNameInput}`, "success");
-    }
-  } else {
-    const newId = "user-" + Date.now();
-    db.users.push({
-      id: newId,
-      username: userNameInput,
+    // 1. Update public profiles details
+    const { error: profErr } = await supabaseClient.from('profiles').update({
       fullname: fullNameInput,
-      password: passwordInput,
-      departmentId: deptInput,
+      department_id: deptInput,
       role: roleInput
+    }).eq('id', idInput);
+    
+    if (profErr) {
+      showToast("Lỗi cập nhật tài khoản: " + profErr.message, "error");
+      return;
+    }
+    
+    // 2. If password changed, update it using RPC
+    if (passwordInput && passwordInput !== '***') {
+      const { error: passErr } = await supabaseClient.rpc('admin_update_user_password', {
+        user_uuid: idInput,
+        new_password: passwordInput
+      });
+      if (passErr) {
+        showToast("Không thể cập nhật mật khẩu: " + passErr.message, "error");
+        return;
+      }
+    }
+    showToast(`Đã cập nhật tài khoản: ${fullNameInput}`, "success");
+  } else {
+    // 3. Register user using RPC (admin_create_user)
+    const { data: newId, error: signUpErr } = await supabaseClient.rpc('admin_create_user', {
+      email_val: userNameInput,
+      password_val: passwordInput,
+      fullname_val: fullNameInput,
+      role_val: roleInput,
+      department_id_val: deptInput
     });
-    showToast(`Đã thêm tài khoản: ${fullNameInput}`, "success");
+    
+    if (signUpErr) {
+      showToast("Lỗi tạo tài khoản: " + signUpErr.message, "error");
+      return;
+    }
+    showToast(`Đã tạo tài khoản thành công cho: ${fullNameInput}`, "success");
   }
   
-  saveDatabase();
+  await loadDatabase();
   resetUserForm();
   renderUsers();
   populateDropdowns();
@@ -1507,7 +1736,7 @@ function deleteUser(id) {
   const user = db.users.find(u => u.id === id);
   if (!user) return;
   
-  if (user.id === db.currentUser.id) {
+  if (id === db.currentUser.id) {
     showToast("Không thể tự xóa tài khoản của chính bạn đang đăng nhập!", "error");
     return;
   }
@@ -1518,7 +1747,12 @@ function deleteUser(id) {
     return;
   }
   
-  confirmAction(`Bạn có chắc chắn muốn xóa tài khoản của '${user.fullname}'?`, () => {
+  confirmAction(`Bạn có chắc chắn muốn xóa tài khoản của '${user.fullname}'?`, async () => {
+    const { error } = await supabaseClient.rpc('admin_delete_user', { user_uuid: id });
+    if (error) {
+      showToast("Lỗi xóa tài khoản: " + error.message, "error");
+      return;
+    }
     db.users = db.users.filter(u => u.id !== id);
     saveDatabase();
     renderUsers();
@@ -1557,6 +1791,25 @@ function saveLayoutConfig() {
     db.settings.cols = newCols;
     
     generateLockers();
+    supabaseSync('settings', 'global', db.settings);
+    
+    // Bulk upsert regenerated lockers layout to Supabase
+    const lockersToUpsert = db.lockers.map(l => ({
+      id: l.id,
+      lobby: l.lobby,
+      row: l.row,
+      col: l.col,
+      tier: l.tier,
+      number: l.number,
+      status: l.status,
+      user_id: l.userId,
+      notes: l.notes || '',
+      assigned_at: l.assignedAt
+    }));
+    supabaseClient.from('lockers').upsert(lockersToUpsert).then(({error}) => {
+      if (error) console.error("Error syncing regenerated lockers layout:", error);
+    });
+
     saveDatabase();
     
     document.getElementById("config-layout-modal").classList.remove("open");
@@ -1593,6 +1846,7 @@ function handleAddLockerSubmit(e) {
   
   let addedCount = 0;
   let skippedCount = 0;
+  const newLockersInserted = [];
   
   tiersToAdd.forEach(t => {
     const cleanRowName = rowName.replace(/\s+/g, '_');
@@ -1603,7 +1857,7 @@ function handleAddLockerSubmit(e) {
       skippedCount++;
     } else {
       const displayName = `${lobby}-${rowName}-C${colVal}-T${t}`;
-      db.lockers.push({
+      const lockerObj = {
         id: id,
         lobby: lobby,
         row: rowName,
@@ -1614,12 +1868,30 @@ function handleAddLockerSubmit(e) {
         userId: null,
         notes: "",
         assignedAt: null
+      };
+      db.lockers.push(lockerObj);
+      newLockersInserted.push({
+        id: lockerObj.id,
+        lobby: lockerObj.lobby,
+        row: lockerObj.row,
+        col: lockerObj.col,
+        tier: lockerObj.tier,
+        number: lockerObj.number,
+        status: lockerObj.status,
+        user_id: lockerObj.userId,
+        notes: lockerObj.notes,
+        assigned_at: lockerObj.assignedAt
       });
       addedCount++;
     }
   });
   
   if (addedCount > 0) {
+    // Insert new lockers into Supabase
+    supabaseClient.from('lockers').insert(newLockersInserted).then(({error}) => {
+      if (error) console.error("Error inserting added lockers:", error);
+    });
+
     saveDatabase();
     
     const descNote = `Thêm mới ${addedCount} tủ tại ${lobby === "A" ? db.lobbyNames.A : db.lobbyNames.B}, ${rowName}, Cột ${colVal}`;
@@ -1796,6 +2068,10 @@ function handleAssignLockerSubmit(e) {
   db.lockers[lockerIndex].notes = note;
   db.lockers[lockerIndex].assignedAt = new Date().toISOString();
   
+  // Sync to Supabase
+  supabaseSync('employees', code, emp);
+  supabaseSync('lockers', selectedLockerIdForModal, db.lockers[lockerIndex]);
+  
   saveDatabase();
   logTransaction(selectedLockerIdForModal, "Cấp tủ", code, note || "Cấp tủ mới");
   
@@ -1823,6 +2099,9 @@ function handleReturnLockerClick() {
     db.lockers[lockerIndex].userId = null;
     db.lockers[lockerIndex].notes = "";
     db.lockers[lockerIndex].assignedAt = null;
+    
+    // Sync to Supabase
+    supabaseSync('lockers', selectedLockerIdForModal, db.lockers[lockerIndex]);
     
     saveDatabase();
     logTransaction(selectedLockerIdForModal, "Trả tủ", oldUserId, "Đã trả tủ lại kho trống");
@@ -1854,6 +2133,9 @@ function handleReportBrokenClick() {
   db.lockers[lockerIndex].userId = null;
   db.lockers[lockerIndex].notes = finalReason;
   db.lockers[lockerIndex].assignedAt = null;
+  
+  // Sync to Supabase
+  supabaseSync('lockers', selectedLockerIdForModal, db.lockers[lockerIndex]);
   
   saveDatabase();
   logTransaction(selectedLockerIdForModal, "Báo hỏng", oldUserId, `Sự cố: ${finalReason}`);
@@ -1892,6 +2174,10 @@ function handleOverrideStatusClick() {
   
   db.lockers[lockerIndex].status = nextStatus;
   db.lockers[lockerIndex].notes = note;
+  
+  // Sync to Supabase
+  supabaseSync('lockers', selectedLockerIdForModal, db.lockers[lockerIndex]);
+  
   saveDatabase();
   
   let actionName = "Thay đổi";
@@ -2246,6 +2532,36 @@ function handleImportLockerListFile(e) {
       }
       
       if (successCount > 0) {
+        // Bulk upsert all lockers and employees to Supabase
+        const empsToUpsert = db.employees.map(e => ({
+          code: e.code,
+          fullname: e.fullname,
+          department_id: e.departmentId
+        }));
+        
+        const lockersToUpsert = db.lockers.map(l => ({
+          id: l.id,
+          lobby: l.lobby,
+          row: l.row,
+          col: l.col,
+          tier: l.tier,
+          number: l.number,
+          status: l.status,
+          user_id: l.userId,
+          notes: l.notes || '',
+          assigned_at: l.assignedAt
+        }));
+
+        Promise.all([
+          supabaseClient.from('employees').upsert(empsToUpsert),
+          supabaseClient.from('lockers').upsert(lockersToUpsert)
+        ]).then(() => {
+          showToast(`Đã đồng bộ ${successCount} bản ghi nhập từ Excel lên Supabase!`, "success");
+        }).catch(err => {
+          console.error("Error bulk upserting from Excel:", err);
+          showToast("Lỗi đồng bộ dữ liệu Excel lên Supabase!", "error");
+        });
+
         saveDatabase();
         populateDropdowns();
         renderLockerMap();
@@ -2572,6 +2888,7 @@ function quickReturnLockerFromSearch(lockerId) {
     db.lockers[lockerIndex].notes = "";
     db.lockers[lockerIndex].assignedAt = null;
     
+    supabaseSync('lockers', lockerId, db.lockers[lockerIndex]);
     saveDatabase();
     logTransaction(lockerId, "Trả tủ", oldUserId, "Đã trả tủ nhanh từ thanh Tìm kiếm màn hình chính");
     
