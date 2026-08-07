@@ -1710,6 +1710,12 @@ function setupEventListeners() {
     btnSaveLayout.addEventListener("click", handleSaveLayoutClick);
   }
   
+  // Reset 1092 Lockers button listener
+  const btnReset1092 = document.getElementById("btn-reset-1092");
+  if (btnReset1092) {
+    btnReset1092.addEventListener("click", handleReset1092Click);
+  }
+  
   // Lobby rename action
   document.getElementById("btn-lobby-rename").addEventListener("click", renameActiveLobby);
   
@@ -3734,5 +3740,120 @@ async function handleSaveLayoutClick() {
       if (saveBtn) saveBtn.disabled = false;
     }
   }, "Lưu thay đổi sơ đồ");
+}
+
+// Reset entire database to 1092 lockers (546 Lobby A + 546 Lobby B)
+async function handleReset1092Click() {
+  if (!db.currentUser || db.currentUser.role !== "admin") {
+    showToast("Chỉ có tài khoản Admin mới có quyền khởi tạo lại tủ đồ!", "error");
+    return;
+  }
+  
+  confirmAction("Bạn có chắc chắn muốn KHÔI PHỤC TOÀN BỘ 1.092 TỦ ĐỒ (546 Sảnh A và 546 Sảnh B)? Thao tác này sẽ dọn dẹp các ô trống dư thừa và thiết lập lại sơ đồ tủ đồ chuẩn.", async () => {
+    showToast("Đang khởi tạo lại 1.092 tủ đồ chuẩn...", "info");
+    
+    // Set settings
+    db.settings.rows = 7;
+    db.settings.cols = 13;
+    
+    const oldLockers = [...db.lockers];
+    
+    // Generate fresh 1092 lockers
+    const newLockers = [];
+    let count = 0;
+    
+    // Sảnh A (1 to 546)
+    for (let r = 1; r <= 7; r++) {
+      const rowName = `Dãy ${r}`;
+      for (let c = 1; c <= 13; c++) {
+        for (let t = 6; t >= 1; t--) {
+          count++;
+          newLockers.push({
+            id: `A-R${r}-C${c}-T${t}`,
+            lobby: "A",
+            row: rowName,
+            col: c,
+            tier: t,
+            number: String(count).padStart(2, '0'),
+            status: "available",
+            userId: null,
+            notes: "",
+            assignedAt: null
+          });
+        }
+      }
+    }
+    
+    // Sảnh B (547 to 1092)
+    for (let r = 1; r <= 7; r++) {
+      const rowName = `Dãy ${r}`;
+      for (let c = 1; c <= 13; c++) {
+        for (let t = 6; t >= 1; t--) {
+          count++;
+          newLockers.push({
+            id: `B-R${r}-C${c}-T${t}`,
+            lobby: "B",
+            row: rowName,
+            col: c,
+            tier: t,
+            number: String(count).padStart(2, '0'),
+            status: "available",
+            userId: null,
+            notes: "",
+            assignedAt: null
+          });
+        }
+      }
+    }
+    
+    db.lockers = newLockers;
+    saveDatabase();
+    
+    try {
+      // Sync settings
+      await supabaseClient.from('settings').upsert({ id: 'global', rows: 7, cols: 13 });
+      
+      // Delete old IDs not in new set
+      const oldIds = oldLockers.map(l => l.id);
+      const newIds = new Set(newLockers.map(l => l.id));
+      const toDelete = oldIds.filter(id => !newIds.has(id));
+      
+      if (toDelete.length > 0) {
+        for (let i = 0; i < toDelete.length; i += 100) {
+          await supabaseClient.from('lockers').delete().in('id', toDelete.slice(i, i + 100));
+        }
+      }
+      
+      // Upsert all 1092 lockers in batches
+      const lockersToUpsert = newLockers.map(l => ({
+        id: l.id,
+        lobby: l.lobby,
+        row: l.row,
+        col: l.col,
+        tier: l.tier,
+        number: l.number,
+        status: l.status,
+        user_id: l.userId,
+        notes: l.notes || '',
+        assigned_at: l.assignedAt
+      }));
+      
+      for (let i = 0; i < lockersToUpsert.length; i += 150) {
+        const batch = lockersToUpsert.slice(i, i + 150);
+        const { error } = await supabaseClient.from('lockers').upsert(batch);
+        if (error) throw error;
+      }
+      
+      showToast("Đã khởi tạo thành công 1.092 tủ đồ chuẩn và đồng bộ lên Supabase!", "success");
+      clearUnsavedLayoutChanges();
+      
+      renderLockerMap();
+      renderLockerList();
+      renderStatistics();
+    } catch (err) {
+      console.error("Error resetting 1092 lockers:", err);
+      showToast("Có lỗi xảy ra khi lưu 1.092 tủ lên Supabase!", "error");
+    }
+  }, "Khôi Phục 1.092 Tủ");
 }
 
