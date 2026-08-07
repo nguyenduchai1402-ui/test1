@@ -416,14 +416,14 @@ function generateLockers() {
     if (lobbyAFinished) break;
   }
   
-  // Generate Lobby B (361 to 1000)
+  // Generate Lobby B (361 to 1035)
   let lobbyBFinished = false;
   for (let r = 1; r <= rowsCount; r++) {
     const rowName = `Dãy ${r}`;
     for (let c = 1; c <= colsCount; c++) {
       for (let t = tiersCount; t >= 1; t--) {
         count++;
-        if (count > 1000) {
+        if (count > 1035) {
           lobbyBFinished = true;
           break;
         }
