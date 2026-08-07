@@ -2173,86 +2173,171 @@ function handleAddLockerSubmit(e) {
   
   const lobby = document.getElementById("add-locker-lobby").value;
   const rowName = document.getElementById("add-locker-row").value.trim();
-  const colVal = parseInt(document.getElementById("add-locker-col").value);
-  const tierVal = document.getElementById("add-locker-tier").value;
+  const mode = document.getElementById("add-locker-mode").value;
   
-  if (!rowName || isNaN(colVal) || colVal < 1) {
-    showToast("Thông tin dãy hoặc cột không hợp lệ!", "error");
+  if (!rowName) {
+    showToast("Vui lòng nhập tên dãy tủ!", "error");
     return;
   }
   
-  const tiersToAdd = [];
-  if (tierVal === "all") {
-    for (let t = 1; t <= 6; t++) tiersToAdd.push(t);
-  } else {
-    tiersToAdd.push(parseInt(tierVal));
-  }
+  // Find next sequential number
+  const allNumbers = db.lockers.map(l => parseInt(l.number)).filter(num => !isNaN(num));
+  let nextNumber = allNumbers.length > 0 ? Math.max(...allNumbers) + 1 : 1;
   
-  let addedCount = 0;
-  let skippedCount = 0;
-  const newLockersInserted = [];
-  
-  tiersToAdd.forEach(t => {
+  if (mode === "single") {
+    const colVal = parseInt(document.getElementById("add-locker-col").value);
+    const tierVal = parseInt(document.getElementById("add-locker-tier").value);
+    
+    if (isNaN(colVal) || colVal < 1 || isNaN(tierVal) || tierVal < 1 || tierVal > 6) {
+      showToast("Thông tin cột hoặc tầng không hợp lệ!", "error");
+      return;
+    }
+    
     const cleanRowName = rowName.replace(/\s+/g, '_');
-    const id = `${lobby}-R_${cleanRowName}-C${colVal}-T${t}`;
+    const id = `${lobby}-R_${cleanRowName}-C${colVal}-T${tierVal}`;
     
     const duplicate = db.lockers.find(l => l.id === id);
     if (duplicate) {
-      skippedCount++;
-    } else {
-      const displayName = `${lobby}-${rowName}-C${colVal}-T${t}`;
-      const lockerObj = {
-        id: id,
-        lobby: lobby,
-        row: rowName,
-        col: colVal,
-        tier: t,
-        number: displayName,
-        status: "available",
-        userId: null,
-        notes: "",
-        assignedAt: null
-      };
-      db.lockers.push(lockerObj);
-      newLockersInserted.push({
-        id: lockerObj.id,
-        lobby: lockerObj.lobby,
-        row: lockerObj.row,
-        col: lockerObj.col,
-        tier: lockerObj.tier,
-        number: lockerObj.number,
-        status: lockerObj.status,
-        user_id: lockerObj.userId,
-        notes: lockerObj.notes,
-        assigned_at: lockerObj.assignedAt
-      });
-      addedCount++;
+      showToast("Thêm thất bại! Vị trí tủ đồ đã tồn tại từ trước.", "error");
+      return;
     }
-  });
-  
-  if (addedCount > 0) {
-    // Insert new lockers into Supabase
-    supabaseClient.from('lockers').insert(newLockersInserted).then(({error}) => {
-      if (error) console.error("Error inserting added lockers:", error);
-    });
-
-    saveDatabase();
     
-    const descNote = `Thêm mới ${addedCount} tủ tại ${lobby === "A" ? db.lobbyNames.A : db.lobbyNames.B}, ${rowName}, Cột ${colVal}`;
-    const refLockerId = `${lobby}-R_${rowName.replace(/\s+/g, '_')}-C${colVal}-T${tiersToAdd[0]}`;
-    logTransaction(refLockerId, "Thêm tủ mới", null, descNote);
+    const formattedNumber = nextNumber < 10 ? '0' + nextNumber : String(nextNumber);
+    
+    const lockerObj = {
+      id: id,
+      lobby: lobby,
+      row: rowName,
+      col: colVal,
+      tier: tierVal,
+      number: formattedNumber,
+      status: "available",
+      userId: null,
+      notes: "",
+      assignedAt: null
+    };
+    
+    db.lockers.push(lockerObj);
+    
+    supabaseClient.from('lockers').insert([{
+      id: lockerObj.id,
+      lobby: lockerObj.lobby,
+      row: lockerObj.row,
+      col: lockerObj.col,
+      tier: lockerObj.tier,
+      number: lockerObj.number,
+      status: lockerObj.status,
+      user_id: lockerObj.userId,
+      notes: lockerObj.notes,
+      assigned_at: lockerObj.assignedAt
+    }]).then(({error}) => {
+      if (error) console.error("Error inserting added locker:", error);
+    });
+    
+    saveDatabase();
+    logTransaction(id, "Thêm tủ mới", null, `Thêm 1 tủ thủ công tại sảnh ${lobby}, ${rowName}, Cột ${colVal}, Tầng ${tierVal}`);
     
     document.getElementById("add-locker-modal").classList.remove("open");
     renderLockerMap();
     renderStatistics();
-    
-    if (skippedCount > 0) {
-      showToast(`Đã thêm thành công ${addedCount} tủ. Bỏ qua ${skippedCount} tủ bị trùng vị trí.`, "warning");
-    } else {
-      showToast(`Đã thêm thành công ${addedCount} tủ đồ mới!`, "success");
+    showToast("Đã thêm thành công 1 tủ đồ mới!", "success");
+    return;
+  }
+  
+  // Bulk Quantity Mode
+  const qty = parseInt(document.getElementById("add-locker-qty").value);
+  if (isNaN(qty) || qty < 1) {
+    showToast("Số lượng tủ cần thêm không hợp lệ!", "error");
+    return;
+  }
+  
+  const rowLockers = db.lockers.filter(l => l.lobby === lobby && l.row === rowName);
+  let currentCol = 1;
+  if (rowLockers.length > 0) {
+    currentCol = Math.max(...rowLockers.map(l => l.col));
+  }
+  
+  let colLockers = rowLockers.filter(l => l.col === currentCol);
+  let addedCount = 0;
+  const newLockersInserted = [];
+  
+  while (addedCount < qty) {
+    let targetTier = -1;
+    // Find the next free tier from top to bottom (6 down to 1) in the current column
+    for (let t = 6; t >= 1; t--) {
+      const exists = colLockers.some(l => l.tier === t);
+      if (!exists) {
+        targetTier = t;
+        break;
+      }
     }
+    
+    if (targetTier === -1) {
+      // Current column is full, advance to next column
+      currentCol++;
+      colLockers = [];
+      targetTier = 6;
+    }
+    
+    const cleanRowName = rowName.replace(/\s+/g, '_');
+    const id = `${lobby}-R_${cleanRowName}-C${currentCol}-T${targetTier}`;
+    
+    const duplicate = db.lockers.find(l => l.id === id);
+    if (duplicate) {
+      colLockers.push(duplicate);
+      continue;
+    }
+    
+    const formattedNumber = nextNumber < 10 ? '0' + nextNumber : String(nextNumber);
+    
+    const lockerObj = {
+      id: id,
+      lobby: lobby,
+      row: rowName,
+      col: currentCol,
+      tier: targetTier,
+      number: formattedNumber,
+      status: "available",
+      userId: null,
+      notes: "",
+      assignedAt: null
+    };
+    
+    db.lockers.push(lockerObj);
+    colLockers.push(lockerObj);
+    newLockersInserted.push({
+      id: lockerObj.id,
+      lobby: lockerObj.lobby,
+      row: lockerObj.row,
+      col: lockerObj.col,
+      tier: lockerObj.tier,
+      number: lockerObj.number,
+      status: lockerObj.status,
+      user_id: lockerObj.userId,
+      notes: lockerObj.notes,
+      assigned_at: lockerObj.assignedAt
+    });
+    
+    nextNumber++;
+    addedCount++;
+  }
+  
+  if (addedCount > 0) {
+    supabaseClient.from('lockers').insert(newLockersInserted).then(({error}) => {
+      if (error) console.error("Error inserting added lockers:", error);
+    });
+    
+    saveDatabase();
+    
+    const refLockerId = newLockersInserted[0].id;
+    logTransaction(refLockerId, "Thêm tủ mới", null, `Thêm mới ${addedCount} tủ tại sảnh ${lobby}, ${rowName} (Từ số ${newLockersInserted[0].number} tới số ${newLockersInserted[newLockersInserted.length - 1].number})`);
+    
+    document.getElementById("add-locker-modal").classList.remove("open");
+    renderLockerMap();
+    renderStatistics();
+    showToast(`Đã thêm thành công ${addedCount} tủ đồ mới vào ${rowName}!`, "success");
   } else {
-    showToast("Thêm thất bại! Vị trí tủ đồ đã tồn tại từ trước.", "error");
+    showToast("Không có tủ nào được thêm!", "warning");
   }
 }
 

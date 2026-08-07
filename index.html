@@ -696,13 +696,24 @@
             <input type="text" id="add-locker-row" placeholder="Dãy 11" required>
           </div>
           <div class="form-group">
-            <label for="add-locker-col">Số cột (Cột ngang) <span class="required">*</span></label>
-            <input type="number" id="add-locker-col" min="1" max="100" placeholder="6" required>
+            <label for="add-locker-mode">Phương thức thêm</label>
+            <select id="add-locker-mode">
+              <option value="bulk" selected>Thêm theo số lượng (Tự động xếp cột/tầng)</option>
+              <option value="single">Thêm 1 tủ thủ công (Nhập Cột & Tầng)</option>
+            </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" id="group-add-locker-qty">
+            <label for="add-locker-qty">Số lượng tủ cần thêm <span class="required">*</span></label>
+            <input type="number" id="add-locker-qty" min="1" max="500" value="6" placeholder="6" required>
+          </div>
+          <div class="form-group" id="group-add-locker-col" style="display: none;">
+            <label for="add-locker-col">Số cột (Cột ngang) <span class="required">*</span></label>
+            <input type="number" id="add-locker-col" min="1" max="100" placeholder="6">
+          </div>
+          <div class="form-group" id="group-add-locker-tier" style="display: none;">
             <label for="add-locker-tier">Tầng tủ (Chiều cao) <span class="required">*</span></label>
-            <select id="add-locker-tier" required>
-              <option value="6">Tầng 6 (Cao nhất)</option>
+            <select id="add-locker-tier">
+              <option value="6" selected>Tầng 6 (Cao nhất)</option>
               <option value="5">Tầng 5</option>
               <option value="4">Tầng 4</option>
               <option value="3">Tầng 3</option>
@@ -711,7 +722,7 @@
             </select>
           </div>
           <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;">
-            * Hệ thống tự động tạo mã định danh tủ từ tọa độ để quản lý và hiển thị.
+            * Khi chọn "Thêm theo số lượng", hệ thống sẽ tự động tìm kiếm cột tiếp theo của dãy này và sắp xếp các ngăn tủ từ Tầng 6 xuống Tầng 1. Số hiệu tủ mới sẽ tự động nối tiếp số lớn nhất hiện tại.
           </p>
         </div>
         <div class="modal-footer">
