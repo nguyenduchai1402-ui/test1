@@ -12,7 +12,7 @@ let db = {
   history: [],
   lobbyNames: { A: "Sảnh A", B: "Sảnh B" },
   settings: {
-    rows: 10, // Mặc định hiển thị 10 dãy tủ
+    rows: 7,  // Mặc định hiển thị 7 dãy tủ (7 dãy * 13 cột * 6 tầng = 546 tủ mỗi sảnh)
     cols: 13  // 13 cột mỗi dãy, mỗi cột cao 6 tầng (tương ứng 78 tủ/dãy)
   },
   currentUser: null,  // Current logged-in user
@@ -374,7 +374,7 @@ function generateLockers() {
   let count = 0;
   let lobbyAFinished = false;
   
-  // Generate Lobby A (1 to 360)
+  // Generate Lobby A (1 to 546)
   for (let r = 1; r <= rowsCount; r++) {
     const rowName = `Dãy ${r}`;
     for (let c = 1; c <= colsCount; c++) {
@@ -406,7 +406,7 @@ function generateLockers() {
           });
         }
         
-        if (count === 360) {
+        if (count === 546) {
           lobbyAFinished = true;
           break;
         }
@@ -416,14 +416,14 @@ function generateLockers() {
     if (lobbyAFinished) break;
   }
   
-  // Generate Lobby B (361 to 1035)
+  // Generate Lobby B (547 to 1092)
   let lobbyBFinished = false;
   for (let r = 1; r <= rowsCount; r++) {
     const rowName = `Dãy ${r}`;
     for (let c = 1; c <= colsCount; c++) {
       for (let t = tiersCount; t >= 1; t--) {
         count++;
-        if (count > 1035) {
+        if (count > 1092) {
           lobbyBFinished = true;
           break;
         }
@@ -2232,7 +2232,7 @@ function findNextEmptyPositions(lobby, qty) {
   let finished = false;
   
   if (lobby === "A") {
-    // Loop standard Lobby A sequence (1 to 360)
+    // Loop standard Lobby A sequence (1 to 546)
     for (let r = 1; r <= rowsCount; r++) {
       const rowName = `Dãy ${r}`;
       for (let c = 1; c <= colsCount; c++) {
@@ -2251,7 +2251,7 @@ function findNextEmptyPositions(lobby, qty) {
               return results;
             }
           }
-          if (count === 360) {
+          if (count === 546) {
             finished = true;
             break;
           }
@@ -2261,13 +2261,13 @@ function findNextEmptyPositions(lobby, qty) {
       if (finished) break;
     }
   } else {
-    // Loop standard Lobby B sequence (361 to 1035)
+    // Loop standard Lobby B sequence (547 to 1092)
     for (let r = 1; r <= rowsCount; r++) {
       const rowName = `Dãy ${r}`;
       for (let c = 1; c <= colsCount; c++) {
         for (let t = tiersCount; t >= 1; t--) {
           count++;
-          if (count > 1035 - 360) { // Lobby B has 675 lockers
+          if (count > 546) { // Lobby B has 546 lockers
             finished = true;
             break;
           }
