@@ -3536,6 +3536,16 @@ function reindexLockers() {
     if (a.lobby !== b.lobby) {
       return a.lobby.localeCompare(b.lobby);
     }
+    
+    // Sort by current physical position sequence (Row, then Col, then Tier descending)
+    const rowA = parseInt(a.row.match(/\d+/)) || 0;
+    const rowB = parseInt(b.row.match(/\d+/)) || 0;
+    if (rowA !== rowB) return rowA - rowB;
+    
+    if (a.col !== b.col) return a.col - b.col;
+    if (a.tier !== b.tier) return b.tier - a.tier; // 6 down to 1
+    
+    // Fallback to number if positions are identical
     const numA = parseInt(a.number) || 0;
     const numB = parseInt(b.number) || 0;
     if (numA !== numB) return numA - numB;
