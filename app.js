@@ -3543,18 +3543,11 @@ function reindexLockers() {
       return a.lobby.localeCompare(b.lobby);
     }
     
-    // Sort by current physical position sequence (Row, then Col, then Tier descending)
-    const rowA = parseInt(a.row.match(/\d+/)) || 0;
-    const rowB = parseInt(b.row.match(/\d+/)) || 0;
-    if (rowA !== rowB) return rowA - rowB;
-    
-    if (a.col !== b.col) return a.col - b.col;
-    if (a.tier !== b.tier) return b.tier - a.tier; // 6 down to 1
-    
-    // Fallback to number if positions are identical
+    // Sort strictly by locker number numerically
     const numA = parseInt(a.number) || 0;
     const numB = parseInt(b.number) || 0;
     if (numA !== numB) return numA - numB;
+    
     return a.id.localeCompare(b.id);
   });
   
@@ -3668,7 +3661,7 @@ async function handleManualReindexClick() {
     return;
   }
   
-  confirmAction("Bạn có chắc chắn muốn sắp xếp lại toàn bộ thứ tự các tủ đồ theo trình tự vật lý (Dãy, Cột, Tầng) và đánh lại số liên tục? Thao tác này sẽ tự động lưu và đồng bộ lên Supabase.", async () => {
+  confirmAction("Bạn có chắc chắn muốn sắp xếp lại toàn bộ thứ tự các tủ đồ theo số thứ tự (từ nhỏ đến lớn), lấp đầy các ô trống trong cột và dãy? Thao tác này sẽ tự động lưu và đồng bộ lên Supabase.", async () => {
     const oldLockers = [...db.lockers];
     
     // Re-index remaining lockers to keep them seamless
