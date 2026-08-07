@@ -352,6 +352,11 @@ async function loadDatabase() {
         cols: settings.cols
       };
     }
+    
+    // Clear unsaved layout state on successful reload
+    if (typeof clearUnsavedLayoutChanges === "function") {
+      clearUnsavedLayoutChanges();
+    }
   } catch (err) {
     console.error("Error loading database from Supabase:", err);
     showToast("Không thể kết nối cơ sở dữ liệu Supabase!", "error");
@@ -1699,6 +1704,12 @@ function setupEventListeners() {
     btnManualReindex.addEventListener("click", handleManualReindexClick);
   }
   
+  // Save Layout Changes button listener
+  const btnSaveLayout = document.getElementById("btn-save-layout");
+  if (btnSaveLayout) {
+    btnSaveLayout.addEventListener("click", handleSaveLayoutClick);
+  }
+  
   // Lobby rename action
   document.getElementById("btn-lobby-rename").addEventListener("click", renameActiveLobby);
   
@@ -2421,11 +2432,9 @@ function handleAddLockerSubmit(e) {
     reindexLockers();
     saveDatabase();
     
-    // Sync to Supabase
-    showToast("Đang đồng bộ sơ đồ tủ đồ...", "info");
-    syncLockersDb(oldLockers).then(() => {
-      showToast(`Đã thêm thành công ${newLockersCreated.length} tủ đồ mới!`, "success");
-    });
+    // Mark unsaved layout changes
+    markUnsavedLayoutChanges(oldLockers);
+    showToast(`Đã thêm ${newLockersCreated.length} tủ mới thành công! Vui lòng nhấn nút "Lưu thay đổi sơ đồ" ở trên để lưu vào cơ sở dữ liệu.`, "warning");
     
     // Log transaction
     const refLocker = newLockersCreated[0];
@@ -3480,10 +3489,9 @@ async function deleteRow(rowName) {
     reindexLockers();
     saveDatabase();
     
-    // 4. Sync changes to Supabase
-    showToast("Đang đồng bộ thay đổi sơ đồ tủ đồ...", "info");
-    await syncLockersDb(oldLockers);
-    showToast(`Đã xóa thành công ${rowName} và sắp xếp lại liền mạch!`, "success");
+    // 4. Mark unsaved layout changes
+    markUnsavedLayoutChanges(oldLockers);
+    showToast(`Đã xóa dãy ${rowName} thành công! Vui lòng nhấn nút "Lưu thay đổi sơ đồ" ở trên để lưu vào cơ sở dữ liệu.`, "warning");
     
     renderLockerMap();
     renderLockerList();
@@ -3524,10 +3532,9 @@ async function handleDeleteLockerClick() {
     reindexLockers();
     saveDatabase();
     
-    // 4. Sync database
-    showToast("Đang đồng bộ thay đổi sơ đồ tủ đồ...", "info");
-    await syncLockersDb(oldLockers);
-    showToast(`Đã xóa tủ số ${locker.number} thành công và sắp xếp lại liền mạch!`, "success");
+    // 4. Mark unsaved layout changes
+    markUnsavedLayoutChanges(oldLockers);
+    showToast(`Đã xóa tủ số ${locker.number} thành công! Vui lòng nhấn nút "Lưu thay đổi sơ đồ" ở trên để lưu vào cơ sở dữ liệu.`, "warning");
     
     closeLockerModal();
     renderLockerMap();
@@ -3661,21 +3668,71 @@ async function handleManualReindexClick() {
     return;
   }
   
-  confirmAction("Bạn có chắc chắn muốn sắp xếp lại toàn bộ thứ tự các tủ đồ theo số thứ tự (từ nhỏ đến lớn), lấp đầy các ô trống trong cột và dãy? Thao tác này sẽ tự động lưu và đồng bộ lên Supabase.", async () => {
+  confirmAction("Bạn có chắc chắn muốn sắp xếp lại toàn bộ thứ tự các tủ đồ theo số thứ tự (từ nhỏ đến lớn), lấp đầy các ô trống trong cột và dãy?", async () => {
     const oldLockers = [...db.lockers];
-    
-    // Re-index remaining lockers to keep them seamless
     reindexLockers();
     saveDatabase();
     
-    // Sync database
-    showToast("Đang sắp xếp lại và đồng bộ sơ đồ tủ đồ...", "info");
-    await syncLockersDb(oldLockers);
-    showToast("Đã sắp xếp lại thứ tự các tủ đồ và đồng bộ thành công!", "success");
+    markUnsavedLayoutChanges(oldLockers);
+    showToast(`Đã sắp xếp lại thứ tự tủ! Vui lòng nhấn nút "Lưu thay đổi sơ đồ" ở trên để lưu vào cơ sở dữ liệu.`, "warning");
     
     renderLockerMap();
     renderLockerList();
     renderStatistics();
   }, "Sắp xếp lại thứ tự tủ");
+}
+
+// Layout state variables for manual saving
+let hasUnsavedLayoutChanges = false;
+let oldLockersStateBeforeEdit = null;
+
+function markUnsavedLayoutChanges(oldLockers) {
+  if (!oldLockersStateBeforeEdit && oldLockers) {
+    oldLockersStateBeforeEdit = [...oldLockers];
+  }
+  hasUnsavedLayoutChanges = true;
+  const saveBtn = document.getElementById("btn-save-layout");
+  if (saveBtn) {
+    saveBtn.style.display = "flex";
+  }
+}
+
+function clearUnsavedLayoutChanges() {
+  hasUnsavedLayoutChanges = false;
+  oldLockersStateBeforeEdit = null;
+  const saveBtn = document.getElementById("btn-save-layout");
+  if (saveBtn) {
+    saveBtn.style.display = "none";
+  }
+}
+
+async function handleSaveLayoutClick() {
+  if (!db.currentUser || db.currentUser.role !== "admin") {
+    showToast("Chỉ có tài khoản Admin mới có quyền lưu thay đổi sơ đồ!", "error");
+    return;
+  }
+  
+  if (!hasUnsavedLayoutChanges || !oldLockersStateBeforeEdit) {
+    showToast("Không có thay đổi sơ đồ nào cần lưu!", "info");
+    return;
+  }
+  
+  confirmAction("Bạn có chắc chắn muốn lưu và đồng bộ toàn bộ các thay đổi sơ đồ tủ đồ vừa thực hiện lên Supabase?", async () => {
+    showToast("Đang đồng bộ sơ đồ tủ đồ lên Supabase...", "info");
+    
+    const saveBtn = document.getElementById("btn-save-layout");
+    if (saveBtn) saveBtn.disabled = true;
+    
+    try {
+      await syncLockersDb(oldLockersStateBeforeEdit);
+      showToast("Đã lưu và đồng bộ sơ đồ tủ đồ thành công!", "success");
+      clearUnsavedLayoutChanges();
+    } catch (err) {
+      console.error("Error saving layout changes:", err);
+      showToast("Lỗi xảy ra khi lưu sơ đồ lên đám mây!", "error");
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }, "Lưu thay đổi sơ đồ");
 }
 
