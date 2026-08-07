@@ -950,7 +950,9 @@ function renderLockerList() {
     
     const tr = document.createElement("tr");
     const displayUsername = user ? user.username.toUpperCase() : "-";
+    const userCode = user ? user.username : "";
     tr.innerHTML = `
+      <td><input type="checkbox" class="locker-list-item-checkbox" data-user-code="${escapeHtml(userCode)}"></td>
       <td>${rowNo}</td>
       <td style="font-family: monospace; font-weight: 700; color: var(--accent-blue);">${escapeHtml(displayUsername)}</td>
       <td><strong>${escapeHtml(user ? user.fullname : "Không rõ")}</strong></td>
@@ -1061,6 +1063,100 @@ function renderLockerList() {
   controlsDiv.appendChild(lastBtn);
   
   paginationContainer.appendChild(controlsDiv);
+
+  // Handle Select All checkbox
+  const selectAllCheckbox = document.getElementById("locker-list-select-all");
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      tbody.querySelectorAll(".locker-list-item-checkbox").forEach(cb => {
+        if (cb.dataset.userCode) {
+          cb.checked = checked;
+        }
+      });
+      updateDeleteSelectedButtonState();
+    });
+  }
+
+  // Handle individual checkbox change
+  tbody.querySelectorAll(".locker-list-item-checkbox").forEach(cb => {
+    cb.addEventListener("change", () => {
+      updateDeleteSelectedButtonState();
+    });
+  });
+  
+  // Update button visibility based on selection
+  updateDeleteSelectedButtonState();
+}
+
+function updateDeleteSelectedButtonState() {
+  const checkboxes = document.querySelectorAll(".locker-list-item-checkbox:checked");
+  const deleteBtn = document.getElementById("btn-delete-selected-employees");
+  const countSpan = document.getElementById("delete-selected-count");
+  if (deleteBtn && countSpan) {
+    if (checkboxes.length > 0) {
+      deleteBtn.style.display = "inline-flex";
+      countSpan.innerText = checkboxes.length;
+    } else {
+      deleteBtn.style.display = "none";
+    }
+  }
+}
+
+async function deleteSelectedEmployees() {
+  const checkedBoxes = document.querySelectorAll(".locker-list-item-checkbox:checked");
+  const userCodes = Array.from(checkedBoxes).map(cb => cb.dataset.userCode).filter(code => code);
+  
+  if (userCodes.length === 0) return;
+  
+  confirmAction(`Bạn có chắc chắn muốn xóa ${userCodes.length} nhân sự đã chọn? Tất cả tủ đồ đang được dùng bởi các nhân viên này sẽ được tự động giải phóng / thu hồi.`, async () => {
+    const promises = [];
+    
+    userCodes.forEach(code => {
+      // 1. Release locker
+      const lockerIndex = db.lockers.findIndex(l => l.status === "in_use" && l.userId === code);
+      if (lockerIndex !== -1) {
+        db.lockers[lockerIndex].status = "available";
+        db.lockers[lockerIndex].userId = null;
+        db.lockers[lockerIndex].notes = "";
+        db.lockers[lockerIndex].assignedAt = null;
+        
+        // Sync locker status
+        promises.push(supabaseSync('lockers', db.lockers[lockerIndex].id, db.lockers[lockerIndex]));
+        
+        // Log transaction
+        logTransaction(db.lockers[lockerIndex].id, "Trả tủ", code, "Thu hồi tự động khi xóa nhân sự");
+      }
+      
+      // 2. Remove employee locally
+      db.employees = db.employees.filter(e => e.code !== code);
+      
+      // 3. Delete from Supabase
+      promises.push(supabaseDelete('employees', code));
+    });
+    
+    try {
+      await Promise.all(promises);
+      showToast(`Đã xóa thành công ${userCodes.length} nhân viên!`, "success");
+    } catch (err) {
+      console.error("Error deleting selected employees:", err);
+      showToast("Có lỗi xảy ra khi xóa nhân sự trên đám mây!", "error");
+    }
+    
+    saveDatabase();
+    
+    // Reset state & refresh UI
+    const selectAllCheckbox = document.getElementById("locker-list-select-all");
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    updateDeleteSelectedButtonState();
+    
+    renderLockerList();
+    renderLockerMap();
+    renderUsers();
+    renderHistory();
+    renderStatistics();
+  });
 }
 
 function quickReturnLocker(lockerId) {
@@ -1406,6 +1502,12 @@ function setupEventListeners() {
     lockerListCurrentPage = 1;
     renderLockerList();
   });
+  
+  // Bulk Delete Selected Employees Listener
+  const bulkDeleteBtn = document.getElementById("btn-delete-selected-employees");
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener("click", deleteSelectedEmployees);
+  }
 
   // Search & Filter History log
   document.getElementById("history-search").addEventListener("input", renderHistory);

@@ -385,7 +385,12 @@
         <!-- Table Card -->
         <section class="glass-card table-card" style="margin-top: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2>Bảng Theo Dõi Sử Dụng</h2>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <h2>Bảng Theo Dõi Sử Dụng</h2>
+              <button id="btn-delete-selected-employees" class="btn-danger" style="background: var(--accent-red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; display: none; gap: 6px; align-items: center; cursor: pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-trash"></i> Xóa nhân viên đã chọn (<span id="delete-selected-count">0</span>)
+              </button>
+            </div>
             <span class="badge" id="locker-list-total-badge">Tổng số: 0 tủ</span>
           </div>
 
@@ -393,12 +398,13 @@
             <table class="data-table">
               <thead>
                 <tr>
+                  <th width="4%"><input type="checkbox" id="locker-list-select-all"></th>
                   <th width="6%">STT</th>
                   <th width="12%">Mã nhân viên</th>
                   <th width="18%">Họ và tên</th>
                   <th width="14%">Bộ phận</th>
                   <th width="12%">Số tủ đồ</th>
-                  <th width="20%">Khu vực tủ</th>
+                  <th width="16%">Khu vực tủ</th>
                   <th width="18%">Ngày cấp bàn giao</th>
                   <th width="10%" class="text-center">Thao tác</th>
                 </tr>
