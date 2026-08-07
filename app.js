@@ -288,11 +288,11 @@ function showAppScreen() {
 
 async function loadDatabase() {
   try {
-    const { data: depts, error: deptErr } = await supabaseClient.from('departments').select('*');
+    const { data: depts, error: deptErr } = await supabaseClient.from('departments').select('*').range(0, 4999);
     if (deptErr) throw deptErr;
     db.departments = depts || [];
     
-    const { data: profiles, error: profErr } = await supabaseClient.from('profiles').select('*');
+    const { data: profiles, error: profErr } = await supabaseClient.from('profiles').select('*').range(0, 4999);
     if (profErr) throw profErr;
     db.users = (profiles || []).map(p => ({
       id: p.id,
@@ -303,7 +303,7 @@ async function loadDatabase() {
       password: '***'
     }));
 
-    const { data: emps, error: empErr } = await supabaseClient.from('employees').select('*');
+    const { data: emps, error: empErr } = await supabaseClient.from('employees').select('*').range(0, 4999);
     if (empErr) throw empErr;
     db.employees = (emps || []).map(e => ({
       code: e.code,
@@ -311,7 +311,7 @@ async function loadDatabase() {
       departmentId: e.department_id
     }));
 
-    const { data: lockers, error: lockErr } = await supabaseClient.from('lockers').select('*');
+    const { data: lockers, error: lockErr } = await supabaseClient.from('lockers').select('*').range(0, 4999);
     if (lockErr) throw lockErr;
     db.lockers = (lockers || []).map(l => ({
       id: l.id,
@@ -326,7 +326,7 @@ async function loadDatabase() {
       assignedAt: l.assigned_at
     }));
 
-    const { data: history, error: histErr } = await supabaseClient.from('history').select('*').order('timestamp', { ascending: false });
+    const { data: history, error: histErr } = await supabaseClient.from('history').select('*').order('timestamp', { ascending: false }).range(0, 4999);
     if (histErr) throw histErr;
     db.history = (history || []).map(h => ({
       id: h.id,
