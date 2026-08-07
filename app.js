@@ -1800,11 +1800,35 @@ function setupEventListeners() {
   
   // UNLIMITED LOCKERS DYNAMIC ADDING MODAL ACTIONS
   const addLockerModal = document.getElementById("add-locker-modal");
+  const modeSelect = document.getElementById("add-locker-mode");
+  
+  if (modeSelect) {
+    modeSelect.addEventListener("change", (e) => {
+      const mode = e.target.value;
+      if (mode === "bulk") {
+        document.getElementById("group-add-locker-qty").style.display = "block";
+        document.getElementById("group-add-locker-row").style.display = "none";
+        document.getElementById("group-add-locker-col").style.display = "none";
+        document.getElementById("group-add-locker-tier").style.display = "none";
+        document.getElementById("add-locker-row").removeAttribute("required");
+      } else {
+        document.getElementById("group-add-locker-qty").style.display = "none";
+        document.getElementById("group-add-locker-row").style.display = "block";
+        document.getElementById("group-add-locker-col").style.display = "block";
+        document.getElementById("group-add-locker-tier").style.display = "block";
+        document.getElementById("add-locker-row").setAttribute("required", "true");
+      }
+    });
+  }
+
   document.getElementById("btn-add-locker").addEventListener("click", () => {
     document.getElementById("add-locker-lobby").value = activeLobby;
+    document.getElementById("add-locker-mode").value = "bulk";
+    if (modeSelect) modeSelect.dispatchEvent(new Event("change"));
+    
     document.getElementById("add-locker-row").value = `Dãy ${db.settings.rows + 1}`;
     document.getElementById("add-locker-col").value = 1;
-    document.getElementById("add-locker-tier").value = "all";
+    document.getElementById("add-locker-tier").value = "6";
     addLockerModal.classList.add("open");
   });
   document.getElementById("btn-close-add-locker-modal").addEventListener("click", () => {
@@ -2188,25 +2212,138 @@ function saveLayoutConfig() {
 // DYNAMIC UNLIMITED LOCKER ADDING
 // ------------------------------------------
 
+// Helper to find the first N vacant sequential coordinates in standard layout grid
+function findNextEmptyPositions(lobby, qty) {
+  const currentLobbyLockers = db.lockers.filter(l => l.lobby === lobby);
+  const currentLobbyIds = new Set(currentLobbyLockers.map(l => l.id));
+  
+  const results = [];
+  const tiersCount = 6;
+  const colsCount = 13;
+  const rowsCount = 10;
+  
+  let count = 0;
+  let finished = false;
+  
+  if (lobby === "A") {
+    // Loop standard Lobby A sequence (1 to 360)
+    for (let r = 1; r <= rowsCount; r++) {
+      const rowName = `Dãy ${r}`;
+      for (let c = 1; c <= colsCount; c++) {
+        for (let t = tiersCount; t >= 1; t--) {
+          count++;
+          const id = `A-R${r}-C${c}-T${t}`;
+          if (!currentLobbyIds.has(id)) {
+            results.push({
+              id: id,
+              lobby: "A",
+              row: rowName,
+              col: c,
+              tier: t
+            });
+            if (results.length >= qty) {
+              return results;
+            }
+          }
+          if (count === 360) {
+            finished = true;
+            break;
+          }
+        }
+        if (finished) break;
+      }
+      if (finished) break;
+    }
+  } else {
+    // Loop standard Lobby B sequence (361 to 1035)
+    for (let r = 1; r <= rowsCount; r++) {
+      const rowName = `Dãy ${r}`;
+      for (let c = 1; c <= colsCount; c++) {
+        for (let t = tiersCount; t >= 1; t--) {
+          count++;
+          if (count > 1035 - 360) { // Lobby B has 675 lockers
+            finished = true;
+            break;
+          }
+          const id = `B-R${r}-C${c}-T${t}`;
+          if (!currentLobbyIds.has(id)) {
+            results.push({
+              id: id,
+              lobby: "B",
+              row: rowName,
+              col: c,
+              tier: t
+            });
+            if (results.length >= qty) {
+              return results;
+            }
+          }
+        }
+        if (finished) break;
+      }
+      if (finished) break;
+    }
+  }
+  
+  // If the standard 1035 slots are fully occupied, expand rows dynamically beyond rowsCount (10)
+  if (results.length < qty) {
+    let nextRow = rowsCount + 1;
+    if (currentLobbyLockers.length > 0) {
+      const rows = currentLobbyLockers.map(l => {
+        const match = l.row.match(/\d+/);
+        return match ? parseInt(match[0]) : 0;
+      });
+      nextRow = Math.max(...rows) + 1;
+    }
+    
+    while (results.length < qty) {
+      const rowName = `Dãy ${nextRow}`;
+      for (let c = 1; c <= colsCount; c++) {
+        for (let t = tiersCount; t >= 1; t--) {
+          const id = `${lobby}-R${nextRow}-C${c}-T${t}`;
+          if (!currentLobbyIds.has(id)) {
+            results.push({
+              id: id,
+              lobby: lobby,
+              row: rowName,
+              col: c,
+              tier: t
+            });
+            if (results.length >= qty) {
+              return results;
+            }
+          }
+        }
+      }
+      nextRow++;
+    }
+  }
+  
+  return results;
+}
+
 function handleAddLockerSubmit(e) {
   e.preventDefault();
   
   const lobby = document.getElementById("add-locker-lobby").value;
-  const rowName = document.getElementById("add-locker-row").value.trim();
   const mode = document.getElementById("add-locker-mode").value;
   
-  if (!rowName) {
-    showToast("Vui lòng nhập tên dãy tủ!", "error");
-    return;
-  }
+  const oldLockers = [...db.lockers];
+  const newLockersCreated = [];
   
-  // Find next sequential number
+  // Find next sequential number to assign temporarily
   const allNumbers = db.lockers.map(l => parseInt(l.number)).filter(num => !isNaN(num));
   let nextNumber = allNumbers.length > 0 ? Math.max(...allNumbers) + 1 : 1;
   
   if (mode === "single") {
+    const rowName = document.getElementById("add-locker-row").value.trim();
     const colVal = parseInt(document.getElementById("add-locker-col").value);
     const tierVal = parseInt(document.getElementById("add-locker-tier").value);
+    
+    if (!rowName) {
+      showToast("Vui lòng nhập tên dãy tủ!", "error");
+      return;
+    }
     
     if (isNaN(colVal) || colVal < 1 || isNaN(tierVal) || tierVal < 1 || tierVal > 6) {
       showToast("Thông tin cột hoặc tầng không hợp lệ!", "error");
@@ -2238,126 +2375,60 @@ function handleAddLockerSubmit(e) {
     };
     
     db.lockers.push(lockerObj);
+    newLockersCreated.push(lockerObj);
     
-    supabaseClient.from('lockers').insert([{
-      id: lockerObj.id,
-      lobby: lockerObj.lobby,
-      row: lockerObj.row,
-      col: lockerObj.col,
-      tier: lockerObj.tier,
-      number: lockerObj.number,
-      status: lockerObj.status,
-      user_id: lockerObj.userId,
-      notes: lockerObj.notes,
-      assigned_at: lockerObj.assignedAt
-    }]).then(({error}) => {
-      if (error) console.error("Error inserting added locker:", error);
-    });
-    
-    saveDatabase();
-    logTransaction(id, "Thêm tủ mới", null, `Thêm 1 tủ thủ công tại sảnh ${lobby}, ${rowName}, Cột ${colVal}, Tầng ${tierVal}`);
-    
-    document.getElementById("add-locker-modal").classList.remove("open");
-    renderLockerMap();
-    renderStatistics();
-    showToast("Đã thêm thành công 1 tủ đồ mới!", "success");
-    return;
-  }
-  
-  // Bulk Quantity Mode
-  const qty = parseInt(document.getElementById("add-locker-qty").value);
-  if (isNaN(qty) || qty < 1) {
-    showToast("Số lượng tủ cần thêm không hợp lệ!", "error");
-    return;
-  }
-  
-  const rowLockers = db.lockers.filter(l => l.lobby === lobby && l.row === rowName);
-  let currentCol = 1;
-  if (rowLockers.length > 0) {
-    currentCol = Math.max(...rowLockers.map(l => l.col));
-  }
-  
-  let colLockers = rowLockers.filter(l => l.col === currentCol);
-  let addedCount = 0;
-  const newLockersInserted = [];
-  
-  while (addedCount < qty) {
-    let targetTier = -1;
-    // Find the next free tier from top to bottom (6 down to 1) in the current column
-    for (let t = 6; t >= 1; t--) {
-      const exists = colLockers.some(l => l.tier === t);
-      if (!exists) {
-        targetTier = t;
-        break;
-      }
-    }
-    
-    if (targetTier === -1) {
-      // Current column is full, advance to next column
-      currentCol++;
-      colLockers = [];
-      targetTier = 6;
-    }
-    
-    const cleanRowName = rowName.replace(/\s+/g, '_');
-    const id = `${lobby}-R_${cleanRowName}-C${currentCol}-T${targetTier}`;
-    
-    const duplicate = db.lockers.find(l => l.id === id);
-    if (duplicate) {
-      colLockers.push(duplicate);
-      continue;
-    }
-    
-    const formattedNumber = nextNumber < 10 ? '0' + nextNumber : String(nextNumber);
-    
-    const lockerObj = {
-      id: id,
-      lobby: lobby,
-      row: rowName,
-      col: currentCol,
-      tier: targetTier,
-      number: formattedNumber,
-      status: "available",
-      userId: null,
-      notes: "",
-      assignedAt: null
-    };
-    
-    db.lockers.push(lockerObj);
-    colLockers.push(lockerObj);
-    newLockersInserted.push({
-      id: lockerObj.id,
-      lobby: lockerObj.lobby,
-      row: lockerObj.row,
-      col: lockerObj.col,
-      tier: lockerObj.tier,
-      number: lockerObj.number,
-      status: lockerObj.status,
-      user_id: lockerObj.userId,
-      notes: lockerObj.notes,
-      assigned_at: lockerObj.assignedAt
-    });
-    
-    nextNumber++;
-    addedCount++;
-  }
-  
-  if (addedCount > 0) {
-    supabaseClient.from('lockers').insert(newLockersInserted).then(({error}) => {
-      if (error) console.error("Error inserting added lockers:", error);
-    });
-    
-    saveDatabase();
-    
-    const refLockerId = newLockersInserted[0].id;
-    logTransaction(refLockerId, "Thêm tủ mới", null, `Thêm mới ${addedCount} tủ tại sảnh ${lobby}, ${rowName} (Từ số ${newLockersInserted[0].number} tới số ${newLockersInserted[newLockersInserted.length - 1].number})`);
-    
-    document.getElementById("add-locker-modal").classList.remove("open");
-    renderLockerMap();
-    renderStatistics();
-    showToast(`Đã thêm thành công ${addedCount} tủ đồ mới vào ${rowName}!`, "success");
   } else {
-    showToast("Không có tủ nào được thêm!", "warning");
+    // Bulk Mode
+    const qty = parseInt(document.getElementById("add-locker-qty").value);
+    if (isNaN(qty) || qty < 1) {
+      showToast("Số lượng tủ cần thêm không hợp lệ!", "error");
+      return;
+    }
+    
+    // Automatically find the next empty coordinates in the standard layout (13 columns, 6 tiers)
+    const emptyCoords = findNextEmptyPositions(lobby, qty);
+    
+    emptyCoords.forEach(coord => {
+      const formattedNumber = nextNumber < 10 ? '0' + nextNumber : String(nextNumber);
+      
+      const lockerObj = {
+        id: coord.id,
+        lobby: lobby,
+        row: coord.row,
+        col: coord.col,
+        tier: coord.tier,
+        number: formattedNumber,
+        status: "available",
+        userId: null,
+        notes: "",
+        assignedAt: null
+      };
+      
+      db.lockers.push(lockerObj);
+      newLockersCreated.push(lockerObj);
+      nextNumber++;
+    });
+  }
+  
+  if (newLockersCreated.length > 0) {
+    // Re-index all lockers to ensure they are seamless and contiguous
+    reindexLockers();
+    saveDatabase();
+    
+    // Sync to Supabase
+    showToast("Đang đồng bộ sơ đồ tủ đồ...", "info");
+    syncLockersDb(oldLockers).then(() => {
+      showToast(`Đã thêm thành công ${newLockersCreated.length} tủ đồ mới!`, "success");
+    });
+    
+    // Log transaction
+    const refLocker = newLockersCreated[0];
+    logTransaction(refLocker.id, "Thêm tủ mới", null, `Thêm mới ${newLockersCreated.length} tủ tại sảnh ${lobby}`);
+    
+    document.getElementById("add-locker-modal").classList.remove("open");
+    renderLockerMap();
+    renderLockerList();
+    renderStatistics();
   }
 }
 
