@@ -326,6 +326,9 @@ async function loadDatabase() {
       assignedAt: l.assigned_at
     }));
 
+    // Guarantee full 1092 lockers array with 7 rows * 13 cols * 6 tiers
+    ensure1092Lockers();
+
     const { data: history, error: histErr } = await supabaseClient.from('history').select('*').order('timestamp', { ascending: false }).range(0, 4999);
     if (histErr) throw histErr;
     db.history = (history || []).map(h => ({
@@ -365,6 +368,97 @@ async function loadDatabase() {
 
 function saveDatabase() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+}
+
+// Guarantee full 1092 lockers array with 7 rows * 13 cols * 6 tiers
+function ensure1092Lockers() {
+  db.settings.rows = 7;
+  db.settings.cols = 13;
+  
+  const existingMap = new Map();
+  if (db.lockers && Array.isArray(db.lockers)) {
+    db.lockers.forEach(l => {
+      if (l.id) existingMap.set(l.id, l);
+      if (l.number) existingMap.set(`NUM_${parseInt(l.number)}`, l);
+    });
+  }
+  
+  const fullLockers = [];
+  let count = 0;
+  
+  // Sảnh A (1 to 546)
+  for (let r = 1; r <= 7; r++) {
+    const rowName = `Dãy ${r}`;
+    for (let c = 1; c <= 13; c++) {
+      for (let t = 6; t >= 1; t--) {
+        count++;
+        const id = `A-R${r}-C${c}-T${t}`;
+        const numStr = String(count).padStart(2, '0');
+        const existing = existingMap.get(id) || existingMap.get(`NUM_${count}`);
+        
+        if (existing) {
+          existing.id = id;
+          existing.lobby = "A";
+          existing.row = rowName;
+          existing.col = c;
+          existing.tier = t;
+          existing.number = numStr;
+          fullLockers.push(existing);
+        } else {
+          fullLockers.push({
+            id: id,
+            lobby: "A",
+            row: rowName,
+            col: c,
+            tier: t,
+            number: numStr,
+            status: "available",
+            userId: null,
+            notes: "",
+            assignedAt: null
+          });
+        }
+      }
+    }
+  }
+  
+  // Sảnh B (547 to 1092)
+  for (let r = 1; r <= 7; r++) {
+    const rowName = `Dãy ${r}`;
+    for (let c = 1; c <= 13; c++) {
+      for (let t = 6; t >= 1; t--) {
+        count++;
+        const id = `B-R${r}-C${c}-T${t}`;
+        const numStr = String(count).padStart(2, '0');
+        const existing = existingMap.get(id) || existingMap.get(`NUM_${count}`);
+        
+        if (existing) {
+          existing.id = id;
+          existing.lobby = "B";
+          existing.row = rowName;
+          existing.col = c;
+          existing.tier = t;
+          existing.number = numStr;
+          fullLockers.push(existing);
+        } else {
+          fullLockers.push({
+            id: id,
+            lobby: "B",
+            row: rowName,
+            col: c,
+            tier: t,
+            number: numStr,
+            status: "available",
+            userId: null,
+            notes: "",
+            assignedAt: null
+          });
+        }
+      }
+    }
+  }
+  
+  db.lockers = fullLockers;
 }
 
 // Generate lockers based on settings (height is always 6 tiers)
@@ -3551,80 +3645,7 @@ async function handleDeleteLockerClick() {
 
 // Re-index remaining lockers sequentially, filling any empty positions and re-assigning numbers consecutively
 function reindexLockers() {
-  const sortedLockers = [...db.lockers].sort((a, b) => {
-    if (a.lobby !== b.lobby) {
-      return a.lobby.localeCompare(b.lobby);
-    }
-    
-    // Sort strictly by locker number numerically
-    const numA = parseInt(a.number) || 0;
-    const numB = parseInt(b.number) || 0;
-    if (numA !== numB) return numA - numB;
-    
-    return a.id.localeCompare(b.id);
-  });
-  
-  const lobbyALockers = sortedLockers.filter(l => l.lobby === "A");
-  const lobbyBLockers = sortedLockers.filter(l => l.lobby === "B");
-  
-  // Ensure layout capacity has enough rows to cover the current locker count
-  let neededRows = db.settings.rows;
-  while (neededRows * db.settings.cols * 6 < Math.max(lobbyALockers.length, lobbyBLockers.length)) {
-    neededRows++;
-  }
-  db.settings.rows = neededRows;
-  
-  const getSeqCoords = (lobby, maxCount, rowsCount, colsCount) => {
-    const coords = [];
-    const tiersCount = 6;
-    let count = 0;
-    for (let r = 1; r <= rowsCount; r++) {
-      const rowName = `Dãy ${r}`;
-      for (let c = 1; c <= colsCount; c++) {
-        for (let t = tiersCount; t >= 1; t--) {
-          count++;
-          coords.push({
-            id: `${lobby}-R${r}-C${c}-T${t}`,
-            row: rowName,
-            col: c,
-            tier: t
-          });
-          if (count >= maxCount) return coords;
-        }
-      }
-    }
-    return coords;
-  };
-  
-  const lobbyACoords = getSeqCoords("A", lobbyALockers.length, db.settings.rows, db.settings.cols);
-  const lobbyBCoords = getSeqCoords("B", lobbyBLockers.length, db.settings.rows, db.settings.cols);
-  
-  const reindexedLockers = [];
-  let globalCount = 0;
-  
-  lobbyALockers.forEach((locker, index) => {
-    globalCount++;
-    const coord = lobbyACoords[index];
-    locker.id = coord.id;
-    locker.row = coord.row;
-    locker.col = coord.col;
-    locker.tier = coord.tier;
-    locker.number = String(globalCount).padStart(2, '0');
-    reindexedLockers.push(locker);
-  });
-  
-  lobbyBLockers.forEach((locker, index) => {
-    globalCount++;
-    const coord = lobbyBCoords[index];
-    locker.id = coord.id;
-    locker.row = coord.row;
-    locker.col = coord.col;
-    locker.tier = coord.tier;
-    locker.number = String(globalCount).padStart(2, '0');
-    reindexedLockers.push(locker);
-  });
-  
-  db.lockers = reindexedLockers;
+  ensure1092Lockers();
 }
 
 // Cleanly synchronize new locker configurations to Supabase, deleting leftover IDs
