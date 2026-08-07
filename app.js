@@ -367,48 +367,98 @@ function generateLockers() {
   const newLockers = [];
   const oldLockers = db.lockers || [];
   
-  const lobbies = ["A", "B"];
   const rowsCount = db.settings.rows;
   const colsCount = db.settings.cols;
   const tiersCount = 6; // Always 6 tiers high
   
   let count = 0;
-  for (const lobby of lobbies) {
-    for (let r = 1; r <= rowsCount; r++) {
-      const rowName = `Dãy ${r}`;
-      for (let c = 1; c <= colsCount; c++) {
-        for (let t = tiersCount; t >= 1; t--) {
-          count++;
-          if (count > 1000) break;
-          
-          const id = `${lobby}-R${r}-C${c}-T${t}`;
-          const formattedNumber = String(count).padStart(2, '0');
-          
-          const existing = oldLockers.find(l => l.id === id);
-          if (existing) {
-            existing.number = formattedNumber;
-            newLockers.push(existing);
-          } else {
-            newLockers.push({
-              id: id,
-              lobby: lobby,
-              row: rowName,
-              col: c,
-              tier: t,
-              number: formattedNumber,
-              status: "available", // available, in_use, broken, error, maintenance
-              userId: null,
-              notes: "",
-              assignedAt: null // Timestamp when locker was assigned
-            });
-          }
+  let lobbyAFinished = false;
+  
+  // Generate Lobby A (1 to 360)
+  for (let r = 1; r <= rowsCount; r++) {
+    const rowName = `Dãy ${r}`;
+    for (let c = 1; c <= colsCount; c++) {
+      for (let t = tiersCount; t >= 1; t--) {
+        count++;
+        const id = `A-R${r}-C${c}-T${t}`;
+        const formattedNumber = String(count).padStart(2, '0');
+        
+        const existing = oldLockers.find(l => l.id === id);
+        if (existing) {
+          existing.lobby = "A";
+          existing.row = rowName;
+          existing.col = c;
+          existing.tier = t;
+          existing.number = formattedNumber;
+          newLockers.push(existing);
+        } else {
+          newLockers.push({
+            id: id,
+            lobby: "A",
+            row: rowName,
+            col: c,
+            tier: t,
+            number: formattedNumber,
+            status: "available",
+            userId: null,
+            notes: "",
+            assignedAt: null
+          });
         }
-        if (count > 1000) break;
+        
+        if (count === 360) {
+          lobbyAFinished = true;
+          break;
+        }
       }
-      if (count > 1000) break;
+      if (lobbyAFinished) break;
     }
-    if (count > 1000) break;
+    if (lobbyAFinished) break;
   }
+  
+  // Generate Lobby B (361 to 1000)
+  let lobbyBFinished = false;
+  for (let r = 1; r <= rowsCount; r++) {
+    const rowName = `Dãy ${r}`;
+    for (let c = 1; c <= colsCount; c++) {
+      for (let t = tiersCount; t >= 1; t--) {
+        count++;
+        if (count > 1000) {
+          lobbyBFinished = true;
+          break;
+        }
+        
+        const id = `B-R${r}-C${c}-T${t}`;
+        const formattedNumber = String(count).padStart(2, '0');
+        
+        const existing = oldLockers.find(l => l.id === id);
+        if (existing) {
+          existing.lobby = "B";
+          existing.row = rowName;
+          existing.col = c;
+          existing.tier = t;
+          existing.number = formattedNumber;
+          newLockers.push(existing);
+        } else {
+          newLockers.push({
+            id: id,
+            lobby: "B",
+            row: rowName,
+            col: c,
+            tier: t,
+            number: formattedNumber,
+            status: "available",
+            userId: null,
+            notes: "",
+            assignedAt: null
+          });
+        }
+      }
+      if (lobbyBFinished) break;
+    }
+    if (lobbyBFinished) break;
+  }
+  
   db.lockers = newLockers;
 }
 
