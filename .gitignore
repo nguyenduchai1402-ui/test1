@@ -1,2 +1,6 @@
 # Ignore workspace folder
 Quan Ly Tu Do/
+**/node_modules/
+*.log
+.DS_Store
+Thumbs.db
