@@ -1,765 +1,433 @@
 {
   "products": [
     {
-      "id": "p1",
-      "code": "T7",
-      "name": "Cốc Tim 700ml UKP",
-      "price": 730,
-      "unit": "thiên",
-      "category": "Cốc Tim",
-      "isPopular": true,
-      "costPrice": 580
+      "id": "p-1793091057699-th0r",
+      "code": "pet7ukp",
+      "name": "Ly Pet700ml/98 Ukp",
+      "price": 1080,
+      "costPrice": 900,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p2",
-      "code": "T7N",
-      "name": "Cốc Tim 700ml Nhám UKP",
-      "price": 760,
-      "unit": "thiên",
-      "category": "Cốc Tim",
-      "isPopular": true,
-      "costPrice": 600
+      "id": "p-1793091057699-eq2o",
+      "code": "Pet650ukp",
+      "name": "Ly Pet650ml/98 Ukp",
+      "price": 1030,
+      "costPrice": 840,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p3",
-      "code": "T5",
-      "name": "Cốc Tim 500ml UKP",
-      "price": 630,
-      "unit": "thiên",
-      "category": "Cốc Tim",
-      "isPopular": true,
-      "costPrice": 500
+      "id": "p-1793091057699-qk62",
+      "code": "pet598ukp",
+      "name": "Ly Pet500ml/98 Lùn Ukp",
+      "price": 830,
+      "costPrice": 643,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p4",
-      "code": "T5N",
-      "name": "Cốc Tim 500ml Nhám UKP",
-      "price": 660,
-      "unit": "thiên",
-      "category": "Cốc Tim",
-      "isPopular": true,
-      "costPrice": 520
-    },
-    {
-      "id": "p5",
-      "code": "TT2",
-      "name": "Cốc Trái Tim 2 Ngăn",
+      "id": "p-1793091057699-3fyt",
+      "code": "pet5lun98ukp",
+      "name": "Ly Pet500ml/98 Lùn Ukp",
       "price": 820,
-      "unit": "thiên",
-      "category": "Cốc Tim",
-      "isPopular": true,
-      "costPrice": 650
+      "costPrice": 634,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p6",
-      "code": "DC",
-      "name": "Cốc Đáy Cầu 500ml",
-      "price": 580,
-      "unit": "thiên",
-      "category": "Cốc Đáy Cầu",
-      "isPopular": true,
-      "costPrice": 450
+      "id": "p-1793091057699-j45y",
+      "code": "pet593ukp",
+      "name": "Ly Pet500ml/93 Ukp",
+      "price": 750,
+      "costPrice": 565,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p7",
-      "code": "DC7",
-      "name": "Cốc Đáy Cầu 700ml",
-      "price": 670,
-      "unit": "thiên",
-      "category": "Cốc Đáy Cầu",
-      "costPrice": 520
+      "id": "p-1793091057699-irbl",
+      "code": "pet593app",
+      "name": "Ly Pet 500ml/93 App",
+      "price": 740,
+      "costPrice": 555,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p8",
-      "code": "U5",
-      "name": "Cốc U 500ml",
-      "price": 580,
-      "unit": "thiên",
-      "category": "Cốc U",
-      "isPopular": true,
-      "costPrice": 450
+      "id": "p-1793091057699-clz1",
+      "code": "pet3Ukpday",
+      "name": "Ly Pet 360ml Ukp dày",
+      "price": 690,
+      "costPrice": 505,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p9",
-      "code": "U5UKP",
-      "name": "Cốc U 500ml UKP",
-      "price": 650,
-      "unit": "thiên",
-      "category": "Cốc U",
-      "costPrice": 500
+      "id": "p-1793091057699-xe1v",
+      "code": "pet3Ukpmong",
+      "name": "Ly Pet 360ml Ukp mỏng",
+      "price": 630,
+      "costPrice": 440,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
     },
     {
-      "id": "p10",
-      "code": "U7",
-      "name": "Cốc U 700ml UKP",
+      "id": "p-1793091057699-tohr",
+      "code": "pet3appmong",
+      "name": "Ly Pet 360ml App mỏng",
+      "price": 610,
+      "costPrice": 425,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-kaox",
+      "code": "t7nk",
+      "name": "Ly tim 700ml nhám dày",
+      "price": 1440,
+      "costPrice": 1260,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-rnhy",
+      "code": "t7nhamUkp",
+      "name": "Ly tim700ml nhám Ukp",
+      "price": 830,
+      "costPrice": 640,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-c3vf",
+      "code": "t7Ukp",
+      "name": "Ly tim700ml Ukp",
+      "price": 780,
+      "costPrice": 595,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-onaz",
+      "code": "t7app",
+      "name": "Ly tim 700ml",
+      "price": 760,
+      "costPrice": 580,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-zw3y",
+      "code": "t5nhamUkp",
+      "name": "Ly tim 500ml nhám Ukp",
+      "price": 730,
+      "costPrice": 540,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-uz32",
+      "code": "t5cung",
+      "name": "Ly tim 500ml nhám dày",
+      "price": 1160,
+      "costPrice": 880,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-upiv",
+      "code": "t5Ukp",
+      "name": "Ly tim 500ml",
       "price": 680,
-      "unit": "thiên",
-      "category": "Cốc U",
-      "costPrice": 530
+      "costPrice": 500,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
     },
     {
-      "id": "p11",
-      "code": "P360",
-      "name": "Cốc PP 360ml",
-      "price": 495,
-      "unit": "thiên",
-      "category": "Cốc PP",
-      "isPopular": true,
-      "costPrice": 380
+      "id": "p-1793091057699-dta6",
+      "code": "t5app",
+      "name": "Ly tim 500ml",
+      "price": 660,
+      "costPrice": 480,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
     },
     {
-      "id": "p12",
-      "code": "P500",
-      "name": "Cốc PP 500ml (P5)",
+      "id": "p-1793091057699-6mte",
+      "code": "t5nhamapp",
+      "name": "Ly tim nhám 500ml",
+      "price": 750,
+      "costPrice": 560,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-0d7b",
+      "code": "q500app",
+      "name": "Ly đáy bầu 360ml",
+      "price": 660,
+      "costPrice": 480,
+      "unit": "Thùng",
+      "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-dmnl",
+      "code": "q500ht",
+      "name": "Ly đáy bầu 360ml",
+      "price": 620,
+      "costPrice": 410,
+      "unit": "Thùng",
+      "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-9rw2",
+      "code": "q500qd",
+      "name": "Ly đáy bầu 360ml",
+      "price": 630,
+      "costPrice": 445,
+      "unit": "Thùng",
+      "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-1lz2",
+      "code": "q360viet",
+      "name": "Ly đáy bầu 360ml",
+      "price": 600,
+      "costPrice": 405,
+      "unit": "Thùng",
+      "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-cb6n",
+      "code": "q360qd",
+      "name": "Ly đáy bầu 360ml",
+      "price": 600,
+      "costPrice": 405,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-pxr1",
+      "code": "p7qd-m",
+      "name": "Ly đáy bằng 700ml",
+      "price": 670,
+      "costPrice": 485,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-mgtu",
+      "code": "p7qd-d",
+      "name": "Ly đáy bằng 700ml",
+      "price": 700,
+      "costPrice": 510,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-u0uh",
+      "code": "p7app-du",
+      "name": "Ly đáy bằng 700ml Đ",
+      "price": 780,
+      "costPrice": 580,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-0gwp",
+      "code": "p700aapp-m",
+      "name": "Ly đáy bằng 700ml",
+      "price": 690,
+      "costPrice": 505,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-5qsk",
+      "code": "p700app-d",
+      "name": "Ly đáy bằng 700ml",
+      "price": 720,
+      "costPrice": 540,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-04y6",
+      "code": "p650app",
+      "name": "Ly đáy bằng 650ml",
+      "price": 700,
+      "costPrice": 515,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-3nqa",
+      "code": "p5appd",
+      "name": "Ly đáy bằng 500ml",
+      "price": 610,
+      "costPrice": 450,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-knbm",
+      "code": "p5nham",
+      "name": "Ly đáy bằng 500ml Nhám",
+      "price": 690,
+      "costPrice": 500,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-nkkb",
+      "code": "p5appm",
+      "name": "Ly đáy bằng 500ml",
+      "price": 600,
+      "costPrice": 425,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-9eg3",
+      "code": "P5ht",
+      "name": "Ly đáy bằng 500ml",
+      "price": 570,
+      "costPrice": 395,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-89g7",
+      "code": "p5qd-d",
+      "name": "Ly đáy bằng 500ml",
+      "price": 600,
+      "costPrice": 425,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-oovb",
+      "code": "p5qd-m",
+      "name": "Ly đáy bằng 500ml",
+      "price": 580,
+      "costPrice": 405,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-reh8",
+      "code": "p4da",
+      "name": "Ly đáy bằng 400ml",
+      "price": 550,
+      "costPrice": 355,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793091057699-cvn2",
+      "code": "p360ht",
+      "name": "Ly đáy bằng 360ml",
       "price": 540,
-      "unit": "thiên",
-      "category": "Cốc PP",
-      "isPopular": true,
-      "costPrice": 420
+      "costPrice": 365,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
     },
     {
-      "id": "p13",
-      "code": "P650",
-      "name": "Cốc PP 650ml",
-      "price": 620,
-      "unit": "thiên",
-      "category": "Cốc PP",
-      "costPrice": 480
+      "id": "p-1793091057699-a60s",
+      "code": "p360qd",
+      "name": "Ly đáy bằng 360ml",
+      "price": 530,
+      "costPrice": 355,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
     },
     {
-      "id": "p14",
-      "code": "P700",
-      "name": "Cốc PP 700ml (P7)",
-      "price": 620,
-      "unit": "thiên",
-      "category": "Cốc PP",
-      "isPopular": true,
-      "costPrice": 480
-    },
-    {
-      "id": "p15",
-      "code": "P1000",
-      "name": "Cốc PP 1000ml Khổng Lồ",
-      "price": 850,
-      "unit": "thiên",
-      "category": "Cốc PP",
-      "costPrice": 660
-    },
-    {
-      "id": "p16",
-      "code": "PET300",
-      "name": "Cốc Pet 300ml UKP",
-      "price": 438,
-      "unit": "thiên",
-      "category": "Cốc Pet",
-      "costPrice": 340
-    },
-    {
-      "id": "p17",
-      "code": "PET360",
-      "name": "Cốc Pet 360ml UKP",
-      "price": 495,
-      "unit": "thiên",
-      "category": "Cốc Pet",
-      "costPrice": 380
-    },
-    {
-      "id": "p18",
-      "code": "PET400",
-      "name": "Cốc Pet 400ml Dày UKP",
-      "price": 505,
-      "unit": "thiên",
-      "category": "Cốc Pet",
-      "costPrice": 390
-    },
-    {
-      "id": "p19",
-      "code": "PET500",
-      "name": "Cốc Pet 500ml UKP",
-      "price": 567,
-      "unit": "thiên",
-      "category": "Cốc Pet",
-      "isPopular": true,
-      "costPrice": 440
-    },
-    {
-      "id": "p20",
-      "code": "PET620",
-      "name": "Cốc Pet 620ml UKP",
-      "price": 743,
-      "unit": "thiên",
-      "category": "Cốc Pet",
-      "costPrice": 580
-    },
-    {
-      "id": "p21",
-      "code": "PET700",
-      "name": "Cốc Pet 700ml UKP",
-      "price": 755,
-      "unit": "thiên",
-      "category": "Cốc Pet",
-      "costPrice": 590
+      "id": "p-1793091057699-1zu5",
+      "code": "p360app",
+      "name": "Ly đáy bằng 360ml",
+      "price": 570,
+      "costPrice": 395,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
     }
   ],
   "customers": [
     {
-      "id": "c1",
-      "code": "KH-TN",
-      "name": "Tiệm Trà Thị Ngọc",
-      "phone": "0976234567",
-      "address": "KĐT Văn Quán, Hà Đông, HN",
-      "notes": "In logo 1 màu đỏ, gửi xe buýt",
-      "createdAt": "2026-08-15"
-    },
-    {
-      "id": "c2",
-      "code": "KH-LC",
-      "name": "La Cà Coffee",
-      "phone": "0912345678",
-      "address": "19 Nguyễn Trãi, Thanh Xuân, HN",
-      "notes": "Giao trực tiếp buổi chiều",
-      "createdAt": "2026-08-20"
-    },
-    {
-      "id": "c3",
-      "code": "KH-NA",
-      "name": "Ngọc Ánh Tea",
-      "phone": "0904567890",
-      "address": "45 Cầu Giấy, Hà Nội",
-      "notes": "Hay lấy Tim7 và Nắp D90",
-      "createdAt": "2026-09-01"
-    },
-    {
-      "id": "c4",
-      "code": "KH-95",
-      "name": "1995 Café",
-      "phone": "0968789012",
-      "address": "Định Công, Hoàng Mai, HN",
-      "notes": "Lấy U500 in 2 mặt",
-      "createdAt": "2026-09-10"
-    },
-    {
-      "id": "c5",
-      "code": "KH-CL",
-      "name": "Chill Trà Chanh",
-      "phone": "0971223344",
-      "address": "Triều Khúc, Thanh Xuân, HN",
-      "notes": "Khách quen lấy P500",
-      "createdAt": "2026-09-15"
-    },
-    {
-      "id": "c6",
-      "code": "KH-TT",
-      "name": "T&T Quán",
-      "phone": "0936889900",
-      "address": "Lê Đức Thọ, Nam Từ Liêm, HN",
-      "notes": "Thường in P5 và P7",
-      "createdAt": "2026-09-22"
-    },
-    {
-      "id": "c7",
-      "code": "KH-OT",
-      "name": "One Tea",
-      "phone": "0982112233",
-      "address": "120 Xã Đàn, Đống Đa, HN",
-      "notes": "Cốc Pet cao cấp",
-      "createdAt": "2026-10-01"
-    },
-    {
-      "id": "c8",
-      "code": "KH-MX",
-      "name": "Mixue Chi Nhánh HN",
-      "phone": "0988123456",
-      "address": "Hà Nội",
-      "notes": "Tim 7 nhám ukp số lượng lớn",
-      "createdAt": "2026-10-05"
-    },
-    {
-      "id": "c9",
-      "code": "KH-PL",
-      "name": "Phúc Long Hà Đông",
-      "phone": "0918765432",
-      "address": "Quang Trung, Hà Đông, HN",
-      "notes": "Cốc PP 700ml in 1 màu",
-      "createdAt": "2026-10-10"
-    },
-    {
-      "id": "c10",
-      "code": "KH-DD",
-      "name": "Trà Sữa Đô Đô",
-      "phone": "0934567891",
-      "address": "Trần Đại Nghĩa, Hai Bà Trưng, HN",
-      "notes": "Lấy kèm nắp tim trắng",
-      "createdAt": "2026-10-12"
-    },
-    {
-      "id": "c11",
-      "code": "KH-BX",
-      "name": "Bạc Xỉu Coffee",
-      "phone": "0978998877",
-      "address": "Huỳnh Thúc Kháng, Ba Đình, HN",
-      "notes": "Cốc Pet 500 nắp cầu",
-      "createdAt": "2026-10-15"
-    },
-    {
-      "id": "c12",
-      "code": "KH-GC",
-      "name": "Gong Cha Cầu Giấy",
-      "phone": "0945112233",
-      "address": "Trần Thái Tông, Cầu Giấy, HN",
-      "notes": "In logo 2 màu",
-      "createdAt": "2026-10-18"
-    },
-    {
-      "id": "c13",
-      "code": "KH-DT",
-      "name": "Ding Tea Giải Phóng",
-      "phone": "0966443322",
-      "address": "Giải Phóng, Hoàng Mai, HN",
-      "notes": "Gửi nhà xe Giáp Bát",
-      "createdAt": "2026-10-20"
-    },
-    {
-      "id": "c14",
-      "code": "KH-BP",
-      "name": "Trà Chanh Bụi Phố",
-      "phone": "0987332211",
-      "address": "Nguyễn Văn Cừ, Long Biên, HN",
-      "notes": "Khách sỉ lấy cuộn màng và ly PP",
-      "createdAt": "2026-10-22"
+      "id": "c-1793091131376",
+      "name": "Lâm Hảo",
+      "phone": "0977943388",
+      "address": "SN 23 Tổ 18B Khu 6,P. Uông Bí,TP. Quảng Ninh",
+      "notes": "in logo trắng",
+      "createdAt": "2026-10-27T08:52:11.376Z"
     }
   ],
   "orders": [
     {
-      "id": "ord-1793069942947",
-      "code": "#DH-1014",
-      "customerName": "Khách vãng lai",
-      "customerPhone": "",
-      "customerAddress": "",
+      "id": "ord-1793091141181",
+      "code": "#DH-1001",
+      "customerId": "c-1793091131376",
+      "customerName": "Lâm Hảo",
+      "customerPhone": "0977943388",
+      "customerAddress": "SN 23 Tổ 18B Khu 6,P. Uông Bí,TP. Quảng Ninh",
       "items": [
         {
-          "id": "row-1793069936156-fuj66",
-          "productId": "p6",
-          "code": "DC",
-          "name": "Cốc Đáy Cầu 500ml",
-          "unitPrice": 580,
+          "id": "row-1793091132486-5r56n",
+          "productId": "p-1793091057699-04y6",
+          "code": "p650app",
+          "name": "Ly đáy bằng 650ml",
+          "unitPrice": 700,
           "quantity": 1,
-          "amount": 580
-        },
-        {
-          "id": "row-1793069936156-tncvs",
-          "productId": "p8",
-          "code": "U5",
-          "name": "Cốc U 500ml",
-          "unitPrice": 580,
-          "quantity": 1,
-          "amount": 580
-        },
-        {
-          "id": "row-1793069936156-i14uj",
-          "productId": "p17",
-          "code": "PET360",
-          "name": "Cốc Pet 360ml UKP",
-          "unitPrice": 495,
-          "quantity": 1,
-          "amount": 495
+          "amount": 700,
+          "costPrice": 0
         }
       ],
-      "totalQuantity": 3,
-      "totalAmount": 1655,
+      "totalQuantity": 1,
+      "totalAmount": 700,
       "notes": "",
       "status": "Chờ in",
-      "createdAt": "09:59:02 27/10/2026",
-      "updatedAt": "2026-10-27T02:59:02.947Z"
-    },
-    {
-      "id": "ord-1025",
-      "code": "#DH-1025",
-      "customerId": "c1",
-      "customerName": "Tiệm Trà Thị Ngọc",
-      "customerPhone": "0976234567",
-      "customerAddress": "KĐT Văn Quán, Hà Đông, HN",
-      "items": [
-        {
-          "id": "item-1",
-          "productId": "p2",
-          "code": "T7N",
-          "name": "Cốc Tim 700ml Nhám UKP",
-          "unitPrice": 760,
-          "quantity": 2,
-          "amount": 1520
-        },
-        {
-          "id": "item-2",
-          "productId": "p27",
-          "code": "NTT90",
-          "name": "Nắp Tim Trong 90 UKP",
-          "unitPrice": 521,
-          "quantity": 2,
-          "amount": 1042
-        }
-      ],
-      "totalQuantity": 4,
-      "totalAmount": 2562,
-      "notes": "In mực đỏ tươi, đóng gói cẩn thận gửi bến xe Yên Nghĩa",
-      "status": "Chờ in",
-      "createdAt": "2026-10-26 09:30",
-      "updatedAt": "2026-10-26 09:30"
-    },
-    {
-      "id": "ord-1024",
-      "code": "#DH-1024",
-      "customerId": "c2",
-      "customerName": "La Cà Coffee",
-      "customerPhone": "0912345678",
-      "customerAddress": "19 Nguyễn Trãi, Thanh Xuân, HN",
-      "items": [
-        {
-          "id": "item-3",
-          "productId": "p12",
-          "code": "P500",
-          "name": "Cốc PP 500ml (P5)",
-          "unitPrice": 540,
-          "quantity": 3,
-          "amount": 1620
-        },
-        {
-          "id": "item-4",
-          "productId": "p14",
-          "code": "P700",
-          "name": "Cốc PP 700ml (P7)",
-          "unitPrice": 620,
-          "quantity": 2,
-          "amount": 1240
-        }
-      ],
-      "totalQuantity": 5,
-      "totalAmount": 2860,
-      "notes": "In logo 1 màu đen, giao trước 17h",
-      "status": "Đã in",
-      "createdAt": "2026-10-25 14:15",
-      "updatedAt": "2026-10-25 16:40"
-    },
-    {
-      "id": "ord-1023",
-      "code": "#DH-1023",
-      "customerId": "c3",
-      "customerName": "Ngọc Ánh Tea",
-      "customerPhone": "0904567890",
-      "customerAddress": "45 Cầu Giấy, Hà Nội",
-      "items": [
-        {
-          "id": "item-5",
-          "productId": "p1",
-          "code": "T7",
-          "name": "Cốc Tim 700ml Trơn UKP",
-          "unitPrice": 750,
-          "quantity": 3,
-          "amount": 2250
-        },
-        {
-          "id": "item-6",
-          "productId": "p22",
-          "code": "ND90",
-          "name": "Nắp D90 Đậy Cốc",
-          "unitPrice": 400,
-          "quantity": 3,
-          "amount": 1200
-        }
-      ],
-      "totalQuantity": 6,
-      "totalAmount": 3450,
-      "notes": "In logo xanh lá",
-      "status": "Đã in",
-      "createdAt": "2026-10-24 10:20",
-      "updatedAt": "2026-10-24 11:00"
-    },
-    {
-      "id": "ord-1022",
-      "code": "#DH-1022",
-      "customerId": "c4",
-      "customerName": "1995 Café",
-      "customerPhone": "0968789012",
-      "customerAddress": "Định Công, Hoàng Mai, HN",
-      "items": [
-        {
-          "id": "item-7",
-          "productId": "p15",
-          "code": "U500",
-          "name": "Cốc Đáy Bầu U 500ml (U5)",
-          "unitPrice": 535,
-          "quantity": 4,
-          "amount": 2140
-        }
-      ],
-      "totalQuantity": 4,
-      "totalAmount": 2140,
-      "notes": "Giao buổi sáng",
-      "status": "Đã in",
-      "createdAt": "2026-10-22 15:45",
-      "updatedAt": "2026-10-22 17:00"
-    },
-    {
-      "id": "ord-1021",
-      "code": "#DH-1021",
-      "customerId": "c5",
-      "customerName": "Chill Trà Chanh",
-      "customerPhone": "0971223344",
-      "customerAddress": "Triều Khúc, Thanh Xuân, HN",
-      "items": [
-        {
-          "id": "item-8",
-          "productId": "p12",
-          "code": "P500",
-          "name": "Cốc PP 500ml (P5)",
-          "unitPrice": 540,
-          "quantity": 5,
-          "amount": 2700
-        },
-        {
-          "id": "item-9",
-          "productId": "p30",
-          "code": "MANG",
-          "name": "Cuộn Màng Ép Cốc Ly",
-          "unitPrice": 180,
-          "quantity": 2,
-          "amount": 360
-        }
-      ],
-      "totalQuantity": 7,
-      "totalAmount": 3060,
-      "notes": "",
-      "status": "Đã in",
-      "createdAt": "2026-10-20 08:30",
-      "updatedAt": "2026-10-20 09:10"
-    },
-    {
-      "id": "ord-1020",
-      "code": "#DH-1020",
-      "customerId": "c6",
-      "customerName": "T&T Quán",
-      "customerPhone": "0936889900",
-      "customerAddress": "Lê Đức Thọ, Nam Từ Liêm, HN",
-      "items": [
-        {
-          "id": "item-10",
-          "productId": "p14",
-          "code": "P700",
-          "name": "Cốc PP 700ml (P7)",
-          "unitPrice": 620,
-          "quantity": 3,
-          "amount": 1860
-        }
-      ],
-      "totalQuantity": 3,
-      "totalAmount": 1860,
-      "notes": "In 2 màu vàng + đen",
-      "status": "Chờ in",
-      "createdAt": "2026-10-18 16:00",
-      "updatedAt": "2026-10-18 16:00"
-    },
-    {
-      "id": "ord-1019",
-      "code": "#DH-1019",
-      "customerId": "c7",
-      "customerName": "One Tea",
-      "customerPhone": "0982112233",
-      "customerAddress": "120 Xã Đàn, Đống Đa, HN",
-      "items": [
-        {
-          "id": "item-11",
-          "productId": "p19",
-          "code": "PET500",
-          "name": "Cốc Pet 500ml UKP",
-          "unitPrice": 686,
-          "quantity": 4,
-          "amount": 2744
-        },
-        {
-          "id": "item-12",
-          "productId": "p25",
-          "code": "NC90",
-          "name": "Nắp Cầu 90 UKP",
-          "unitPrice": 429,
-          "quantity": 4,
-          "amount": 1716
-        }
-      ],
-      "totalQuantity": 8,
-      "totalAmount": 4460,
-      "notes": "Hàng xuất khẩu gấp",
-      "status": "Đã in",
-      "createdAt": "2026-10-15 11:20",
-      "updatedAt": "2026-10-15 14:00"
-    },
-    {
-      "id": "ord-1018",
-      "code": "#DH-1018",
-      "customerId": "c8",
-      "customerName": "Mixue Chi Nhánh HN",
-      "customerPhone": "0988123456",
-      "customerAddress": "Hà Nội",
-      "items": [
-        {
-          "id": "item-13",
-          "productId": "p2",
-          "code": "T7N",
-          "name": "Cốc Tim 700ml Nhám UKP",
-          "unitPrice": 760,
-          "quantity": 10,
-          "amount": 7600
-        },
-        {
-          "id": "item-14",
-          "productId": "p28",
-          "code": "NTW90",
-          "name": "Nắp Tim Trắng 90 UKP",
-          "unitPrice": 569,
-          "quantity": 10,
-          "amount": 5690
-        }
-      ],
-      "totalQuantity": 20,
-      "totalAmount": 13290,
-      "notes": "Hợp đồng tháng",
-      "status": "Đã in",
-      "createdAt": "2026-10-10 09:00",
-      "updatedAt": "2026-10-10 17:00"
-    },
-    {
-      "id": "ord-1017",
-      "code": "#DH-1017",
-      "customerId": "c9",
-      "customerName": "Phúc Long Hà Đông",
-      "customerPhone": "0918765432",
-      "customerAddress": "Quang Trung, Hà Đông, HN",
-      "items": [
-        {
-          "id": "item-15",
-          "productId": "p14",
-          "code": "P700",
-          "name": "Cốc PP 700ml (P7)",
-          "unitPrice": 620,
-          "quantity": 6,
-          "amount": 3720
-        }
-      ],
-      "totalQuantity": 6,
-      "totalAmount": 3720,
-      "notes": "Giao trước thứ 6",
-      "status": "Đã in",
-      "createdAt": "2026-10-05 13:40",
-      "updatedAt": "2026-10-05 15:30"
-    },
-    {
-      "id": "ord-1016",
-      "code": "#DH-1016",
-      "customerId": "c10",
-      "customerName": "Trà Sữa Đô Đô",
-      "customerPhone": "0934567891",
-      "customerAddress": "Trần Đại Nghĩa, Hai Bà Trưng, HN",
-      "items": [
-        {
-          "id": "item-16",
-          "productId": "p1",
-          "code": "T7",
-          "name": "Cốc Tim 700ml Trơn UKP",
-          "unitPrice": 750,
-          "quantity": 4,
-          "amount": 3000
-        },
-        {
-          "id": "item-17",
-          "productId": "p27",
-          "code": "NTT90",
-          "name": "Nắp Tim Trong 90 UKP",
-          "unitPrice": 521,
-          "quantity": 4,
-          "amount": 2084
-        }
-      ],
-      "totalQuantity": 8,
-      "totalAmount": 5084,
-      "notes": "In logo thương hiệu",
-      "status": "Đã in",
-      "createdAt": "2026-10-02 10:00",
-      "updatedAt": "2026-10-02 11:30"
-    },
-    {
-      "id": "ord-1015",
-      "code": "#DH-1015",
-      "customerId": "c3",
-      "customerName": "Ngọc Ánh Tea",
-      "customerPhone": "0904567890",
-      "customerAddress": "45 Cầu Giấy, Hà Nội",
-      "items": [
-        {
-          "id": "item-18",
-          "productId": "p12",
-          "code": "P500",
-          "name": "Cốc PP 500ml (P5)",
-          "unitPrice": 540,
-          "quantity": 5,
-          "amount": 2700
-        }
-      ],
-      "totalQuantity": 5,
-      "totalAmount": 2700,
-      "notes": "Đơn tháng 9",
-      "status": "Đã in",
-      "createdAt": "2026-09-28 15:20",
-      "updatedAt": "2026-09-28 16:00"
-    },
-    {
-      "id": "ord-1014",
-      "code": "#DH-1014",
-      "customerId": "c4",
-      "customerName": "1995 Café",
-      "customerPhone": "0968789012",
-      "customerAddress": "Định Công, Hoàng Mai, HN",
-      "items": [
-        {
-          "id": "item-19",
-          "productId": "p15",
-          "code": "U500",
-          "name": "Cốc Đáy Bầu U 500ml (U5)",
-          "unitPrice": 535,
-          "quantity": 6,
-          "amount": 3210
-        }
-      ],
-      "totalQuantity": 6,
-      "totalAmount": 3210,
-      "notes": "Đơn tháng 9",
-      "status": "Đã in",
-      "createdAt": "2026-09-15 09:15",
-      "updatedAt": "2026-09-15 11:00"
-    },
-    {
-      "id": "ord-1013",
-      "code": "#DH-1013",
-      "customerId": "c1",
-      "customerName": "Tiệm Trà Thị Ngọc",
-      "customerPhone": "0976234567",
-      "customerAddress": "KĐT Văn Quán, Hà Đông, HN",
-      "items": [
-        {
-          "id": "item-20",
-          "productId": "p2",
-          "code": "T7N",
-          "name": "Cốc Tim 700ml Nhám UKP",
-          "unitPrice": 760,
-          "quantity": 5,
-          "amount": 3800
-        }
-      ],
-      "totalQuantity": 5,
-      "totalAmount": 3800,
-      "notes": "Đơn tháng 8",
-      "status": "Đã in",
-      "createdAt": "2026-08-20 14:00",
-      "updatedAt": "2026-08-20 16:00"
+      "createdAt": "15:52:21 27/10/2026",
+      "updatedAt": "2026-10-27T08:54:59.380Z"
     }
   ],
-  "lastUpdated": "2026-10-27T04:41:33.207Z"
+  "lastUpdated": "2026-10-27T08:54:59.383Z"
 }

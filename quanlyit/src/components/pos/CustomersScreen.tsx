@@ -27,6 +27,7 @@ export const CustomersScreen: React.FC<CustomersScreenProps> = ({
   const [orders, setOrders] = useState<Order[]>(posDb.getOrders());
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
 
   // Form Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -134,10 +135,54 @@ export const CustomersScreen: React.FC<CustomersScreenProps> = ({
     setIsModalOpen(false);
   };
 
+
+  // Multi-selection handlers for Customers
+  const handleToggleSelectAllCustomers = () => {
+    if (selectedCustomerIds.length === filteredCustomers.length) {
+      setSelectedCustomerIds([]);
+    } else {
+      setSelectedCustomerIds(filteredCustomers.map(c => c.id));
+    }
+  };
+
+  const handleToggleSelectCustomer = (id: string) => {
+    setSelectedCustomerIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelectedCustomers = () => {
+    if (selectedCustomerIds.length === 0) return;
+    const isAll = selectedCustomerIds.length === customers.length || selectedCustomerIds.length === filteredCustomers.length;
+    const confirmMsg = isAll
+      ? `CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ ${selectedCustomerIds.length} khách hàng không? Hành động này không thể hoàn tác!`
+      : `Xác nhận xóa ${selectedCustomerIds.length} khách hàng đã chọn?`;
+
+    if (window.confirm(confirmMsg)) {
+      if (isAll && selectedCustomerIds.length === customers.length) {
+        posDb.clearAllCustomers();
+      } else {
+        posDb.deleteMultipleCustomers(selectedCustomerIds);
+      }
+      setSelectedCustomerIds([]);
+      onShowToast(`Đã xóa ${selectedCustomerIds.length} khách hàng thành công!`);
+    }
+  };
+
+  const handleDeleteAllCustomers = () => {
+    if (customers.length === 0) return;
+    if (window.confirm(`CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ ${customers.length} khách hàng trong danh bạ không? Không thể hoàn tác!`)) {
+      posDb.clearAllCustomers();
+      setSelectedCustomerIds([]);
+      onShowToast(`Đã xóa sạch toàn bộ khách hàng!`);
+    }
+  };
+
   // Delete Customer
   const handleDeleteCustomer = (cust: Customer) => {
     if (window.confirm(`Xác nhận xóa khách hàng "${cust.name}"?`)) {
       posDb.deleteCustomer(cust.id);
+      setSelectedCustomerIds(prev => prev.filter(id => id !== cust.id));
       onShowToast(`Đã xóa khách [${cust.name}]!`);
     }
   };

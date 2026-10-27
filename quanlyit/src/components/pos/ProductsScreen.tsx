@@ -16,6 +16,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
   // Modal / Bottom Sheet Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -120,10 +121,54 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     setIsModalOpen(false);
   };
 
+
+  // Multi-selection handlers for Products
+  const handleToggleSelectAllProducts = () => {
+    if (selectedProductIds.length === filteredProducts.length) {
+      setSelectedProductIds([]);
+    } else {
+      setSelectedProductIds(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const handleToggleSelectProduct = (id: string) => {
+    setSelectedProductIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelectedProducts = () => {
+    if (selectedProductIds.length === 0) return;
+    const isAll = selectedProductIds.length === products.length || selectedProductIds.length === filteredProducts.length;
+    const confirmMsg = isAll
+      ? `CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ ${selectedProductIds.length} sản phẩm không? Hành động này không thể hoàn tác!`
+      : `Xác nhận xóa ${selectedProductIds.length} sản phẩm đã chọn?`;
+
+    if (window.confirm(confirmMsg)) {
+      if (isAll && selectedProductIds.length === products.length) {
+        posDb.clearAllProducts();
+      } else {
+        posDb.deleteMultipleProducts(selectedProductIds);
+      }
+      setSelectedProductIds([]);
+      onShowToast(`Đã xóa ${selectedProductIds.length} sản phẩm thành công!`);
+    }
+  };
+
+  const handleDeleteAllProducts = () => {
+    if (products.length === 0) return;
+    if (window.confirm(`CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ ${products.length} sản phẩm trong bảng giá không? Không thể hoàn tác!`)) {
+      posDb.clearAllProducts();
+      setSelectedProductIds([]);
+      onShowToast(`Đã xóa sạch toàn bộ sản phẩm!`);
+    }
+  };
+
   // Delete product
   const handleDeleteProduct = (prod: Product) => {
     if (window.confirm(`Xác nhận xóa sản phẩm [${prod.code}] ${prod.name}?`)) {
       posDb.deleteProduct(prod.id);
+      setSelectedProductIds(prev => prev.filter(id => id !== prod.id));
       onShowToast(`Đã xóa sản phẩm [${prod.code}]!`);
     }
   };
@@ -228,6 +273,89 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
         ))}
       </div>
 
+      
+      {/* SELECTION BAR / BATCH ACTIONS */}
+      {filteredProducts.length > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 10px',
+          background: selectedProductIds.length > 0 ? '#fef2f2' : '#f8fafc',
+          border: selectedProductIds.length > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
+          borderRadius: 8,
+          marginBottom: 8
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+            <input
+              type="checkbox"
+              checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
+              onChange={handleToggleSelectAllProducts}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#dc2626' }}
+            />
+            <span>
+              {selectedProductIds.length > 0 
+                ? `Đã chọn ${selectedProductIds.length} / ${filteredProducts.length} SP` 
+                : `Chọn tất cả (${filteredProducts.length} SP)`}
+            </span>
+          </label>
+
+          {selectedProductIds.length > 0 ? (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setSelectedProductIds([])}
+                className="pos-btn pos-btn-secondary"
+                style={{ height: 30, padding: '0 8px', fontSize: 12 }}
+              >
+                Bỏ chọn
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSelectedProducts}
+                className="pos-btn"
+                style={{
+                  height: 30,
+                  padding: '0 10px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <Trash2 size={13} />
+                <span>Xóa {selectedProductIds.length === filteredProducts.length ? 'toàn bộ' : `(${selectedProductIds.length})`}</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDeleteAllProducts}
+              title="Xóa toàn bộ sản phẩm"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ef4444',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '2px 6px'
+              }}
+            >
+              <Trash2 size={12} />
+              <span>Xóa toàn bộ</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* PRODUCT LIST */}
       <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600, margin: '6px 2px 8px' }}>
         DANH SÁCH SẢN PHẨM ({filteredProducts.length})
@@ -256,10 +384,29 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 8
+              gap: 8,
+              border: selectedProductIds.includes(prod.id) ? '1.5px solid #ef4444' : '1px solid var(--border)',
+              backgroundColor: selectedProductIds.includes(prod.id) ? '#fff5f5' : '#ffffff'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+              <input
+                type="checkbox"
+                checked={selectedProductIds.includes(prod.id)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleToggleSelectProduct(prod.id);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: 17,
+                  height: 17,
+                  cursor: 'pointer',
+                  accentColor: '#dc2626',
+                  flexShrink: 0
+                }}
+                aria-label={`Chọn ${prod.name}`}
+              />
               <span className="pos-item-code-badge" style={{ fontSize: 12, padding: '3px 8px' }}>
                 {prod.code}
               </span>

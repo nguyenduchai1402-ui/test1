@@ -53,6 +53,11 @@ function dbApiPlugin(): Plugin {
                 current.products = list
               } else if (payload.action === 'deleteProduct') {
                 current.products = (current.products || []).filter((p: any) => p.id !== payload.id)
+              } else if (payload.action === 'deleteMultipleProducts') {
+                const ids = new Set(payload.ids || [])
+                current.products = (current.products || []).filter((p: any) => !ids.has(p.id))
+              } else if (payload.action === 'clearAllProducts') {
+                current.products = []
               } else if (payload.action === 'saveOrder') {
                 const list = current.orders || []
                 const idx = list.findIndex((o: any) => o.id === payload.order.id)
@@ -61,6 +66,11 @@ function dbApiPlugin(): Plugin {
                 current.orders = list
               } else if (payload.action === 'deleteOrder') {
                 current.orders = (current.orders || []).filter((o: any) => o.id !== payload.id)
+              } else if (payload.action === 'deleteMultipleOrders') {
+                const ids = new Set(payload.ids || [])
+                current.orders = (current.orders || []).filter((o: any) => !ids.has(o.id))
+              } else if (payload.action === 'clearAllOrders') {
+                current.orders = []
               } else if (payload.action === 'saveCustomer') {
                 const list = current.customers || []
                 const idx = list.findIndex((c: any) => c.id === payload.customer.id)
@@ -69,6 +79,11 @@ function dbApiPlugin(): Plugin {
                 current.customers = list
               } else if (payload.action === 'deleteCustomer') {
                 current.customers = (current.customers || []).filter((c: any) => c.id !== payload.id)
+              } else if (payload.action === 'deleteMultipleCustomers') {
+                const ids = new Set(payload.ids || [])
+                current.customers = (current.customers || []).filter((c: any) => !ids.has(c.id))
+              } else if (payload.action === 'clearAllCustomers') {
+                current.customers = []
               } else if (payload.action === 'syncAll' && payload.data) {
                 current = { ...current, ...payload.data }
               }

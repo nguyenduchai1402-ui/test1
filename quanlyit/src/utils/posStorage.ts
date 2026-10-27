@@ -553,17 +553,7 @@ function getStorage<T>(key: string, defaultVal: T): T {
       return defaultVal;
     }
     const parsed = JSON.parse(item) as T;
-    // Auto-expand default list if stored list is the old 2-order or 8-customer demo seed
-    if (Array.isArray(parsed) && Array.isArray(defaultVal)) {
-      if (key === STORAGE_KEYS.ORDERS && parsed.length <= 2 && defaultVal.length > 2) {
-        localStorage.setItem(key, JSON.stringify(defaultVal));
-        return defaultVal;
-      }
-      if (key === STORAGE_KEYS.CUSTOMERS && parsed.length <= 8 && defaultVal.length > 8) {
-        localStorage.setItem(key, JSON.stringify(defaultVal));
-        return defaultVal;
-      }
-    }
+// LocalStorage loaded successfully
     return parsed;
   } catch (err) {
     console.warn(`Error reading localStorage key ${key}:`, err);
@@ -603,9 +593,9 @@ export function generateZaloMessage(order: Order): string {
     return `${idx + 1}. ${it.name} [${it.code}]\n   ${it.quantity} x ${it.unitPrice}k = ${formatVND(it.amount)}`;
   }).join('\n');
 
-  return `📋 ĐƠN HÀNG IN LY - ${order.customerName.toUpperCase()}
+  return `📋 ĐƠN HÀNG IN LY - ${(order.customerName || "Khách Lẻ").toUpperCase()}
 Mã đơn: ${order.code} | Ngày: ${dateStr}
-👤 Khách hàng: ${order.customerName}
+👤 Khách hàng: ${order.customerName || "Khách Lẻ"}
 📞 SĐT: ${order.customerPhone || 'Chưa có'}
 📍 Đ/C: ${order.customerAddress || 'Giao tại xưởng'}
 ------------------------------
@@ -862,6 +852,118 @@ export const posDb = {
       })();
     }
     return updated;
+  },
+
+  
+  // BATCH DELETE & CLEAR PRODUCTS
+  deleteMultipleProducts(ids: string[]): void {
+    const idSet = new Set(ids);
+    const list = this.getProducts().filter(p => !idSet.has(p.id));
+    setStorage(STORAGE_KEYS.PRODUCTS, list);
+    window.dispatchEvent(new Event('pos_products_updated'));
+    void postLocalApi({ action: 'deleteMultipleProducts', ids });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          await client.from('pos_products').delete().in('id', ids);
+        } catch (err) {
+          console.warn('Lỗi xóa nhiều SP trên Supabase:', err);
+        }
+      })();
+    }
+  },
+
+  clearAllProducts(): void {
+    setStorage(STORAGE_KEYS.PRODUCTS, []);
+    window.dispatchEvent(new Event('pos_products_updated'));
+    void postLocalApi({ action: 'clearAllProducts' });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          await client.from('pos_products').delete().neq('id', '');
+        } catch (err) {
+          console.warn('Lỗi xóa toàn bộ SP trên Supabase:', err);
+        }
+      })();
+    }
+  },
+
+  // BATCH DELETE & CLEAR CUSTOMERS
+  deleteMultipleCustomers(ids: string[]): void {
+    const idSet = new Set(ids);
+    const list = this.getCustomers().filter(c => !idSet.has(c.id));
+    setStorage(STORAGE_KEYS.CUSTOMERS, list);
+    window.dispatchEvent(new Event('pos_customers_updated'));
+    void postLocalApi({ action: 'deleteMultipleCustomers', ids });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          await client.from('pos_customers').delete().in('id', ids);
+        } catch (err) {
+          console.warn('Lỗi xóa nhiều khách trên Supabase:', err);
+        }
+      })();
+    }
+  },
+
+  clearAllCustomers(): void {
+    setStorage(STORAGE_KEYS.CUSTOMERS, []);
+    window.dispatchEvent(new Event('pos_customers_updated'));
+    void postLocalApi({ action: 'clearAllCustomers' });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          await client.from('pos_customers').delete().neq('id', '');
+        } catch (err) {
+          console.warn('Lỗi xóa toàn bộ khách trên Supabase:', err);
+        }
+      })();
+    }
+  },
+
+  // BATCH DELETE & CLEAR ORDERS
+  deleteMultipleOrders(ids: string[]): void {
+    const idSet = new Set(ids);
+    const list = this.getOrders().filter(o => !idSet.has(o.id));
+    setStorage(STORAGE_KEYS.ORDERS, list);
+    window.dispatchEvent(new Event('pos_orders_updated'));
+    void postLocalApi({ action: 'deleteMultipleOrders', ids });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          await client.from('pos_orders').delete().in('id', ids);
+        } catch (err) {
+          console.warn('Lỗi xóa nhiều đơn trên Supabase:', err);
+        }
+      })();
+    }
+  },
+
+  clearAllOrders(): void {
+    setStorage(STORAGE_KEYS.ORDERS, []);
+    window.dispatchEvent(new Event('pos_orders_updated'));
+    void postLocalApi({ action: 'clearAllOrders' });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          await client.from('pos_orders').delete().neq('id', '');
+        } catch (err) {
+          console.warn('Lỗi xóa toàn bộ đơn trên Supabase:', err);
+        }
+      })();
+    }
   },
 
   deleteOrder(id: string): void {

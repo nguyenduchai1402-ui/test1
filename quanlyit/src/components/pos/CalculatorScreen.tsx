@@ -311,7 +311,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
       code: orderCode,
       customerId: customerId,
-      customerName: customerName.trim() || 'Khách vãng lai',
+      customerName: customerName.trim() || 'Khách Lẻ',
       customerPhone: customerPhone.trim(),
       customerAddress: customerAddress.trim(),
       items: validOrderItems,
@@ -523,7 +523,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
           fontWeight: 600,
           color: '#92400e'
         }}>
-          <span>Đang chỉnh sửa đơn hàng: <strong>{editingOrder.customerName || 'Khách vãng lai'}</strong></span>
+          <span>Đang chỉnh sửa đơn hàng: <strong>{editingOrder.customerName || 'Khách Lẻ'}</strong></span>
           <button 
             type="button" 
             onClick={onClearEditingOrder}
@@ -660,7 +660,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                 <input 
                   type="text" 
                   className="pos-input pos-input-sm" 
-                  placeholder="Tên khách / Quán *"
+                  placeholder="Tên khách / Quán (mặc định: Khách Lẻ)"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                 />
@@ -849,7 +849,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
         <div className="receipt-customer-box">
           <div className="receipt-customer-row">
             <span className="receipt-cust-label">Khách hàng:</span>
-            <span className="receipt-cust-val">{customerName || 'Khách vãng lai'}</span>
+            <span className="receipt-cust-val">{customerName || 'Khách Lẻ'}</span>
           </div>
           {customerPhone && (
             <div className="receipt-customer-row">
@@ -1009,7 +1009,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                 Bạn có muốn lưu đơn hàng này vào hệ thống không?
               </p>
               <p style={{ fontSize: 13, color: '#64748b' }}>
-                Khách hàng: <strong>{customerName || 'Khách vãng lai'}</strong> | Tổng tiền: <strong style={{ color: '#15803d' }}>{formatVND(totalAmount)}</strong>
+                Khách hàng: <strong>{customerName || 'Khách Lẻ'}</strong> | Tổng tiền: <strong style={{ color: '#15803d' }}>{formatVND(totalAmount)}</strong>
               </p>
             </div>
 

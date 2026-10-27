@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Search, ChevronDown, ChevronUp, Send, Edit, Trash2, Calendar, 
+  Search, ChevronDown, ChevronUp, Camera, Share2, Copy, Download, Edit, Trash2, Calendar, 
   Phone, MapPin, X, FileSpreadsheet, TrendingUp, PackageCheck, Coins 
 } from 'lucide-react';
 import { Order } from '../../types/pos';
 import { posDb, formatVND, formatK, generateZaloMessage } from '../../utils/posStorage';
 import { exportOrdersToExcel } from '../../utils/excelHelper';
 import { Pagination } from './Pagination';
+import html2canvas from 'html2canvas';
 
 interface OrdersScreenProps {
   onEditOrder: (order: Order) => void;
@@ -51,6 +52,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
   const [orders, setOrders] = useState<Order[]>(posDb.getOrders());
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
   // Time & Revenue Filter
   const currentDate = new Date();
@@ -60,6 +62,12 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
   // Pagination state (10 items per page)
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Order Receipt Capture Modal State
+  const [selectedOrderForCapture, setSelectedOrderForCapture] = useState<Order | null>(null);
+  const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const receiptCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleUpdate = () => setOrders(posDb.getOrders());
@@ -192,22 +200,156 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
     }
   };
 
-  // Copy Zalo
-  const handleCopyZalo = (order: Order, e: React.MouseEvent) => {
+  // Execute Capture Receipt Image
+  const handleCaptureOrder = async (order: Order, e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = generateZaloMessage(order);
+    setSelectedOrderForCapture(order);
+    setIsCapturing(true);
+
+    try {
+      // Allow DOM to render receipt template
+      await new Promise(r => setTimeout(r, 120));
+
+      if (!receiptCaptureRef.current) {
+        throw new Error('Receipt element not found');
+      }
+
+      const canvas = await html2canvas(receiptCaptureRef.current, {
+        scale: 2, // High resolution crisp image
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      setCapturedImageUrl(imgData);
+    } catch (err) {
+      console.error('Error capturing receipt screenshot:', err);
+      alert('Không thể tạo ảnh chụp hóa đơn. Vui lòng thử lại!');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Share Image via Web Share API (Direct to Zalo on Mobile)
+  const handleShareToZalo = async () => {
+    if (!capturedImageUrl || !selectedOrderForCapture) return;
+
+    try {
+      const res = await fetch(capturedImageUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `don-hang-${selectedOrderForCapture.code || 'In-Ly'}-${Date.now()}.png`, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Đơn hàng in ly - ${selectedOrderForCapture.customerName || 'Khách Lẻ'}`,
+          text: `Đơn hàng in ly ${selectedOrderForCapture.code} gửi ${selectedOrderForCapture.customerName || 'Quý khách'}`
+        });
+        onShowToast('Đã mở Zalo để gửi ảnh đơn!');
+      } else {
+        handleDownloadImage();
+        onShowToast('Trình duyệt chưa hỗ trợ chia sẻ trực tiếp. Đã tải ảnh về máy!');
+      }
+    } catch (err) {
+      console.warn('Share cancelled or not supported:', err);
+    }
+  };
+
+  // Copy Image to Clipboard (Ctrl+V in Zalo PC / Web)
+  const handleCopyImageToClipboard = async () => {
+    if (!capturedImageUrl) return;
+
+    try {
+      const res = await fetch(capturedImageUrl);
+      const blob = await res.blob();
+      // @ts-ignore
+      if (navigator.clipboard && window.ClipboardItem) {
+        // @ts-ignore
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        onShowToast('Đã sao chép ảnh! Hãy mở Zalo và nhấn Ctrl+V để dán ảnh.');
+      } else {
+        handleDownloadImage();
+        onShowToast('Đã tải ảnh về máy!');
+      }
+    } catch (err) {
+      console.warn('Clipboard write failed:', err);
+      handleDownloadImage();
+      onShowToast('Đã tải ảnh về máy để gửi Zalo!');
+    }
+  };
+
+  // Download image file
+  const handleDownloadImage = () => {
+    if (!capturedImageUrl || !selectedOrderForCapture) return;
+    const a = document.createElement('a');
+    a.href = capturedImageUrl;
+    a.download = `Don-Hang-${selectedOrderForCapture.code || 'In-Ly'}-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Copy Text format for Zalo as fallback
+  const handleCopyTextZalo = () => {
+    if (!selectedOrderForCapture) return;
+    const text = generateZaloMessage(selectedOrderForCapture);
     navigator.clipboard.writeText(text).then(() => {
-      onShowToast(`Đã chép nội dung đơn ${order.code} để gửi Zalo!`);
+      onShowToast(`Đã sao chép tin nhắn đơn ${selectedOrderForCapture.code}!`);
     }).catch(() => {
       alert(text);
     });
   };
 
+
+  // Multi-selection handlers for Orders
+  const handleToggleSelectAllOrders = () => {
+    if (selectedOrderIds.length === filteredOrders.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(filteredOrders.map(o => o.id));
+    }
+  };
+
+  const handleToggleSelectOrder = (id: string) => {
+    setSelectedOrderIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelectedOrders = () => {
+    if (selectedOrderIds.length === 0) return;
+    const isAll = selectedOrderIds.length === orders.length || selectedOrderIds.length === filteredOrders.length;
+    const confirmMsg = isAll
+      ? `CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ ${selectedOrderIds.length} đơn hàng không? Hành động này không thể hoàn tác!`
+      : `Xác nhận xóa ${selectedOrderIds.length} đơn hàng đã chọn?`;
+
+    if (window.confirm(confirmMsg)) {
+      if (isAll && selectedOrderIds.length === orders.length) {
+        posDb.clearAllOrders();
+      } else {
+        posDb.deleteMultipleOrders(selectedOrderIds);
+      }
+      setSelectedOrderIds([]);
+      onShowToast(`Đã xóa ${selectedOrderIds.length} đơn hàng thành công!`);
+    }
+  };
+
+  const handleDeleteAllOrders = () => {
+    if (orders.length === 0) return;
+    if (window.confirm(`CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ ${orders.length} đơn hàng trong hệ thống không? Không thể hoàn tác!`)) {
+      posDb.clearAllOrders();
+      setSelectedOrderIds([]);
+      onShowToast(`Đã xóa sạch toàn bộ đơn hàng!`);
+    }
+  };
+
   // Delete Order
   const handleDeleteOrder = (order: Order, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`Xác nhận xóa đơn hàng ${order.code} của ${order.customerName}?`)) {
+    if (window.confirm(`Xác nhận xóa đơn hàng ${order.code} của ${order.customerName || 'Khách Lẻ'}?`)) {
       posDb.deleteOrder(order.id);
+      setSelectedOrderIds(prev => prev.filter(id => id !== order.id));
       onShowToast(`Đã xóa đơn ${order.code}!`);
     }
   };
@@ -422,6 +564,89 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
         </button>
       </div>
 
+      
+      {/* SELECTION BAR / BATCH ACTIONS */}
+      {filteredOrders.length > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 10px',
+          background: selectedOrderIds.length > 0 ? '#fef2f2' : '#f8fafc',
+          border: selectedOrderIds.length > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
+          borderRadius: 8,
+          marginBottom: 8
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+            <input
+              type="checkbox"
+              checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length}
+              onChange={handleToggleSelectAllOrders}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#dc2626' }}
+            />
+            <span>
+              {selectedOrderIds.length > 0 
+                ? `Đã chọn ${selectedOrderIds.length} / ${filteredOrders.length} đơn` 
+                : `Chọn tất cả (${filteredOrders.length} đơn)`}
+            </span>
+          </label>
+
+          {selectedOrderIds.length > 0 ? (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setSelectedOrderIds([])}
+                className="pos-btn pos-btn-secondary"
+                style={{ height: 30, padding: '0 8px', fontSize: 12 }}
+              >
+                Bỏ chọn
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSelectedOrders}
+                className="pos-btn"
+                style={{
+                  height: 30,
+                  padding: '0 10px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <Trash2 size={13} />
+                <span>Xóa {selectedOrderIds.length === filteredOrders.length ? 'toàn bộ' : `(${selectedOrderIds.length})`}</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDeleteAllOrders}
+              title="Xóa toàn bộ đơn hàng"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ef4444',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '2px 6px'
+              }}
+            >
+              <Trash2 size={12} />
+              <span>Xóa toàn bộ</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ORDERS LIST (PAGINATED 10 PER PAGE) */}
       {filteredOrders.length === 0 ? (
         <div style={{
@@ -448,13 +673,31 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
                 marginBottom: 8,
                 cursor: 'pointer',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
-                border: isExpanded ? '1.5px solid #15803d' : '1px solid var(--border)'
+                border: selectedOrderIds.includes(order.id) ? '1.5px solid #ef4444' : isExpanded ? '1.5px solid #15803d' : '1px solid var(--border)',
+                backgroundColor: selectedOrderIds.includes(order.id) ? '#fff5f5' : '#ffffff'
               }}
               onClick={() => toggleExpand(order.id)}
             >
               {/* TOP HEADER OF CARD */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedOrderIds.includes(order.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleToggleSelectOrder(order.id);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      width: 17,
+                      height: 17,
+                      cursor: 'pointer',
+                      accentColor: '#dc2626',
+                      flexShrink: 0
+                    }}
+                    aria-label={`Chọn đơn ${order.code}`}
+                  />
                   <span style={{
                     background: '#15803d',
                     color: '#ffffff',
@@ -581,10 +824,12 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
                     <button
                       type="button"
                       className="pos-btn pos-btn-zalo pos-btn-sm"
-                      onClick={(e) => handleCopyZalo(order, e)}
+                      onClick={(e) => handleCaptureOrder(order, e)}
+                      disabled={isCapturing}
+                      title="Chụp ảnh đơn hàng giống bên màn hình đặt đơn"
                     >
-                      <Send size={13} />
-                      <span>Gửi Zalo</span>
+                      <Camera size={13} />
+                      <span>{isCapturing && selectedOrderForCapture?.id === order.id ? 'Đang chụp...' : 'Chụp ảnh đơn'}</span>
                     </button>
 
                     <button
@@ -619,6 +864,147 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
         pageSize={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />
+
+      {/* HIDDEN RECEIPT COMPONENT FOR ULTRA-CRISP 2X SCREENSHOT CAPTURE */}
+      <div className="receipt-capture-wrapper" ref={receiptCaptureRef}>
+        {selectedOrderForCapture && (
+          <>
+            <div className="receipt-header-box">
+              <div className="receipt-shop-title">XƯỞNG IN LY NHỰA</div>
+              <div className="receipt-sub-title">HÓA ĐƠN ĐẶT IN LY & PHỤ KIỆN</div>
+              <div className="receipt-date-time">
+                Mã đơn: <strong>{selectedOrderForCapture.code}</strong> | Ngày: {selectedOrderForCapture.createdAt || new Date().toLocaleString('vi-VN')}
+              </div>
+            </div>
+
+            <div className="receipt-customer-box">
+              <div className="receipt-customer-row">
+                <span className="receipt-cust-label">Khách hàng:</span>
+                <span className="receipt-cust-val">{selectedOrderForCapture.customerName || 'Khách Lẻ'}</span>
+              </div>
+              {selectedOrderForCapture.customerPhone && (
+                <div className="receipt-customer-row">
+                  <span className="receipt-cust-label">Số ĐT:</span>
+                  <span className="receipt-cust-val">{selectedOrderForCapture.customerPhone}</span>
+                </div>
+              )}
+              {selectedOrderForCapture.customerAddress && (
+                <div className="receipt-customer-row">
+                  <span className="receipt-cust-label">Địa chỉ:</span>
+                  <span className="receipt-cust-val">{selectedOrderForCapture.customerAddress}</span>
+                </div>
+              )}
+            </div>
+
+            <table className="receipt-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '50%' }}>Tên Sản Phẩm</th>
+                  <th style={{ textAlign: 'center', width: '15%' }}>SL</th>
+                  <th style={{ textAlign: 'right', width: '15%' }}>Đ.Giá</th>
+                  <th style={{ textAlign: 'right', width: '20%' }}>T.Tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedOrderForCapture.items.map((it, idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: 700, color: '#0f172a' }}>{it.name}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{it.quantity}</td>
+                    <td style={{ textAlign: 'right', color: '#475569' }}>{it.unitPrice}k</td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#15803d' }}>{formatVND(it.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="receipt-total-box">
+              <div className="receipt-total-row" style={{ alignItems: 'center' }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>TỔNG TIỀN:</span>
+                <span className="receipt-grand-total">{formatVND(selectedOrderForCapture.totalAmount)}</span>
+              </div>
+            </div>
+
+            {selectedOrderForCapture.notes && (
+              <div className="receipt-notes-box">
+                <strong>Ghi chú:</strong> {selectedOrderForCapture.notes}
+              </div>
+            )}
+
+            <div className="receipt-footer-box">
+              Xưởng In Ly Nhựa xin chân thành cảm ơn Quý khách! 🙏
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* SCREENSHOT PREVIEW MODAL */}
+      {capturedImageUrl && (
+        <div className="pos-sheet-backdrop" onClick={() => setCapturedImageUrl(null)}>
+          <div className="pos-sheet-container" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '92vh' }}>
+            <div className="pos-sheet-header">
+              <div className="pos-sheet-title" style={{ color: '#15803d' }}>
+                📸 Ảnh Hóa Đơn Đơn Hàng {selectedOrderForCapture?.code}
+              </div>
+              <button 
+                type="button" 
+                className="pos-icon-btn" 
+                style={{ color: '#64748b' }}
+                onClick={() => setCapturedImageUrl(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* PREVIEW OF THE CAPTURED IMAGE */}
+            <div className="pos-image-preview-card">
+              <img src={capturedImageUrl} alt={`Hóa đơn ${selectedOrderForCapture?.code || ''}`} />
+            </div>
+
+            {/* ACTION BUTTONS: SHARE / COPY / DOWNLOAD */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                type="button"
+                className="pos-btn pos-btn-zalo"
+                onClick={handleShareToZalo}
+              >
+                <Share2 size={16} />
+                <span>Gửi qua ứng dụng Zalo</span>
+              </button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <button
+                  type="button"
+                  className="pos-btn pos-btn-secondary"
+                  onClick={handleCopyImageToClipboard}
+                  title="Sao chép ảnh vào bộ nhớ tạm (dán Ctrl+V vào Zalo PC)"
+                >
+                  <Copy size={15} />
+                  <span>Sao chép ảnh</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="pos-btn pos-btn-secondary"
+                  onClick={handleDownloadImage}
+                  title="Tải file ảnh PNG về máy"
+                >
+                  <Download size={15} />
+                  <span>Tải ảnh về máy</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="pos-btn pos-btn-secondary pos-btn-sm"
+                onClick={handleCopyTextZalo}
+                style={{ color: '#475569' }}
+              >
+                <span>Sao chép thêm tin nhắn chữ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
