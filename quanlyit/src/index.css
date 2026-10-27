@@ -907,3 +907,31 @@ html, body {
 .pos-unitprice-input:focus {
   outline: none;
 }
+
+/* HORIZONTAL SCROLL ARROW BUTTONS */
+.pos-scroll-arrow-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pos-scroll-arrow-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.pos-scroll-arrow-btn:active {
+  transform: scale(0.92);
+}

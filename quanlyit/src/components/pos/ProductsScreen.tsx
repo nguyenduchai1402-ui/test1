@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Check, Package, FileSpreadsheet, Upload, Download } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Check, Package, FileSpreadsheet, Upload, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../../types/pos';
 import { posDb, formatVND, formatK } from '../../utils/posStorage';
 import { downloadProductExcelTemplate, parseProductsFromExcel } from '../../utils/excelHelper';
@@ -32,6 +32,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleUpdate = () => setProducts(posDb.getProducts());
@@ -44,7 +45,34 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     setCurrentPage(1);
   }, [searchQuery, selectedCategory]);
 
-  const categories = ['Tất cả', 'Cốc Tim', 'Cốc PP', 'Cốc Pet', 'Cốc U', 'Cốc Đáy Cầu', 'Nắp & Phụ kiện', 'Phụ kiện'];
+  // Tự động cập nhật danh mục theo các danh mục thực tế của sản phẩm
+  const categories = React.useMemo(() => {
+    const catsSet = new Set<string>();
+    products.forEach(p => {
+      const c = (p.category || '').trim();
+      if (c) catsSet.add(c);
+    });
+    // Nếu chưa có sản phẩm nào, gợi ý một số danh mục cơ bản
+    if (catsSet.size === 0) {
+      ['Ly pet', 'Ly tim', 'Ly đáy bầu', 'Ly đáy bằng'].forEach(c => catsSet.add(c));
+    }
+    return ['Tất cả', ...Array.from(catsSet)];
+  }, [products]);
+
+  // Đảm bảo nếu danh mục đã chọn bị xóa thì quay về 'Tất cả'
+  useEffect(() => {
+    if (selectedCategory !== 'Tất cả' && !categories.includes(selectedCategory)) {
+      setSelectedCategory('Tất cả');
+    }
+  }, [categories, selectedCategory]);
+
+  // Cuộn danh mục sang trái / phải
+  const handleScrollCategories = (direction: 'left' | 'right') => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -160 : 160;
+      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   // Filter products
   const filteredProducts = products.filter(p => {
@@ -81,7 +109,8 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     setFormPrice('');
     setFormCostPrice('');
     setFormUnit('thiên');
-    setFormCategory('Cốc Tim');
+    const defaultCat = categories.find(c => c !== 'Tất cả') || 'Ly đáy bằng';
+    setFormCategory(defaultCat);
     setIsModalOpen(true);
   };
 
@@ -253,24 +282,73 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
         </button>
       </div>
 
-      {/* CATEGORY TABS HORIZONTAL SCROLL */}
-      <div className="pos-chips-scroll" style={{ marginBottom: 8 }}>
-        {categories.map(cat => (
-          <button
-            key={cat}
-            type="button"
-            className="pos-chip"
-            style={{
-              backgroundColor: selectedCategory === cat ? '#15803d' : '#ffffff',
-              color: selectedCategory === cat ? '#ffffff' : '#475569',
-              borderColor: selectedCategory === cat ? '#15803d' : '#e2e8f0',
-              fontWeight: selectedCategory === cat ? 700 : 500
-            }}
-            onClick={() => setSelectedCategory(cat)}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* BỘ LỌC NHANH DANH MỤC SẢN PHẨM CÓ NÚT MŨI TÊN ĐẨY TRÁI / PHẢI */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <button
+          type="button"
+          className="pos-scroll-arrow-btn"
+          onClick={() => handleScrollCategories('left')}
+          title="Cuộn danh mục sang trái"
+          aria-label="Cuộn trái"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <div 
+          ref={categoryScrollRef}
+          className="pos-chips-scroll" 
+          style={{ 
+            margin: 0, 
+            paddingBottom: 2, 
+            flex: 1, 
+            scrollBehavior: 'smooth' 
+          }}
+        >
+          {categories.map(cat => {
+            const isSelected = selectedCategory === cat;
+            const count = cat === 'Tất cả' 
+              ? products.length 
+              : products.filter(p => p.category === cat).length;
+
+            return (
+              <button
+                key={cat}
+                type="button"
+                className="pos-chip"
+                style={{
+                  backgroundColor: isSelected ? '#15803d' : '#ffffff',
+                  color: isSelected ? '#ffffff' : '#475569',
+                  borderColor: isSelected ? '#15803d' : '#e2e8f0',
+                  fontWeight: isSelected ? 700 : 500,
+                  whiteSpace: 'nowrap'
+                }}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                <span>{cat}</span>
+                <span style={{
+                  fontSize: 10,
+                  opacity: isSelected ? 0.9 : 0.6,
+                  background: isSelected ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+                  padding: '1px 5px',
+                  borderRadius: 10,
+                  marginLeft: 2
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="pos-scroll-arrow-btn"
+          onClick={() => handleScrollCategories('right')}
+          title="Cuộn danh mục sang phải"
+          aria-label="Cuộn phải"
+        >
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       
@@ -665,15 +743,20 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                   <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Danh mục
                   </label>
-                  <select
-                    className="pos-select"
+                  <input
+                    list="product-categories-datalist"
+                    type="text"
+                    className="pos-input"
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                  >
+                    placeholder="Chọn hoặc nhập danh mục mới"
+                    required
+                  />
+                  <datalist id="product-categories-datalist">
                     {categories.filter(c => c !== 'Tất cả').map(c => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
