@@ -240,6 +240,21 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     }));
   };
 
+  // Update item unit price directly (cho phép nhập đơn giá tùy chỉnh)
+  const handleUpdateUnitPrice = (rowId: string, newPrice: number) => {
+    const validPrice = isNaN(newPrice) ? 0 : Math.max(0, newPrice);
+    setOrderItems(prev => prev.map(item => {
+      if (item.id === rowId) {
+        return {
+          ...item,
+          unitPrice: validPrice,
+          amount: (item.quantity || 1) * validPrice
+        };
+      }
+      return item;
+    }));
+  };
+
   // Remove row or clear back to empty slot (keeping minimum 3 rows)
   const handleRemoveOrClearRow = (rowId: string) => {
     if (orderItems.length > 3) {
@@ -733,14 +748,47 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                   </div>
 
                   <div className="pos-item-bottom">
-                    <div className="pos-item-price-info">
-                      Giá: <span className="pos-item-unit-price">{item.unitPrice}k</span>
-                      <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 4 }}>
-                        ({formatVND(item.unitPrice)})
-                      </span>
+                    <div className="pos-item-price-info" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Đ.Giá:</span>
+                      <div className="pos-unitprice-wrapper" style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        background: '#ffffff',
+                        border: '1.5px solid #cbd5e1',
+                        borderRadius: 6,
+                        padding: '1px 6px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                      }}>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          className="pos-unitprice-input"
+                          value={item.unitPrice === 0 ? '' : item.unitPrice}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            handleUpdateUnitPrice(item.id, isNaN(val) ? 0 : val);
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          placeholder="0"
+                          style={{
+                            width: 52,
+                            border: 'none',
+                            outline: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#15803d',
+                            textAlign: 'right',
+                            background: 'transparent',
+                            padding: 0
+                          }}
+                          title="Chạm để nhập đơn giá mới (k)"
+                        />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', marginLeft: 2 }}>k</span>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {/* Quantity Stepper */}
                       <div className="pos-qty-control">
                         <button
@@ -757,6 +805,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                           className="pos-qty-input"
                           value={item.quantity}
                           onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
+                          onFocus={(e) => e.target.select()}
                         />
                         <button
                           type="button"
@@ -768,7 +817,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                       </div>
 
                       {/* Line Total */}
-                      <div className="pos-item-amount">
+                      <div className="pos-item-amount" style={{ minWidth: 72, textAlign: 'right' }}>
                         {formatVND(item.amount)}
                       </div>
                     </div>

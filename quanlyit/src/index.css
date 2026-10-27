@@ -898,3 +898,12 @@ html, body {
   color: var(--text-sub);
   font-weight: 600;
 }
+
+/* UNIT PRICE EDITABLE INPUT */
+.pos-unitprice-wrapper:focus-within {
+  border-color: #15803d !important;
+  box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.18) !important;
+}
+.pos-unitprice-input:focus {
+  outline: none;
+}
