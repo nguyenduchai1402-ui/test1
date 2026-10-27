@@ -73,8 +73,19 @@ export const CustomersScreen: React.FC<CustomersScreenProps> = ({
     );
   });
 
+  // Sắp xếp khách hàng mới nhất lên đầu tiên (Newest first)
+  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    const tA = new Date(a.createdAt || 0).getTime();
+    const tB = new Date(b.createdAt || 0).getTime();
+    if (tA && tB && tA !== tB) return tB - tA;
+    const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
+    const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
+    if (numA !== numB) return numB - numA;
+    return (b.code || b.id).localeCompare(a.code || a.id);
+  });
+
   // Paginated customers (10 per page)
-  const paginatedCustomers = filteredCustomers.slice(
+  const paginatedCustomers = sortedCustomers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -387,7 +398,7 @@ export const CustomersScreen: React.FC<CustomersScreenProps> = ({
       {/* PHÂN TRANG: 10 KHÁCH HÀNG / TRANG */}
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredCustomers.length}
+        totalItems={sortedCustomers.length}
         pageSize={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />

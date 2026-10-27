@@ -40,8 +40,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const isSupabaseConfigured = supabaseUrl !== '' && supabaseAnonKey !== '';
 
+const cleanUrl = supabaseUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
 export const supabase = isSupabaseConfigured 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
+  ? createClient(cleanUrl, supabaseAnonKey.trim()) 
   : null;
 
 // --- LOCAL STORAGE REPOSITORY (MOCK DATABASE ENGINE) ---

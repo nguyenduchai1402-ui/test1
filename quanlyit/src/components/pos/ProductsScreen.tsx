@@ -54,8 +54,19 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     return p.code.toLowerCase().includes(clean) || p.name.toLowerCase().includes(clean);
   });
 
+  // Sắp xếp sản phẩm mới nhất lên đầu tiên (Newest first)
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    if (tA && tB && tA !== tB) return tB - tA;
+    const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
+    const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
+    if (numA !== numB) return numB - numA;
+    return b.id.localeCompare(a.id);
+  });
+
   // Paginated products (10 items per page)
-  const paginatedProducts = filteredProducts.slice(
+  const paginatedProducts = sortedProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -303,7 +314,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
       {/* PHÂN TRANG: 10 SẢN PHẨM / TRANG */}
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredProducts.length}
+        totalItems={sortedProducts.length}
         pageSize={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />

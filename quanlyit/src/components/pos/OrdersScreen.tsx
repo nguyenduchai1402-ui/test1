@@ -114,13 +114,26 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
     return true;
   });
 
+  // Sắp xếp đơn hàng mới nhất lên đầu tiên (Newest first)
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+    const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+    if (!isNaN(tA) && !isNaN(tB) && tA !== tB) {
+      return tB - tA;
+    }
+    const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
+    const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
+    if (numA !== numB) return numB - numA;
+    return (b.code || '').localeCompare(a.code || '');
+  });
+
   // Calculate Statistics for filtered data
-  const totalOrdersCount = filteredOrders.length;
-  const totalRevenue = filteredOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-  const totalItemsSold = filteredOrders.reduce((sum, o) => sum + o.totalQuantity, 0);
+  const totalOrdersCount = sortedOrders.length;
+  const totalRevenue = sortedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalItemsSold = sortedOrders.reduce((sum, o) => sum + o.totalQuantity, 0);
 
   // Paginated slice (10 items per page)
-  const paginatedOrders = filteredOrders.slice(
+  const paginatedOrders = sortedOrders.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -132,12 +145,12 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
   // Export to Excel
   const handleExportExcel = () => {
-    if (filteredOrders.length === 0) {
+    if (sortedOrders.length === 0) {
       alert('Không có đơn hàng nào để xuất Excel!');
       return;
     }
     try {
-      exportOrdersToExcel(filteredOrders);
+      exportOrdersToExcel(sortedOrders);
       onShowToast(`Đã xuất file Excel cho ${filteredOrders.length} đơn hàng!`);
     } catch (err) {
       console.error('Export error:', err);
@@ -548,7 +561,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
       {/* PAGINATION: 10 ĐƠN / TRANG */}
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredOrders.length}
+        totalItems={sortedOrders.length}
         pageSize={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />

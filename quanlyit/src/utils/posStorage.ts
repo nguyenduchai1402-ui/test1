@@ -1,12 +1,253 @@
+
+export function cleanSupabaseUrl(url: string): string {
+  if (!url) return '';
+  return url.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+}
 import { Product, Customer, Order, OrderItem } from '../types/pos';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Supabase configuration - falls back gracefully to localStorage
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://xdxdeggyrdifnrcyaqmu.supabase.co";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkeGRlZ2d5cmRpZm5yY3lhcW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjc4NDUsImV4cCI6MjEwMTY0Mzg0NX0.9T8L9azWQMTRHxqubLcwjvbni9IIIWS-OHptiJmlJ1g";
+// Supabase Configuration & Management
+export interface SupabaseConfig {
+  url: string;
+  anonKey: string;
+  autoSync: boolean;
+}
 
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+export const DEFAULT_SUPABASE_URL = 'https://wxwmbowpwbjpevawgvup.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_LnhAaf4nOQ0FtuvOKWyzoQ_OjlReFRn';
+
+export function getSupabaseConfig(): SupabaseConfig {
+  const envUrl = import.meta.env.VITE_SUPABASE_URL;
+  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  return {
+    url: cleanSupabaseUrl(envUrl && envUrl.trim() ? envUrl : DEFAULT_SUPABASE_URL),
+    anonKey: (envKey && envKey.trim() ? envKey : DEFAULT_SUPABASE_ANON_KEY).trim(),
+    autoSync: true
+  };
+}
+
+let _supabaseInstance: SupabaseClient | null = null;
+let _isListeningRealtime = false;
+
+export function getSupabaseClient(): SupabaseClient | null {
+  if (!_supabaseInstance) {
+    const cfg = getSupabaseConfig();
+    if (cfg.url && cfg.anonKey) {
+      try {
+        _supabaseInstance = createClient(cleanSupabaseUrl(cfg.url), cfg.anonKey.trim());
+        initRealtimeSync();
+      } catch (err) {
+        console.warn('Không thể khởi tạo Supabase client:', err);
+      }
+    }
+  }
+  return _supabaseInstance;
+}
+
+export const isSupabaseConfigured = (): boolean => {
+  const cfg = getSupabaseConfig();
+  return Boolean(cfg.url && cfg.anonKey);
+};
+
+export function saveSupabaseConfig(cfg: SupabaseConfig): void {
+  localStorage.setItem('pos_supabase_config', JSON.stringify(cfg));
+  _supabaseInstance = null;
+  _isListeningRealtime = false;
+  getSupabaseClient();
+  window.dispatchEvent(new Event('pos_supabase_config_changed'));
+}
+
+export async function checkSupabaseConnection(): Promise<{ ok: boolean; message: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { ok: false, message: 'Chưa cấu hình Supabase URL hoặc Anon Key!' };
+  }
+  try {
+    const { data, error } = await client.from('pos_products').select('id').limit(1);
+    if (error) {
+      if (error.code === 'PGRST205' || error.code === '42P01' || error.message?.includes('relation "pos_products" does not exist') || error.message?.includes('schema cache')) {
+        return { 
+          ok: false, 
+          message: 'Kết nối Supabase thành công nhưng chưa có bảng! Vui lòng bấm sao chép SQL và chạy trong SQL Editor của Supabase.' 
+        };
+      }
+      return { ok: false, message: `Lỗi kết nối Supabase: ${error.message}` };
+    }
+    return { ok: true, message: 'Kết nối Supabase thành công! Dữ liệu Cloud đã sẵn sàng.' };
+  } catch (err: any) {
+    return { ok: false, message: `Không thể kết nối đến Supabase: ${err.message || 'Lỗi mạng'}` };
+  }
+}
+
+function initRealtimeSync() {
+  if (_isListeningRealtime || !_supabaseInstance) return;
+  _isListeningRealtime = true;
+
+  try {
+    _supabaseInstance
+      .channel('pos_realtime_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pos_products' }, () => {
+        syncFromSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pos_customers' }, () => {
+        syncFromSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pos_orders' }, () => {
+        syncFromSupabase();
+      })
+      .subscribe();
+  } catch (err) {
+    console.warn('Realtime subscription error:', err);
+  }
+}
+
+export async function syncFromSupabase(): Promise<{ 
+  ok: boolean; 
+  count: { products: number; customers: number; orders: number }; 
+  message: string 
+}> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { ok: false, count: { products: 0, customers: 0, orders: 0 }, message: 'Chưa cấu hình Supabase!' };
+  }
+
+  try {
+    const [pRes, cRes, oRes] = await Promise.all([
+      client.from('pos_products').select('*'),
+      client.from('pos_customers').select('*'),
+      client.from('pos_orders').select('*')
+    ]);
+
+    if (pRes.error) throw pRes.error;
+    if (cRes.error) throw cRes.error;
+    if (oRes.error) throw oRes.error;
+
+    const cloudProducts: Product[] = (pRes.data || []).map((row: any) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      price: Number(row.price),
+      unit: row.unit || 'thiên',
+      category: row.category || 'Cốc Tim',
+      isPopular: row.is_popular !== false
+    }));
+
+    const cloudCustomers: Customer[] = (cRes.data || []).map((row: any) => ({
+      id: row.id,
+      code: row.code || undefined,
+      name: row.name,
+      phone: row.phone || undefined,
+      address: row.address || undefined,
+      notes: row.notes || undefined,
+      createdAt: row.created_at
+    }));
+
+    const cloudOrders: Order[] = (oRes.data || []).map((row: any) => ({
+      id: row.id,
+      code: row.code,
+      customerId: row.customer_id || undefined,
+      customerName: row.customer_name,
+      customerPhone: row.customer_phone || undefined,
+      customerAddress: row.customer_address || undefined,
+      items: typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []),
+      totalQuantity: Number(row.total_quantity || 0),
+      totalAmount: Number(row.total_amount || 0),
+      notes: row.notes || undefined,
+      status: row.status || 'Chờ in',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+
+    if (cloudProducts.length > 0) {
+      setStorage(STORAGE_KEYS.PRODUCTS, cloudProducts);
+      window.dispatchEvent(new Event('pos_products_updated'));
+    }
+    if (cloudCustomers.length > 0) {
+      setStorage(STORAGE_KEYS.CUSTOMERS, cloudCustomers);
+      window.dispatchEvent(new Event('pos_customers_updated'));
+    }
+    if (cloudOrders.length > 0) {
+      setStorage(STORAGE_KEYS.ORDERS, cloudOrders);
+      window.dispatchEvent(new Event('pos_orders_updated'));
+    }
+
+    return {
+      ok: true,
+      count: {
+        products: cloudProducts.length,
+        customers: cloudCustomers.length,
+        orders: cloudOrders.length
+      },
+      message: `Đã đồng bộ từ Cloud: ${cloudProducts.length} sản phẩm, ${cloudCustomers.length} khách, ${cloudOrders.length} đơn hàng.`
+    };
+  } catch (err: any) {
+    return { ok: false, count: { products: 0, customers: 0, orders: 0 }, message: `Lỗi đồng bộ: ${err.message}` };
+  }
+}
+
+export async function pushAllToSupabase(): Promise<{ ok: boolean; message: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { ok: false, message: 'Chưa cấu hình Supabase!' };
+
+  try {
+    const products = posDb.getProducts();
+    const customers = posDb.getCustomers();
+    const orders = posDb.getOrders();
+
+    if (products.length > 0) {
+      const pRows = products.map(p => ({
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        price: p.price,
+        unit: p.unit,
+        category: p.category,
+        is_popular: p.isPopular ?? true,
+        created_at: new Date().toISOString()
+      }));
+      await client.from('pos_products').upsert(pRows, { onConflict: 'id' });
+    }
+
+    if (customers.length > 0) {
+      const cRows = customers.map(c => ({
+        id: c.id,
+        code: c.code || null,
+        name: c.name,
+        phone: c.phone || null,
+        address: c.address || null,
+        notes: c.notes || null,
+        created_at: c.createdAt || new Date().toISOString()
+      }));
+      await client.from('pos_customers').upsert(cRows, { onConflict: 'id' });
+    }
+
+    if (orders.length > 0) {
+      const oRows = orders.map(o => ({
+        id: o.id,
+        code: o.code,
+        customer_id: o.customerId || null,
+        customer_name: o.customerName,
+        customer_phone: o.customerPhone || null,
+        customer_address: o.customerAddress || null,
+        items: o.items,
+        total_quantity: o.totalQuantity,
+        total_amount: o.totalAmount,
+        notes: o.notes || '',
+        status: o.status,
+        created_at: o.createdAt,
+        updated_at: o.updatedAt || new Date().toISOString()
+      }));
+      await client.from('pos_orders').upsert(oRows, { onConflict: 'id' });
+    }
+
+    return { 
+      ok: true, 
+      message: `Đã đẩy lên Supabase thành công: ${products.length} SP, ${customers.length} khách, ${orders.length} đơn!` 
+    };
+  } catch (err: any) {
+    return { ok: false, message: `Lỗi tải lên: ${err.message}` };
+  }
+}
 
 // LocalStorage Keys
 const STORAGE_KEYS = {
@@ -377,45 +618,168 @@ Xưởng In Ly Nhựa xin cảm ơn Quý khách! 🙏`;
 }
 
 // POS DATABASE REPOSITORY
+
+// SHARED DATABASE API UTILITIES (Multi-Browser Sync)
+export async function postLocalApi(payload: any): Promise<void> {
+  try {
+    await fetch('/api/db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    // Ignore when offline
+  }
+}
+
+export async function syncFromLocalApi(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/db');
+    if (!res.ok) return false;
+    const data = await res.json();
+    let hasChanges = false;
+
+    if (Array.isArray(data.products) && data.products.length > 0) {
+      setStorage(STORAGE_KEYS.PRODUCTS, data.products);
+      window.dispatchEvent(new Event('pos_products_updated'));
+      hasChanges = true;
+    }
+    if (Array.isArray(data.customers) && data.customers.length > 0) {
+      setStorage(STORAGE_KEYS.CUSTOMERS, data.customers);
+      window.dispatchEvent(new Event('pos_customers_updated'));
+      hasChanges = true;
+    }
+    if (Array.isArray(data.orders)) {
+      setStorage(STORAGE_KEYS.ORDERS, data.orders);
+      window.dispatchEvent(new Event('pos_orders_updated'));
+      hasChanges = true;
+    }
+    return hasChanges;
+  } catch {
+    return false;
+  }
+}
+
 export const posDb = {
   // PRODUCTS
   getProducts(): Product[] {
-    return getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    const list = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    return [...list].sort((a, b) => {
+      const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      if (tA && tB && tA !== tB) return tB - tA;
+      const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
+      const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
+      if (numA !== numB) return numB - numA;
+      return b.id.localeCompare(a.id);
+    });
   },
 
   saveProduct(prod: Product): void {
     const list = this.getProducts();
     const idx = list.findIndex(p => p.id === prod.id);
+    const updatedProd: Product = {
+      ...prod,
+      createdAt: prod.createdAt || (idx >= 0 ? list[idx].createdAt : undefined) || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     if (idx >= 0) {
-      list[idx] = prod;
-    } else {
-      list.unshift(prod);
+      list.splice(idx, 1);
     }
+    list.unshift(updatedProd);
     setStorage(STORAGE_KEYS.PRODUCTS, list);
     window.dispatchEvent(new Event('pos_products_updated'));
+    void postLocalApi({ action: 'saveProduct', product: prod });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          const { error } = await client.from('pos_products').upsert({
+            id: prod.id,
+            code: prod.code,
+            name: prod.name,
+            price: prod.price,
+            unit: prod.unit,
+            category: prod.category,
+            is_popular: prod.isPopular ?? true,
+            created_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+          if (error) console.warn('Lỗi lưu SP lên Supabase:', error.message);
+        } catch (err) {
+          console.warn('Lỗi mạng Supabase:', err);
+        }
+      })();
+    }
   },
 
   deleteProduct(id: string): void {
     const list = this.getProducts().filter(p => p.id !== id);
     setStorage(STORAGE_KEYS.PRODUCTS, list);
     window.dispatchEvent(new Event('pos_products_updated'));
+    void postLocalApi({ action: 'deleteProduct', id });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          const { error } = await client.from('pos_products').delete().eq('id', id);
+          if (error) console.warn('Lỗi xóa SP trên Supabase:', error.message);
+        } catch (err) {
+          console.warn('Lỗi mạng Supabase:', err);
+        }
+      })();
+    }
   },
 
   // CUSTOMERS
   getCustomers(): Customer[] {
-    return getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
+    const list = getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
+    return [...list].sort((a, b) => {
+      const tA = new Date(a.createdAt || 0).getTime();
+      const tB = new Date(b.createdAt || 0).getTime();
+      if (tA && tB && tA !== tB) return tB - tA;
+      const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
+      const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
+      if (numA !== numB) return numB - numA;
+      return (b.code || b.id).localeCompare(a.code || a.id);
+    });
   },
 
   saveCustomer(cust: Customer): Customer {
     const list = this.getCustomers();
     const idx = list.findIndex(c => c.id === cust.id);
+    const updatedCust: Customer = {
+      ...cust,
+      createdAt: cust.createdAt || (idx >= 0 ? list[idx].createdAt : undefined) || new Date().toISOString()
+    };
     if (idx >= 0) {
-      list[idx] = cust;
-    } else {
-      list.unshift(cust);
+      list.splice(idx, 1);
     }
+    list.unshift(updatedCust);
     setStorage(STORAGE_KEYS.CUSTOMERS, list);
     window.dispatchEvent(new Event('pos_customers_updated'));
+    void postLocalApi({ action: 'saveCustomer', customer: cust });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          const { error } = await client.from('pos_customers').upsert({
+            id: cust.id,
+            code: cust.code || null,
+            name: cust.name,
+            phone: cust.phone || null,
+            address: cust.address || null,
+            notes: cust.notes || null,
+            created_at: cust.createdAt || new Date().toISOString()
+          }, { onConflict: 'id' });
+          if (error) console.warn('Lỗi lưu khách lên Supabase:', error.message);
+        } catch (err) {
+          console.warn('Lỗi mạng Supabase:', err);
+        }
+      })();
+    }
     return cust;
   },
 
@@ -423,11 +787,33 @@ export const posDb = {
     const list = this.getCustomers().filter(c => c.id !== id);
     setStorage(STORAGE_KEYS.CUSTOMERS, list);
     window.dispatchEvent(new Event('pos_customers_updated'));
+    void postLocalApi({ action: 'deleteCustomer', id });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          const { error } = await client.from('pos_customers').delete().eq('id', id);
+          if (error) console.warn('Lỗi xóa khách trên Supabase:', error.message);
+        } catch (err) {
+          console.warn('Lỗi mạng Supabase:', err);
+        }
+      })();
+    }
   },
 
   // ORDERS
   getOrders(): Order[] {
-    return getStorage<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    const list = getStorage<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    return [...list].sort((a, b) => {
+      const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      if (!isNaN(tA) && !isNaN(tB) && tA !== tB) return tB - tA;
+      const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
+      const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
+      if (numA !== numB) return numB - numA;
+      return (b.code || '').localeCompare(a.code || '');
+    });
   },
 
   getOrderById(id: string): Order | undefined {
@@ -437,20 +823,64 @@ export const posDb = {
   saveOrder(order: Order): Order {
     const list = this.getOrders();
     const idx = list.findIndex(o => o.id === order.id);
+    const updated: Order = {
+      ...order,
+      createdAt: order.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     if (idx >= 0) {
-      list[idx] = { ...order, updatedAt: new Date().toISOString() };
-    } else {
-      list.unshift(order);
+      list.splice(idx, 1);
     }
+    list.unshift(updated);
     setStorage(STORAGE_KEYS.ORDERS, list);
     window.dispatchEvent(new Event('pos_orders_updated'));
-    return order;
+    void postLocalApi({ action: 'saveOrder', order: updated });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          const { error } = await client.from('pos_orders').upsert({
+            id: updated.id,
+            code: updated.code,
+            customer_id: updated.customerId || null,
+            customer_name: updated.customerName,
+            customer_phone: updated.customerPhone || null,
+            customer_address: updated.customerAddress || null,
+            items: updated.items,
+            total_quantity: updated.totalQuantity,
+            total_amount: updated.totalAmount,
+            notes: updated.notes || '',
+            status: updated.status,
+            created_at: updated.createdAt,
+            updated_at: updated.updatedAt
+          }, { onConflict: 'id' });
+          if (error) console.warn('Lỗi lưu đơn hàng lên Supabase:', error.message);
+        } catch (err) {
+          console.warn('Lỗi mạng Supabase:', err);
+        }
+      })();
+    }
+    return updated;
   },
 
   deleteOrder(id: string): void {
     const list = this.getOrders().filter(o => o.id !== id);
     setStorage(STORAGE_KEYS.ORDERS, list);
     window.dispatchEvent(new Event('pos_orders_updated'));
+    void postLocalApi({ action: 'deleteOrder', id });
+
+    const client = getSupabaseClient();
+    if (client) {
+      void (async () => {
+        try {
+          const { error } = await client.from('pos_orders').delete().eq('id', id);
+          if (error) console.warn('Lỗi xóa đơn trên Supabase:', error.message);
+        } catch (err) {
+          console.warn('Lỗi mạng Supabase:', err);
+        }
+      })();
+    }
   },
 
   resetDemoData(): void {
@@ -462,3 +892,41 @@ export const posDb = {
     window.dispatchEvent(new Event('pos_orders_updated'));
   }
 };
+
+export async function initAutoSupabaseSync(): Promise<{ ok: boolean; message: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { ok: false, message: 'Chưa khởi tạo client Supabase' };
+  }
+
+  try {
+    const { data: existingProducts, error: pError } = await client
+      .from('pos_products')
+      .select('id')
+      .limit(1);
+
+    if (pError) {
+      if (pError.code === 'PGRST205' || pError.code === '42P01' || pError.message?.includes('schema cache')) {
+        console.warn('[Supabase AutoSync] Chưa tạo bảng trên Supabase. Cần chạy schema SQL trên Supabase.');
+        return { 
+          ok: false, 
+          message: 'Supabase đã kết nối nhưng chưa có bảng SQL.' 
+        };
+      }
+      return { ok: false, message: `Lỗi Supabase: ${pError.message}` };
+    }
+
+    if (!existingProducts || existingProducts.length === 0) {
+      console.log('[Supabase AutoSync] Cloud rỗng, tự động đẩy dữ liệu xưởng lên Cloud...');
+      const pushRes = await pushAllToSupabase();
+      return { ok: true, message: `Đã tự động khởi tạo dữ liệu lên Cloud: ${pushRes.message}` };
+    }
+
+    console.log('[Supabase AutoSync] Đang đồng bộ dữ liệu từ Cloud về máy...');
+    const syncRes = await syncFromSupabase();
+    return { ok: true, message: `Đã đồng bộ từ Cloud: ${syncRes.message}` };
+  } catch (err: any) {
+    console.warn('[Supabase AutoSync] Lỗi:', err);
+    return { ok: false, message: `Lỗi kết nối tự động: ${err.message || 'Lỗi mạng'}` };
+  }
+}

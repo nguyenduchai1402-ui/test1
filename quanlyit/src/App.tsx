@@ -7,7 +7,7 @@ import { OrdersScreen } from './components/pos/OrdersScreen';
 import { ProductsScreen } from './components/pos/ProductsScreen';
 import { CustomersScreen } from './components/pos/CustomersScreen';
 import { Toast } from './components/pos/Toast';
-import { posDb } from './utils/posStorage';
+import { posDb, initAutoSupabaseSync, syncFromLocalApi } from './utils/posStorage';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -32,6 +32,34 @@ export function App() {
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Đồng bộ dữ liệu chung giữa tất cả trình duyệt và kết nối Supabase
+  useEffect(() => {
+    // 1. Tải dữ liệu từ database dùng chung (/api/db) ngay lập tức
+    syncFromLocalApi();
+
+    // 2. Khi chuyển tab hoặc đổi trình duyệt quay lại, tự động cập nhật
+    const handleFocus = () => {
+      syncFromLocalApi();
+    };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') handleFocus();
+    });
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Tự động kết nối và đồng bộ với Supabase khi khởi chạy app
+  useEffect(() => {
+    initAutoSupabaseSync().then((res) => {
+      if (res && res.ok) {
+        showToast('Đã kết nối và đồng bộ Supabase Cloud!');
+      }
+    });
   }, []);
 
   // Sync orders count

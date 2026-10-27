@@ -9,6 +9,8 @@ export interface Product {
   category: string;   // Cốc Tim, Cốc PP, Cốc Pet, Cốc U, Nắp & Phụ kiện
   description?: string;
   isPopular?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Customer {
