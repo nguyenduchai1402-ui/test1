@@ -508,18 +508,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     onShowToast('Đã tạo đơn mới!');
   };
 
-  // Popular quick chips
-  const popularChips = [
-    { code: 'T7', label: 'Tim 700' },
-    { code: 'T5', label: 'Tim 500' },
-    { code: 'TT2', label: 'Trái Tim 2 Ngăn' },
-    { code: 'DC', label: 'Đáy Cầu 500' },
-    { code: 'U5', label: 'Cốc U500' },
-    { code: 'P500', label: 'PP 500' },
-    { code: 'P700', label: 'PP 700' },
-    { code: 'ND90', label: 'Nắp D90' },
-    { code: 'NTT90', label: 'Nắp Tim' },
-  ];
+
 
   return (
     <div className="pos-content">
@@ -558,7 +547,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             ref={searchInputRef}
             type="text"
             className="pos-input pos-search-input"
-            placeholder="Gõ mã (T7, TT2, DC, P5, U5, ND90...)"
+            placeholder="Tìm kiếm sản phẩm theo tên hoặc mã..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => {
@@ -601,27 +590,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
         )}
       </div>
 
-      {/* QUICK POPULAR CHIPS */}
-      <div className="pos-chips-scroll">
-        {popularChips.map(chip => {
-          const prod = products.find(p => p.code.toLowerCase() === chip.code.toLowerCase());
-          return (
-            <button
-              key={chip.code}
-              type="button"
-              className="pos-chip"
-              onClick={() => {
-                if (prod) handleSelectProduct(prod);
-              }}
-              title={prod ? prod.name : chip.label}
-            >
-              <span className="pos-chip-code">{chip.code}</span>
-              <span>{chip.label}</span>
-              {prod && <span style={{ fontSize: 11, color: '#166534', opacity: 0.85 }}>({prod.price}k)</span>}
-            </button>
-          );
-        })}
-      </div>
+
 
       {/* COLLAPSIBLE CUSTOMER INFORMATION CARD */}
       <div className="pos-customer-box">
