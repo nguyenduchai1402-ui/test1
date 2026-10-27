@@ -5,6 +5,7 @@ export interface Product {
   code: string;       // Shortcode: T7, TT2, DC, P5, U5, etc.
   name: string;       // Full name
   price: number;      // Price in thousand VND (k), e.g. 750 = 750.000đ
+  costPrice?: number;  // Giá nhập tính theo k (ví dụ: 550 = 550.000đ)
   unit: string;       // Đơn vị tính: thiên, cây, cái, cuộn, thùng
   category: string;   // Cốc Tim, Cốc PP, Cốc Pet, Cốc U, Nắp & Phụ kiện
   description?: string;
@@ -29,6 +30,7 @@ export interface OrderItem {
   code?: string;
   name: string;
   unitPrice: number;  // Price in thousand VND (k)
+  costPrice?: number;  // Giá vốn / Giá nhập (k)
   quantity: number;   // Số lượng
   amount: number;     // unitPrice * quantity (in k)
   notes?: string;     // Ghi chú từng món (in màu, kèm nắp...)

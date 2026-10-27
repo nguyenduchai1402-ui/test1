@@ -89,6 +89,7 @@ export function downloadProductExcelTemplate() {
       'Mã sản phẩm': 'T7',
       'Tên sản phẩm': 'Cốc Tim 700ml UKP',
       'Đơn giá (k)': 730,
+      'Giá nhập (k)': 580,
       'Đơn vị tính': 'thiên',
       'Danh mục': 'Cốc Tim'
     },
@@ -182,6 +183,10 @@ export async function parseProductsFromExcel(file: File): Promise<Product[]> {
 
     const unit = String(r['Đơn vị tính'] || r['Đơn vị'] || r['Don vi'] || r['Unit'] || 'thiên').trim();
     const category = String(r['Danh mục'] || r['Danh muc'] || r['Loại'] || r['Category'] || 'Khác').trim();
+    let rawCostPrice = Number(r['Giá nhập (k)'] || r['Giá nhập'] || r['Gia nhap'] || r['Cost'] || 0);
+    if (rawCostPrice >= 10000) {
+      rawCostPrice = Math.round(rawCostPrice / 1000);
+    }
 
     if (name) {
       products.push({
@@ -189,6 +194,7 @@ export async function parseProductsFromExcel(file: File): Promise<Product[]> {
         code: code || ('SP' + (products.length + 1)),
         name,
         price: rawPrice || 0,
+        costPrice: rawCostPrice || undefined,
         unit: unit || 'thiên',
         category: category || 'Khác',
         isPopular: true

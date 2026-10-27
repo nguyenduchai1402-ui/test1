@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, ChevronDown, ChevronUp, Send, Edit, Trash2, Calendar, 
-  Phone, MapPin, X, FileSpreadsheet, TrendingUp, PackageCheck 
+  Phone, MapPin, X, FileSpreadsheet, TrendingUp, PackageCheck, Coins 
 } from 'lucide-react';
 import { Order } from '../../types/pos';
 import { posDb, formatVND, formatK, generateZaloMessage } from '../../utils/posStorage';
@@ -127,9 +127,43 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
     return (b.code || '').localeCompare(a.code || '');
   });
 
+
+  // Bảng tra giá vốn sản phẩm để tính lợi nhuận
+  const products = posDb.getProducts();
+  const productCostMap = new Map<string, number>();
+  products.forEach(p => {
+    if (p.costPrice !== undefined && p.costPrice !== null) {
+      productCostMap.set(p.id, p.costPrice);
+      productCostMap.set(p.code.toUpperCase(), p.costPrice);
+    }
+  });
+
+  const getOrderItemCost = (it: any): number => {
+    const qty = it.quantity || 0;
+    if (it.costPrice !== undefined && it.costPrice !== null && it.costPrice > 0) {
+      return it.costPrice * qty;
+    }
+    if (it.productId && productCostMap.has(it.productId)) {
+      return (productCostMap.get(it.productId) || 0) * qty;
+    }
+    if (it.code && productCostMap.has(String(it.code).toUpperCase())) {
+      return (productCostMap.get(String(it.code).toUpperCase()) || 0) * qty;
+    }
+    return 0;
+  };
+
+  const getOrderProfit = (order: Order): number => {
+    let cost = 0;
+    (order.items || []).forEach(it => {
+      cost += getOrderItemCost(it);
+    });
+    return Math.max(0, order.totalAmount - cost);
+  };
+
   // Calculate Statistics for filtered data
   const totalOrdersCount = sortedOrders.length;
   const totalRevenue = sortedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalProfit = sortedOrders.reduce((sum, o) => sum + getOrderProfit(o), 0);
   const totalItemsSold = sortedOrders.reduce((sum, o) => sum + o.totalQuantity, 0);
 
   // Paginated slice (10 items per page)
@@ -186,26 +220,14 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
   return (
     <div className="pos-content" style={{ paddingBottom: 'calc(var(--bottom-nav-height) + 20px)' }}>
-      {/* TOP STATS CARDS (THỐNG KÊ DOANH THU & ĐƠN HÀNG) */}
+      {/* TOP STATS CARDS: DOANH THU & LỢI NHUẬN CẠNH NHAU */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
+        gridTemplateColumns: 'repeat(2, 1fr)',
         gap: 6,
         marginBottom: 8
       }}>
-        <div style={{
-          background: '#ffffff',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          padding: '8px 10px',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
-          <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Số Đơn</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>
-            {totalOrdersCount}
-          </div>
-        </div>
-
+        {/* DOANH THU */}
         <div style={{
           background: '#f0fdf4',
           border: '1px solid #bbf7d0',
@@ -213,15 +235,33 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
           padding: '8px 10px',
           boxShadow: 'var(--shadow-sm)'
         }}>
-          <div style={{ fontSize: 11, color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <TrendingUp size={11} />
+          <div style={{ fontSize: 11, color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <TrendingUp size={12} />
             <span>Doanh Thu</span>
           </div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#15803d', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#15803d', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {formatVND(totalRevenue)}
           </div>
         </div>
 
+        {/* LỢI NHUẬN (CẠNH Ô DOANH THU) */}
+        <div style={{
+          background: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: 8,
+          padding: '8px 10px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Coins size={12} />
+            <span>Lợi Nhuận</span>
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#2563eb', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {formatVND(totalProfit)}
+          </div>
+        </div>
+
+        {/* SỐ ĐƠN HÀNG */}
         <div style={{
           background: '#ffffff',
           border: '1px solid var(--border)',
@@ -229,12 +269,26 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
           padding: '8px 10px',
           boxShadow: 'var(--shadow-sm)'
         }}>
-          <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <PackageCheck size={11} />
-            <span>Đã Bán</span>
+          <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Số Đơn Hàng</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>
+            {totalOrdersCount} <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>đơn</span>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>
-            {totalItemsSold} <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>cây</span>
+        </div>
+
+        {/* TỔNG ĐÃ BÁN */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          padding: '8px 10px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <PackageCheck size={12} />
+            <span>Tổng Đã Bán</span>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>
+            {totalItemsSold} <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>cây/thiên</span>
           </div>
         </div>
       </div>

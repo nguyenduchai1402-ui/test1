@@ -153,6 +153,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
           code: product.code,
           name: product.name,
           unitPrice: product.price,
+          costPrice: product.costPrice || 0,
           quantity: updatedRows[idx].quantity || 1,
           amount: (updatedRows[idx].quantity || 1) * product.price
         };
@@ -181,6 +182,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             code: product.code,
             name: product.name,
             unitPrice: product.price,
+            costPrice: product.costPrice || 0,
             quantity: 1,
             amount: product.price
           };

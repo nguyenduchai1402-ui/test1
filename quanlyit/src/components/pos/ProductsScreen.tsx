@@ -23,6 +23,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
   const [formCode, setFormCode] = useState('');
   const [formName, setFormName] = useState('');
   const [formPrice, setFormPrice] = useState<number | ''>('');
+  const [formCostPrice, setFormCostPrice] = useState<number | ''>('');
   const [formUnit, setFormUnit] = useState('thiên');
   const [formCategory, setFormCategory] = useState('Cốc Tim');
 
@@ -77,6 +78,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     setFormCode('');
     setFormName('');
     setFormPrice('');
+    setFormCostPrice('');
     setFormUnit('thiên');
     setFormCategory('Cốc Tim');
     setIsModalOpen(true);
@@ -88,6 +90,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     setFormCode(prod.code);
     setFormName(prod.name);
     setFormPrice(prod.price);
+    setFormCostPrice(prod.costPrice !== undefined && prod.costPrice !== null ? prod.costPrice : '');
     setFormUnit(prod.unit);
     setFormCategory(prod.category);
     setIsModalOpen(true);
@@ -106,6 +109,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
       code: formCode.trim().toUpperCase(),
       name: formName.trim(),
       price: Number(formPrice),
+      costPrice: formCostPrice !== '' ? Number(formCostPrice) : undefined,
       unit: formUnit.trim() || 'thiên',
       category: formCategory,
       isPopular: true
@@ -281,9 +285,24 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                 <div style={{ fontSize: 15, fontWeight: 800, color: '#15803d' }}>
                   {prod.price}k
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                <div style={{ fontSize: 11, color: '#64748b' }}>
                   {formatVND(prod.price)}
                 </div>
+                {prod.costPrice !== undefined && prod.costPrice !== null && (
+                  <div style={{ 
+                    fontSize: 10, 
+                    color: '#0284c7', 
+                    fontWeight: 700, 
+                    marginTop: 2,
+                    background: '#f0f9ff',
+                    border: '1px solid #e0f2fe',
+                    padding: '1px 5px',
+                    borderRadius: 4,
+                    display: 'inline-block'
+                  }}>
+                    Giá nhập: {prod.costPrice}k ({formatVND(prod.costPrice)})
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: 4 }}>
@@ -456,7 +475,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                    Đơn giá (k) *
+                    Đơn giá bán (k) *
                   </label>
                   <input
                     type="number"
@@ -471,6 +490,26 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                   {formPrice !== '' && (
                     <div style={{ fontSize: 11, color: '#15803d', fontWeight: 600, marginTop: 2 }}>
                       = {formatVND(Number(formPrice))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4, color: '#0369a1' }}>
+                    Giá nhập (k)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="pos-input"
+                    placeholder="Ví dụ: 550 = 550.000đ"
+                    value={formCostPrice}
+                    onChange={(e) => setFormCostPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  {formCostPrice !== '' && (
+                    <div style={{ fontSize: 11, color: '#0284c7', fontWeight: 600, marginTop: 2 }}>
+                      = {formatVND(Number(formCostPrice))}
                     </div>
                   )}
                 </div>

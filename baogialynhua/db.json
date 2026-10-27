@@ -7,7 +7,8 @@
       "price": 730,
       "unit": "thiên",
       "category": "Cốc Tim",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 580
     },
     {
       "id": "p2",
@@ -16,7 +17,8 @@
       "price": 760,
       "unit": "thiên",
       "category": "Cốc Tim",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 600
     },
     {
       "id": "p3",
@@ -25,7 +27,8 @@
       "price": 630,
       "unit": "thiên",
       "category": "Cốc Tim",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 500
     },
     {
       "id": "p4",
@@ -34,7 +37,8 @@
       "price": 660,
       "unit": "thiên",
       "category": "Cốc Tim",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 520
     },
     {
       "id": "p5",
@@ -43,7 +47,8 @@
       "price": 820,
       "unit": "thiên",
       "category": "Cốc Tim",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 650
     },
     {
       "id": "p6",
@@ -52,7 +57,8 @@
       "price": 580,
       "unit": "thiên",
       "category": "Cốc Đáy Cầu",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 450
     },
     {
       "id": "p7",
@@ -60,7 +66,8 @@
       "name": "Cốc Đáy Cầu 700ml",
       "price": 670,
       "unit": "thiên",
-      "category": "Cốc Đáy Cầu"
+      "category": "Cốc Đáy Cầu",
+      "costPrice": 520
     },
     {
       "id": "p8",
@@ -69,7 +76,8 @@
       "price": 580,
       "unit": "thiên",
       "category": "Cốc U",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 450
     },
     {
       "id": "p9",
@@ -77,7 +85,8 @@
       "name": "Cốc U 500ml UKP",
       "price": 650,
       "unit": "thiên",
-      "category": "Cốc U"
+      "category": "Cốc U",
+      "costPrice": 500
     },
     {
       "id": "p10",
@@ -85,7 +94,8 @@
       "name": "Cốc U 700ml UKP",
       "price": 680,
       "unit": "thiên",
-      "category": "Cốc U"
+      "category": "Cốc U",
+      "costPrice": 530
     },
     {
       "id": "p11",
@@ -94,7 +104,8 @@
       "price": 495,
       "unit": "thiên",
       "category": "Cốc PP",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 380
     },
     {
       "id": "p12",
@@ -103,7 +114,8 @@
       "price": 540,
       "unit": "thiên",
       "category": "Cốc PP",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 420
     },
     {
       "id": "p13",
@@ -111,7 +123,8 @@
       "name": "Cốc PP 650ml",
       "price": 620,
       "unit": "thiên",
-      "category": "Cốc PP"
+      "category": "Cốc PP",
+      "costPrice": 480
     },
     {
       "id": "p14",
@@ -120,7 +133,8 @@
       "price": 620,
       "unit": "thiên",
       "category": "Cốc PP",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 480
     },
     {
       "id": "p15",
@@ -128,7 +142,8 @@
       "name": "Cốc PP 1000ml Khổng Lồ",
       "price": 850,
       "unit": "thiên",
-      "category": "Cốc PP"
+      "category": "Cốc PP",
+      "costPrice": 660
     },
     {
       "id": "p16",
@@ -136,7 +151,8 @@
       "name": "Cốc Pet 300ml UKP",
       "price": 438,
       "unit": "thiên",
-      "category": "Cốc Pet"
+      "category": "Cốc Pet",
+      "costPrice": 340
     },
     {
       "id": "p17",
@@ -144,7 +160,8 @@
       "name": "Cốc Pet 360ml UKP",
       "price": 495,
       "unit": "thiên",
-      "category": "Cốc Pet"
+      "category": "Cốc Pet",
+      "costPrice": 380
     },
     {
       "id": "p18",
@@ -152,7 +169,8 @@
       "name": "Cốc Pet 400ml Dày UKP",
       "price": 505,
       "unit": "thiên",
-      "category": "Cốc Pet"
+      "category": "Cốc Pet",
+      "costPrice": 390
     },
     {
       "id": "p19",
@@ -161,7 +179,8 @@
       "price": 567,
       "unit": "thiên",
       "category": "Cốc Pet",
-      "isPopular": true
+      "isPopular": true,
+      "costPrice": 440
     },
     {
       "id": "p20",
@@ -169,7 +188,8 @@
       "name": "Cốc Pet 620ml UKP",
       "price": 743,
       "unit": "thiên",
-      "category": "Cốc Pet"
+      "category": "Cốc Pet",
+      "costPrice": 580
     },
     {
       "id": "p21",
@@ -177,106 +197,8 @@
       "name": "Cốc Pet 700ml UKP",
       "price": 755,
       "unit": "thiên",
-      "category": "Cốc Pet"
-    },
-    {
-      "id": "p22",
-      "code": "ND90",
-      "name": "Nắp D90 Đậy Cốc",
-      "price": 400,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện",
-      "isPopular": true
-    },
-    {
-      "id": "p23",
-      "code": "NN90",
-      "name": "Nắp N90 Bằng Tiêu Chuẩn",
-      "price": 210,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện"
-    },
-    {
-      "id": "p24",
-      "code": "NC84",
-      "name": "Nắp Cầu 84 UKP",
-      "price": 371,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện"
-    },
-    {
-      "id": "p25",
-      "code": "NC90",
-      "name": "Nắp Cầu 90 UKP",
-      "price": 429,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện",
-      "isPopular": true
-    },
-    {
-      "id": "p26",
-      "code": "NB90",
-      "name": "Nắp Bằng 90 UKP",
-      "price": 309,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện"
-    },
-    {
-      "id": "p27",
-      "code": "NTT90",
-      "name": "Nắp Tim Trong 90 UKP",
-      "price": 521,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện",
-      "isPopular": true
-    },
-    {
-      "id": "p28",
-      "code": "NTW90",
-      "name": "Nắp Tim Trắng 90 UKP",
-      "price": 569,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện"
-    },
-    {
-      "id": "p29",
-      "code": "NUT90",
-      "name": "Nắp Uống Trực Tiếp 90",
-      "price": 429,
-      "unit": "thiên",
-      "category": "Nắp & Phụ kiện"
-    },
-    {
-      "id": "p30",
-      "code": "MANG",
-      "name": "Cuộn Màng Ép Cốc Ly",
-      "price": 180,
-      "unit": "cuộn",
-      "category": "Phụ kiện"
-    },
-    {
-      "id": "p31",
-      "code": "ONGHUT",
-      "name": "Ống Hút Trà Sữa Bọc Màng",
-      "price": 65,
-      "unit": "cây",
-      "category": "Phụ kiện"
-    },
-    {
-      "id": "p32",
-      "code": "TUI1",
-      "name": "Túi Đựng 1 Ly Chữ T",
-      "price": 55,
-      "unit": "kg",
-      "category": "Phụ kiện"
-    },
-    {
-      "id": "p33",
-      "code": "TUI2",
-      "name": "Túi Đựng 2 Ly Xoè Đáy",
-      "price": 55,
-      "unit": "kg",
-      "category": "Phụ kiện"
+      "category": "Cốc Pet",
+      "costPrice": 590
     }
   ],
   "customers": [
@@ -839,5 +761,5 @@
       "updatedAt": "2026-08-20 16:00"
     }
   ],
-  "lastUpdated": "2026-10-27T02:59:02.951Z"
+  "lastUpdated": "2026-10-27T04:41:33.207Z"
 }
