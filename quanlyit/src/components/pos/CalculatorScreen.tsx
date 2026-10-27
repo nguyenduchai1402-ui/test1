@@ -551,7 +551,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => {
-              if (searchQuery.trim()) setIsDropdownOpen(true);
+              if (searchQuery.trim()) {
+                setIsDropdownOpen(true);
+              } else {
+                setFilteredProducts(products.slice(0, 10));
+                setIsDropdownOpen(true);
+              }
             }}
           />
           {searchQuery && (
@@ -578,7 +583,10 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                 onClick={() => handleSelectProduct(prod)}
               >
                 <div>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{prod.name}</span>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>{prod.name}</div>
+                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 2 }}>
+                    Mã SP: <span style={{ color: '#15803d' }}>{prod.code}</span>
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>{prod.price}k</span>
@@ -701,9 +709,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                 <>
                   <div className="pos-item-top">
                     <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>
                         {item.name}
-                      </span>
+                      </div>
+                      {item.code && (
+                        <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 2 }}>
+                          Mã SP: <span style={{ color: '#15803d' }}>{item.code}</span>
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -811,7 +824,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                       <option value="">-- Chạm để chọn sản phẩm hàng #{index + 1} --</option>
                       {products.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.name} ({p.price}k)
+                          {p.name} [Mã: {p.code}] - {p.price}k
                         </option>
                       ))}
                     </select>
