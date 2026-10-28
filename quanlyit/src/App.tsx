@@ -80,8 +80,19 @@ export function App() {
   // Handle Edit Order action: navigate to calculator and load order
   const handleEditOrder = (order: Order) => {
     setEditingOrder(order);
+    window.location.hash = 'calculator';
     setActiveTab('calculator');
-    showToast(`Đã mở đơn ${order.code} để chỉnh sửa`);
+    showToast(`Đang sửa đơn ${order.code} của ${order.customerName || 'Khách Lẻ'}`);
+  };
+
+  // Return to orders tab when editing is finished or cancelled
+  const handleFinishedEditOrder = (savedOrder?: Order) => {
+    setEditingOrder(null);
+    window.location.hash = 'orders';
+    setActiveTab('orders');
+    if (savedOrder) {
+      showToast(`Đã lưu cập nhật đơn ${savedOrder.code} thành công!`);
+    }
   };
 
   // Handle Select Customer for New Order: navigate to calculator with customer pre-selected
@@ -106,6 +117,7 @@ export function App() {
           onShowToast={showToast}
           selectedCustomerForOrder={selectedCustomerForOrder}
           onClearSelectedCustomer={() => setSelectedCustomerForOrder(null)}
+          onFinishedEditOrder={handleFinishedEditOrder}
         />
       )}
 

@@ -413,6 +413,42 @@
   ],
   "orders": [
     {
+      "id": "ord-1793169298026",
+      "code": "#DH-1003",
+      "customerId": "c-1793169267531",
+      "customerName": "Hà Mi - Zizi",
+      "customerPhone": "0383.0383.98",
+      "customerAddress": "110.C Thanh Bình - CT1 - Hoàng Hoa Thám - Võ Cường - Bắc Ninh",
+      "items": [
+        {
+          "id": "row-1793169268987-v0mto",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 2280,
+          "quantity": 3,
+          "costPrice": 580,
+          "productId": "p-1793163521006-1qvl",
+          "unitPrice": 760
+        },
+        {
+          "id": "row-1793169268987-jg6ov",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 660,
+          "quantity": 1,
+          "costPrice": 480,
+          "productId": "p-1793163521006-ayk2",
+          "unitPrice": 660
+        }
+      ],
+      "totalQuantity": 4,
+      "totalAmount": 2940,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:34:58 28/10/2026",
+      "updatedAt": "2026-10-28T07:54:20.264Z"
+    },
+    {
       "id": "ord-1793091141181",
       "code": "#DH-1001",
       "customerId": "c-1793091131376",
@@ -439,5 +475,5 @@
       "updatedAt": "2026-10-27T08:54:59.380Z"
     }
   ],
-  "lastUpdated": "2026-10-28T03:48:17.879Z"
+  "lastUpdated": "2026-10-28T07:54:20.266Z"
 }

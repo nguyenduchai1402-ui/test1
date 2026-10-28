@@ -14,6 +14,7 @@ interface CalculatorScreenProps {
   onShowToast: (msg: string) => void;
   selectedCustomerForOrder?: Customer | null;
   onClearSelectedCustomer?: () => void;
+  onFinishedEditOrder?: (savedOrder?: Order) => void;
 }
 
 // Helper to create an empty row
@@ -42,7 +43,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   onOrderSaved,
   onShowToast,
   selectedCustomerForOrder,
-  onClearSelectedCustomer
+  onClearSelectedCustomer,
+  onFinishedEditOrder
 }) => {
   const [products, setProducts] = useState<Product[]>(posDb.getProducts());
   const [customers, setCustomers] = useState<Customer[]>(posDb.getCustomers());
@@ -360,8 +362,13 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  // Filter only valid items that have a product selected
-  const validOrderItems = orderItems.filter(item => Boolean(item.productId && item.name));
+  // Filter only valid items that have a product selected or name
+  const validOrderItems = orderItems
+    .filter(item => Boolean((item.name && item.name.trim()) || item.productId))
+    .map(item => ({
+      ...item,
+      productId: item.productId || 'p-' + item.id
+    }));
 
   // Calculate totals (only from valid rows)
   const totalQuantity = validOrderItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -381,7 +388,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       totalAmount,
       notes: orderNotes.trim(),
       status: editingOrder ? editingOrder.status : 'Chờ in',
-      createdAt: editingOrder ? editingOrder.createdAt : new Date().toLocaleString('vi-VN'),
+      createdAt: editingOrder ? (editingOrder.createdAt || new Date().toISOString()) : new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
@@ -396,13 +403,21 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       return;
     }
 
-    const order = performSaveOrder();
-    onShowToast(`Đã lưu đơn hàng của ${order.customerName}!`);
+    const isEditing = Boolean(editingOrder);
+    const savedOrder = performSaveOrder();
 
-    if (editingOrder) {
-      onClearEditingOrder();
+    if (isEditing) {
+      handleResetForm();
+      if (onFinishedEditOrder) {
+        onFinishedEditOrder(savedOrder);
+      } else {
+        if (onClearEditingOrder) onClearEditingOrder();
+        onShowToast(`Đã lưu cập nhật đơn ${savedOrder.code} thành công!`);
+        window.location.hash = 'orders';
+      }
     } else {
       handleResetForm();
+      onShowToast(`Đã lưu đơn hàng của ${savedOrder.customerName}!`);
     }
   };
 
@@ -577,7 +592,15 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
           <span>Đang chỉnh sửa đơn hàng: <strong>{editingOrder.customerName || 'Khách Lẻ'}</strong></span>
           <button 
             type="button" 
-            onClick={onClearEditingOrder}
+            onClick={() => {
+              handleResetForm();
+              if (onFinishedEditOrder) {
+                onFinishedEditOrder();
+              } else {
+                if (onClearEditingOrder) onClearEditingOrder();
+                window.location.hash = 'orders';
+              }
+            }}
             style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', fontWeight: 700 }}
           >
             Hủy sửa
