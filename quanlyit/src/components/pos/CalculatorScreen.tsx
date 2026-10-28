@@ -504,7 +504,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     setSearchQuery('');
     setCapturedImageUrl(null);
     if (editingOrder) onClearEditingOrder();
-    if (searchInputRef.current) searchInputRef.current.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     onShowToast('Đã tạo đơn mới!');
   };
 
@@ -538,65 +538,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
         </div>
       )}
 
-      {/* TOP QUICK CODE SEARCH BAR */}
-      <div className="pos-quick-search-box">
-        <div className="pos-search-input-wrap">
-          <Search size={18} className="pos-search-icon" />
-          <input
-            id="pos-search-input"
-            ref={searchInputRef}
-            type="text"
-            className="pos-input pos-search-input"
-            placeholder="Tìm kiếm sản phẩm theo tên hoặc mã..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            onFocus={() => {
-              if (searchQuery.trim()) {
-                setIsDropdownOpen(true);
-              } else {
-                setFilteredProducts(products.slice(0, 10));
-                setIsDropdownOpen(true);
-              }
-            }}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => { setSearchQuery(''); setIsDropdownOpen(false); }}
-              style={{
-                position: 'absolute', right: 10, background: 'none', border: 'none',
-                color: '#94a3b8', cursor: 'pointer', padding: 4
-              }}
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
 
-        {/* Autocomplete Dropdown */}
-        {isDropdownOpen && filteredProducts.length > 0 && (
-          <div className="pos-autocomplete-list">
-            {filteredProducts.map(prod => (
-              <div
-                key={prod.id}
-                className="pos-autocomplete-item"
-                onClick={() => handleSelectProduct(prod)}
-              >
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>{prod.name}</div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 2 }}>
-                    Mã SP: <span style={{ color: '#15803d' }}>{prod.code}</span>
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>{prod.price}k</span>
-                  <div style={{ fontSize: 11, color: '#64748b' }}>{formatVND(prod.price)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
 
 
@@ -859,7 +801,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       </div>
 
       {/* ORDER NOTE */}
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 10 }}>
         <input
           type="text"
           className="pos-input pos-input-sm"
@@ -867,6 +809,66 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
           value={orderNotes}
           onChange={(e) => setOrderNotes(e.target.value)}
         />
+      </div>
+
+      {/* QUICK PRODUCT SEARCH BAR - ĐƯỢC CHUYỂN XUỐNG DƯỚI CÙNG */}
+      <div className="pos-quick-search-box" style={{ marginBottom: 14 }}>
+        <div className="pos-search-input-wrap">
+          <Search size={18} className="pos-search-icon" />
+          <input
+            id="pos-search-input"
+            ref={searchInputRef}
+            type="text"
+            className="pos-input pos-search-input"
+            placeholder="Tìm kiếm sản phẩm theo tên hoặc mã..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onFocus={() => {
+              if (searchQuery.trim()) {
+                setIsDropdownOpen(true);
+              } else {
+                setFilteredProducts(products.slice(0, 10));
+                setIsDropdownOpen(true);
+              }
+            }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); setIsDropdownOpen(false); }}
+              style={{
+                position: 'absolute', right: 10, background: 'none', border: 'none',
+                color: '#94a3b8', cursor: 'pointer', padding: 4
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Autocomplete Dropdown (mở hướng lên trên vì ở dưới cùng) */}
+        {isDropdownOpen && filteredProducts.length > 0 && (
+          <div className="pos-autocomplete-list" style={{ bottom: '100%', top: 'auto', marginBottom: 6, boxShadow: '0 -4px 20px rgba(0,0,0,0.15)' }}>
+            {filteredProducts.map(prod => (
+              <div
+                key={prod.id}
+                className="pos-autocomplete-item"
+                onClick={() => handleSelectProduct(prod)}
+              >
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>{prod.name}</div>
+                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 2 }}>
+                    Mã SP: <span style={{ color: '#15803d' }}>{prod.code}</span>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>{prod.price}k</span>
+                  <div style={{ fontSize: 11, color: '#64748b' }}>{formatVND(prod.price)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* HIDDEN RECEIPT COMPONENT FOR ULTRA-CRISP 2X SCREENSHOT CAPTURE */}
