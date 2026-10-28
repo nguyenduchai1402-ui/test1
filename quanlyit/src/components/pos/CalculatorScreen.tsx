@@ -64,6 +64,22 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   // Collapsible customer card (default collapsed on mobile)
   const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
 
+  // Customer search autocomplete state
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [isCustDropdownOpen, setIsCustDropdownOpen] = useState(false);
+  const custSearchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close customer search dropdown on outside click
+  useEffect(() => {
+    const handleClickOutsideCust = (e: MouseEvent) => {
+      if (custSearchContainerRef.current && !custSearchContainerRef.current.contains(e.target as Node)) {
+        setIsCustDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideCust);
+    return () => document.removeEventListener('mousedown', handleClickOutsideCust);
+  }, []);
+
   // Quick Add Customer Modal
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [newCustName, setNewCustName] = useState('');
@@ -105,6 +121,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       setCustomerId(editingOrder.customerId);
       setOrderNotes(editingOrder.notes || '');
       setIsCustomerExpanded(Boolean(editingOrder.customerName));
+      setCustomerSearchQuery(editingOrder.customerName || '');
     }
   }, [editingOrder]);
 
@@ -115,6 +132,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       setCustomerName(selectedCustomerForOrder.name);
       setCustomerPhone(selectedCustomerForOrder.phone);
       setCustomerAddress(selectedCustomerForOrder.address);
+      setCustomerSearchQuery(selectedCustomerForOrder.name);
       setIsCustomerExpanded(true);
       if (onClearSelectedCustomer) onClearSelectedCustomer();
     }
@@ -206,6 +224,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
     setOrderItems(ensureMinimumThreeRows(updatedRows));
     setSearchQuery('');
+    setCustomerSearchQuery('');
+    setIsCustDropdownOpen(false);
     setFilteredProducts([]);
     setIsDropdownOpen(false);
 
@@ -278,12 +298,21 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
   // Quick Customer Select from existing list
   const handleSelectCustomer = (cId: string) => {
+    if (!cId) {
+      setCustomerId(undefined);
+      setCustomerName('');
+      setCustomerPhone('');
+      setCustomerAddress('');
+      setCustomerSearchQuery('');
+      return;
+    }
     const cust = customers.find(c => c.id === cId);
     if (cust) {
       setCustomerId(cust.id);
       setCustomerName(cust.name);
       setCustomerPhone(cust.phone);
       setCustomerAddress(cust.address);
+      setCustomerSearchQuery(cust.name);
       onShowToast(`Đã chọn: ${cust.name}`);
     }
   };
@@ -306,12 +335,30 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     setCustomerName(newCust.name);
     setCustomerPhone(newCust.phone);
     setCustomerAddress(newCust.address);
+    setCustomerSearchQuery(newCust.name);
     setShowAddCustomerModal(false);
     setNewCustName('');
     setNewCustPhone('');
     setNewCustAddress('');
     onShowToast(`Đã thêm khách hàng mới: ${newCust.name}`);
   };
+
+  // Filter and sort customers for quick search
+  const sortedCustMatches = customers.filter(c => {
+    if (!customerSearchQuery.trim()) return true;
+    const clean = customerSearchQuery.trim().toLowerCase();
+    return (
+      (c.name && c.name.toLowerCase().includes(clean)) ||
+      (c.phone && c.phone.includes(clean)) ||
+      (c.address && c.address.toLowerCase().includes(clean)) ||
+      (c.code && c.code.toLowerCase().includes(clean))
+    );
+  }).sort((a, b) => {
+    const tA = new Date(a.createdAt || 0).getTime();
+    const tB = new Date(b.createdAt || 0).getTime();
+    if (tA && tB && tA !== tB) return tB - tA;
+    return (a.name || '').localeCompare(b.name || '');
+  });
 
   // Filter only valid items that have a product selected
   const validOrderItems = orderItems.filter(item => Boolean(item.productId && item.name));
@@ -563,26 +610,181 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
         {isCustomerExpanded && (
           <div className="pos-customer-body">
-            <div style={{ display: 'flex', gap: 6 }}>
-              <select 
-                className="pos-select pos-input-sm"
-                value={customerId || ''}
-                onChange={(e) => handleSelectCustomer(e.target.value)}
-                style={{ flex: 1 }}
-              >
-                <option value="">-- Chọn khách quen có sẵn --</option>
-                {customers.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} - {c.phone}
-                  </option>
-                ))}
-              </select>
+            <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
+              <div ref={custSearchContainerRef} style={{ position: 'relative', flex: 1 }}>
+                <Search 
+                  size={15} 
+                  color="#64748b" 
+                  style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} 
+                />
+                <input
+                  type="text"
+                  className="pos-input pos-input-sm"
+                  style={{ paddingLeft: 32, paddingRight: customerSearchQuery || customerId ? 30 : 10 }}
+                  placeholder="🔍 Tìm khách quen (nhập Tên hoặc SĐT)..."
+                  value={customerSearchQuery}
+                  onChange={(e) => {
+                    setCustomerSearchQuery(e.target.value);
+                    setIsCustDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsCustDropdownOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (sortedCustMatches.length > 0) {
+                        const firstCust = sortedCustMatches[0];
+                        handleSelectCustomer(firstCust.id);
+                        setCustomerSearchQuery(firstCust.name);
+                        setIsCustDropdownOpen(false);
+                      }
+                    } else if (e.key === 'Escape') {
+                      setIsCustDropdownOpen(false);
+                    }
+                  }}
+                />
+                {(customerSearchQuery || customerId) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomerSearchQuery('');
+                      setCustomerId(undefined);
+                      setCustomerName('');
+                      setCustomerPhone('');
+                      setCustomerAddress('');
+                      setIsCustDropdownOpen(false);
+                      onShowToast('Đã xóa chọn khách quen');
+                    }}
+                    title="Xóa tìm kiếm / Bỏ chọn khách quen"
+                    style={{
+                      position: 'absolute',
+                      right: 8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      padding: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+
+                {/* AUTOCOMPLETE DROPDOWN */}
+                {isCustDropdownOpen && (
+                  <div
+                    className="pos-autocomplete-list"
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: '#ffffff',
+                      border: '1.5px solid #16a34a',
+                      borderRadius: 8,
+                      marginTop: 4,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                      maxHeight: 280,
+                      overflowY: 'auto',
+                      zIndex: 110
+                    }}
+                  >
+                    {sortedCustMatches.length === 0 ? (
+                      <div style={{ padding: '12px 14px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                        <div>Không tìm thấy khách nào khớp với <strong>"{customerSearchQuery}"</strong></div>
+                        <button
+                          type="button"
+                          className="pos-btn pos-btn-primary pos-btn-sm"
+                          style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          onClick={() => {
+                            setIsCustDropdownOpen(false);
+                            if (/^\d+$/.test(customerSearchQuery.trim())) {
+                              setNewCustPhone(customerSearchQuery.trim());
+                              setNewCustName('');
+                            } else {
+                              setNewCustName(customerSearchQuery.trim());
+                              setNewCustPhone('');
+                            }
+                            setShowAddCustomerModal(true);
+                          }}
+                        >
+                          <UserPlus size={13} />
+                          <span>+ Thêm khách mới này</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ padding: '6px 10px', fontSize: 11, fontWeight: 600, color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>{customerSearchQuery.trim() ? `Kết quả tìm kiếm (${sortedCustMatches.length})` : `Danh sách khách quen (${sortedCustMatches.length})`}</span>
+                          <span style={{ fontSize: 10, color: '#94a3b8' }}>Bấm để chọn</span>
+                        </div>
+                        {sortedCustMatches.map(c => {
+                          const isSelected = customerId === c.id;
+                          return (
+                            <div
+                              key={c.id}
+                              className={`pos-autocomplete-item ${isSelected ? 'active' : ''}`}
+                              onClick={() => {
+                                handleSelectCustomer(c.id);
+                                setCustomerSearchQuery(c.name);
+                                setIsCustDropdownOpen(false);
+                              }}
+                              style={{
+                                padding: '8px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                borderBottom: '1px solid #f1f5f9',
+                                cursor: 'pointer',
+                                background: isSelected ? '#f0fdf4' : undefined
+                              }}
+                            >
+                              <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                  {c.code && (
+                                    <span style={{ fontSize: 10, background: '#e2e8f0', color: '#475569', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
+                                      {c.code}
+                                    </span>
+                                  )}
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                                    {c.name}
+                                  </span>
+                                  {c.phone && (
+                                    <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600, background: '#dcfce7', padding: '1px 6px', borderRadius: 4 }}>
+                                      📞 {c.phone}
+                                    </span>
+                                  )}
+                                </div>
+                                {c.address && (
+                                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    📍 {c.address}
+                                  </div>
+                                )}
+                              </div>
+                              {isSelected && (
+                                <span style={{ color: '#16a34a', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                                  ✓ Đang chọn
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"
                 className="pos-btn pos-btn-secondary pos-btn-sm"
                 onClick={() => setShowAddCustomerModal(true)}
                 title="Thêm khách mới"
+                style={{ flexShrink: 0 }}
               >
                 <UserPlus size={14} />
                 <span>+ Khách mới</span>
