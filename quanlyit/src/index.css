@@ -145,7 +145,7 @@ html, body {
 /* MAIN VIEW CONTENT AREA */
 .pos-content {
   flex: 1;
-  padding: 10px 10px calc(var(--bottom-nav-height) + 85px) 10px;
+  padding: 10px 10px calc(var(--bottom-nav-height) + 145px) 10px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
