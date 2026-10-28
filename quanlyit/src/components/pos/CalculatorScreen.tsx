@@ -376,11 +376,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
   // Save Order to Database
   const performSaveOrder = (): Order => {
+    const finalCustName = (customerName || customerSearchQuery).trim() || 'Khách Lẻ';
     const order: Order = {
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
       code: orderCode,
       customerId: customerId,
-      customerName: customerName.trim() || 'Khách Lẻ',
+      customerName: finalCustName,
       customerPhone: customerPhone.trim(),
       customerAddress: customerAddress.trim(),
       items: validOrderItems,
@@ -404,19 +405,37 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     }
 
     const isEditing = Boolean(editingOrder);
-    const savedOrder = performSaveOrder();
+    const finalCustName = (customerName || customerSearchQuery).trim() || 'Khách Lẻ';
+
+    const orderToSave: Order = {
+      id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
+      code: orderCode,
+      customerId: customerId,
+      customerName: finalCustName,
+      customerPhone: customerPhone.trim(),
+      customerAddress: customerAddress.trim(),
+      items: validOrderItems,
+      totalQuantity,
+      totalAmount,
+      notes: orderNotes.trim(),
+      status: editingOrder ? editingOrder.status : 'Chờ in',
+      createdAt: editingOrder ? (editingOrder.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const savedOrder = posDb.saveOrder(orderToSave);
 
     if (isEditing) {
-      handleResetForm();
+      handleResetForm(false);
       if (onFinishedEditOrder) {
         onFinishedEditOrder(savedOrder);
       } else {
         if (onClearEditingOrder) onClearEditingOrder();
-        onShowToast(`Đã lưu cập nhật đơn ${savedOrder.code} thành công!`);
+        onShowToast(`Đã lưu cập nhật đơn ${savedOrder.code} của ${savedOrder.customerName} thành công!`);
         window.location.hash = 'orders';
       }
     } else {
-      handleResetForm();
+      handleResetForm(true);
       onShowToast(`Đã lưu đơn hàng của ${savedOrder.customerName}!`);
     }
   };
@@ -555,19 +574,23 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   };
 
   // Reset Form for New Order (Always restores 3 empty rows)
-  const handleResetForm = () => {
+  const handleResetForm = (showToastNotice?: boolean) => {
     setOrderCode(generateOrderCode());
     setOrderItems(ensureMinimumThreeRows([]));
     setCustomerName('');
     setCustomerPhone('');
     setCustomerAddress('');
     setCustomerId(undefined);
+    setCustomerSearchQuery('');
+    setIsCustDropdownOpen(false);
     setOrderNotes('');
     setSearchQuery('');
     setCapturedImageUrl(null);
-    if (editingOrder) onClearEditingOrder();
+    if (editingOrder && onClearEditingOrder) onClearEditingOrder();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    onShowToast('Đã tạo đơn mới!');
+    if (showToastNotice !== false) {
+      onShowToast('Đã tạo đơn mới!');
+    }
   };
 
 
@@ -643,11 +666,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                 <input
                   type="text"
                   className="pos-input pos-input-sm"
-                  style={{ paddingLeft: 32, paddingRight: customerSearchQuery || customerId ? 30 : 10 }}
+                  style={{ paddingLeft: 32, paddingRight: customerSearchQuery || customerId || customerName ? 30 : 10 }}
                   placeholder="🔍 Tìm khách quen (nhập Tên hoặc SĐT)..."
                   value={customerSearchQuery}
                   onChange={(e) => {
-                    setCustomerSearchQuery(e.target.value);
+                    const val = e.target.value;
+                    setCustomerSearchQuery(val);
+                    setCustomerName(val);
+                    setCustomerId(undefined);
                     setIsCustDropdownOpen(true);
                   }}
                   onFocus={() => setIsCustDropdownOpen(true)}
@@ -665,7 +691,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                     }
                   }}
                 />
-                {(customerSearchQuery || customerId) && (
+                {(customerSearchQuery || customerId || customerName) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -821,7 +847,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                   className="pos-input pos-input-sm" 
                   placeholder="Tên khách / Quán (mặc định: Khách Lẻ)"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCustomerName(val);
+                    setCustomerSearchQuery(val);
+                    setCustomerId(undefined);
+                  }}
                 />
               </div>
               <div>
@@ -1414,7 +1445,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             type="button"
             id="btn-new-order"
             className="pos-btn pos-btn-secondary"
-            onClick={handleResetForm}
+            onClick={() => handleResetForm(true)}
             title="Tạo đơn mới với 3 hàng trống"
           >
             <RotateCcw size={15} />

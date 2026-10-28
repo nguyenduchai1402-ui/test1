@@ -145,6 +145,9 @@ export function App() {
       <BottomNav
         activeTab={activeTab}
         onChangeTab={(tab) => {
+          if (editingOrder && tab !== 'calculator') {
+            setEditingOrder(null);
+          }
           setActiveTab(tab);
         }}
         orderCount={orders.length}

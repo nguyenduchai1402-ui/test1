@@ -415,8 +415,7 @@
     {
       "id": "ord-1793169298026",
       "code": "#DH-1003",
-      "customerId": "c-1793169267531",
-      "customerName": "Hà Mi - Zizi",
+      "customerName": "Quan Tra Sua Ruby",
       "customerPhone": "0383.0383.98",
       "customerAddress": "110.C Thanh Bình - CT1 - Hoàng Hoa Thám - Võ Cường - Bắc Ninh",
       "items": [
@@ -446,7 +445,7 @@
       "notes": "",
       "status": "Chờ in",
       "createdAt": "13:34:58 28/10/2026",
-      "updatedAt": "2026-10-28T07:54:20.264Z"
+      "updatedAt": "2026-10-28T08:39:26.360Z"
     },
     {
       "id": "ord-1793091141181",
@@ -475,5 +474,5 @@
       "updatedAt": "2026-10-27T08:54:59.380Z"
     }
   ],
-  "lastUpdated": "2026-10-28T07:54:20.266Z"
+  "lastUpdated": "2026-10-28T08:39:26.372Z"
 }
