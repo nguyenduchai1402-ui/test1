@@ -1,17 +1,428 @@
 {
   "products": [
     {
-      "id": "p-1793156444215-b6q9",
-      "code": "PET7UKP",
-      "name": "Ly Pet700ml/98 Ukp",
-      "price": 1080,
-      "costPrice": 920,
-      "unit": "Thùng",
-      "category": "Ly pet",
+      "id": "p-1793177484625-5rw8",
+      "code": "napbang95da",
+      "name": "Nắp bằng 95 ĐA",
+      "price": 18,
+      "costPrice": 10,
+      "unit": "chiếc",
+      "category": "Nắp bằng",
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-th0r",
+      "id": "p-1793177484625-sax0",
+      "code": "117ht",
+      "name": "Nắp bằng 117 HT",
+      "price": 28,
+      "costPrice": 20,
+      "unit": "chiếc",
+      "category": "Nắp bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-d6q4",
+      "code": "93-1app",
+      "name": "Nắp trực tiếp 93-1",
+      "price": 28,
+      "costPrice": 20,
+      "unit": "chiếc",
+      "category": "Nắp trực tiếp",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-ixi4",
+      "code": "93s",
+      "name": "Nắp trực tiếp 93S UKP",
+      "price": 31,
+      "costPrice": 23.5,
+      "unit": "chiếc",
+      "category": "Nắp trực tiếp",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-e6uu",
+      "code": "N95app",
+      "name": "Nắp trực tiếp N95 App",
+      "price": 28,
+      "costPrice": 16,
+      "unit": "chiếc",
+      "category": "Nắp trực tiếp",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-njwu",
+      "code": "98S",
+      "name": "Nắp trực tiếp 98S-ukp",
+      "price": 38,
+      "costPrice": 30,
+      "unit": "chiếc",
+      "category": "Nắp trực tiếp",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-9r7j",
+      "code": "napbang90sg",
+      "name": "Nắp bằng 90-sg",
+      "price": 0,
+      "unit": "chiếc",
+      "category": "Nắp bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-dv2q",
+      "code": "kc95app",
+      "name": "Nắp kim cương 95 App",
+      "price": 25,
+      "costPrice": 18.5,
+      "unit": "chiếc",
+      "category": "Nắp kim cương",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-d1ch",
+      "code": "kc95td",
+      "name": "Nắp kim cương 95 TĐ",
+      "price": 23,
+      "costPrice": 15.5,
+      "unit": "chiếc",
+      "category": "Nắp kim cương",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-ajv1",
+      "code": "Y95ht",
+      "name": "Nắp Vuông 95 HT",
+      "price": 23,
+      "costPrice": 14.5,
+      "unit": "chiếc",
+      "category": "Nắp vuông",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-86xy",
+      "code": "Y95app",
+      "name": "Nắp Vuông Y95 APP",
+      "price": 24,
+      "costPrice": 18.5,
+      "unit": "chiếc",
+      "category": "Nắp vuông",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-70cm",
+      "code": "d90app",
+      "name": "Nắp cầu 90 App",
+      "price": 25,
+      "costPrice": 18,
+      "unit": "chiếc",
+      "category": "Nắp cầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-pt7a",
+      "code": "D95td",
+      "name": "Nắp cầu 95 TĐ",
+      "price": 23,
+      "costPrice": 15.5,
+      "unit": "chiếc",
+      "category": "Nắp cầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-1kng",
+      "code": "D95app",
+      "name": "Nắp cầu 95 App",
+      "price": 23,
+      "costPrice": 18,
+      "unit": "chiếc",
+      "category": "Nắp cầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-mxwk",
+      "code": "98DT1",
+      "name": "Nắp cầu 98 T1 Ukp",
+      "price": 38,
+      "costPrice": 29,
+      "unit": "chiếc",
+      "category": "Nắp cầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-les1",
+      "code": "93Dapp",
+      "name": "Nắp cầu D93",
+      "price": 25,
+      "costPrice": 18.5,
+      "unit": "chiếc",
+      "category": "Nắp cầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-wtax",
+      "code": "93DT1",
+      "name": "Nắp cầu 93D Ukp",
+      "price": 31,
+      "costPrice": 23.5,
+      "unit": "chiếc",
+      "category": "Nắp cầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-v773",
+      "code": "chongtran",
+      "name": "Giấy chống tràn (500c)",
+      "price": 35,
+      "costPrice": 25,
+      "unit": "Tệp",
+      "category": "Túi",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-s8b7",
+      "code": "tuidoi",
+      "name": "Túi đôi",
+      "price": 56,
+      "costPrice": 46,
+      "unit": "kg",
+      "category": "Túi",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-rcca",
+      "code": "tuidon",
+      "name": "Túi đơn",
+      "price": 56,
+      "costPrice": 46,
+      "unit": "kg",
+      "category": "Túi",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-vn5r",
+      "code": "tuit",
+      "name": "Túi chữ T",
+      "price": 60,
+      "costPrice": 50,
+      "unit": "kg",
+      "category": "Túi",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-uiak",
+      "code": "hut12dent",
+      "name": "Hút 12 Đen ( 10 bịch )",
+      "price": 240,
+      "costPrice": 190,
+      "unit": "Thùng",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-91gr",
+      "code": "hut12denb",
+      "name": "Hút 12 Đen ( Bịch )",
+      "price": 24,
+      "costPrice": 19,
+      "unit": "Bịch",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-rbu2",
+      "code": "hut12xanht",
+      "name": "Hút 12 xanh ( 10 bịch )",
+      "price": 240,
+      "costPrice": 190,
+      "unit": "Thùng",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-ida7",
+      "code": "hut12xanhb",
+      "name": "Hút 12 xanh ( Bịch )",
+      "price": 24,
+      "costPrice": 19,
+      "unit": "Bịch",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-z1fd",
+      "code": "hut12dot",
+      "name": "Hút 12 đỏ ( 10 bịch )",
+      "price": 240,
+      "costPrice": 190,
+      "unit": "Thùng",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-ir3o",
+      "code": "hut12dob",
+      "name": "Hút 12 đỏ ( Bịch )",
+      "price": 24,
+      "costPrice": 19,
+      "unit": "Bịch",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-e7bh",
+      "code": "hut12trongt",
+      "name": "Hút 12 trong ( 10 bịch )",
+      "price": 230,
+      "costPrice": 185,
+      "unit": "Thùng",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-9ubl",
+      "code": "hut12trongb",
+      "name": "Hút 12 trong ( Bịch )",
+      "price": 23,
+      "costPrice": 18.5,
+      "unit": "Bịch",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-8fd0",
+      "code": "hut8trongt",
+      "name": "Hút 8 trong  ( 10 bịch )",
+      "price": 230,
+      "costPrice": 185,
+      "unit": "Thùng",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-uuxj",
+      "code": "hut8trongb",
+      "name": "Hút 8 trong ( Bịch )",
+      "price": 23,
+      "costPrice": 18.5,
+      "unit": "Bịch",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-9jpi",
+      "code": "hut6trongt",
+      "name": "Hút 6 trong  ( 10 bịch )",
+      "price": 240,
+      "costPrice": 190,
+      "unit": "Thùng",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-c0xa",
+      "code": "hut6trongb",
+      "name": "Hút 6 trong ( Bịch )",
+      "price": 24,
+      "costPrice": 19,
+      "unit": "Bịch",
+      "category": "Ống hút",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-31bn",
+      "code": "lygiay7002lop",
+      "name": "Ly giấy 700ml 2 lớp",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-m5ls",
+      "code": "lygiay5002lop",
+      "name": "Ly giấy 500ml 2 lớp",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-xx7q",
+      "code": "lygiay3602lop",
+      "name": "Ly giấy 360ml 2 lớp",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-iw28",
+      "code": "lygiay2702lop",
+      "name": "Ly giấy 270ml 2 lớp",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-l2dq",
+      "code": "lygiay7002pe",
+      "name": "Ly giấy 700ml 2Pe",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-1ksd",
+      "code": "lygiay5002pe",
+      "name": "Ly giấy 500ml 2Pe",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-vvhd",
+      "code": "lygiay3602pe",
+      "name": "Ly giấy 360ml 2Pe",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-pwty",
+      "code": "lygiay2702pe",
+      "name": "Ly giấy 270ml 2Pe",
+      "price": 0,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-koab",
+      "code": "t1000mlnhamday",
+      "name": "Ly tim 1000ml nhám dày",
+      "price": 1430,
+      "costPrice": 1180,
+      "unit": "Thùng",
+      "category": "Ly tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-bq9w",
+      "code": "P1000mlapp",
+      "name": "Ly 1000ml",
+      "price": 980,
+      "costPrice": 700,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484625-zv55",
       "code": "pet7ukp",
       "name": "Ly Pet700ml/98 Ukp",
       "price": 1080,
@@ -21,7 +432,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-eq2o",
+      "id": "p-1793177484625-x2vd",
       "code": "Pet650ukp",
       "name": "Ly Pet650ml/98 Ukp",
       "price": 1030,
@@ -31,7 +442,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-qk62",
+      "id": "p-1793177484625-a1nx",
       "code": "pet598ukp",
       "name": "Ly Pet500ml/98 Lùn Ukp",
       "price": 830,
@@ -41,7 +452,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-3fyt",
+      "id": "p-1793177484625-582e",
       "code": "pet5lun98ukp",
       "name": "Ly Pet500ml/98 Lùn Ukp",
       "price": 820,
@@ -51,7 +462,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-j45y",
+      "id": "p-1793177484625-0fm0",
       "code": "pet593ukp",
       "name": "Ly Pet500ml/93 Ukp",
       "price": 750,
@@ -61,7 +472,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-irbl",
+      "id": "p-1793177484625-caml",
       "code": "pet593app",
       "name": "Ly Pet 500ml/93 App",
       "price": 740,
@@ -71,7 +482,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-clz1",
+      "id": "p-1793177484625-leer",
       "code": "pet3Ukpday",
       "name": "Ly Pet 360ml Ukp dày",
       "price": 690,
@@ -81,7 +492,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-xe1v",
+      "id": "p-1793177484625-ts4w",
       "code": "pet3Ukpmong",
       "name": "Ly Pet 360ml Ukp mỏng",
       "price": 630,
@@ -91,7 +502,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-tohr",
+      "id": "p-1793177484625-cljr",
       "code": "pet3appmong",
       "name": "Ly Pet 360ml App mỏng",
       "price": 610,
@@ -101,7 +512,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-kaox",
+      "id": "p-1793177484625-9kmz",
       "code": "t7nk",
       "name": "Ly tim 700ml nhám dày",
       "price": 1440,
@@ -111,7 +522,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-rnhy",
+      "id": "p-1793177484625-9b84",
       "code": "t7nhamUkp",
       "name": "Ly tim700ml nhám Ukp",
       "price": 830,
@@ -121,7 +532,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-c3vf",
+      "id": "p-1793177484625-8vym",
       "code": "t7Ukp",
       "name": "Ly tim700ml Ukp",
       "price": 780,
@@ -131,7 +542,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-onaz",
+      "id": "p-1793177484625-t0wf",
       "code": "t7app",
       "name": "Ly tim 700ml",
       "price": 760,
@@ -141,17 +552,17 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-zw3y",
+      "id": "p-1793177484625-dooj",
       "code": "t5nhamUkp",
       "name": "Ly tim 500ml nhám Ukp",
-      "price": 730,
+      "price": 720,
       "costPrice": 540,
       "unit": "Thùng",
       "category": "Ly tim",
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-uz32",
+      "id": "p-1793177484625-h1i4",
       "code": "t5cung",
       "name": "Ly tim 500ml nhám dày",
       "price": 1160,
@@ -161,7 +572,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-upiv",
+      "id": "p-1793177484625-r5fv",
       "code": "t5Ukp",
       "name": "Ly tim 500ml",
       "price": 680,
@@ -171,7 +582,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-dta6",
+      "id": "p-1793177484625-b6u0",
       "code": "t5app",
       "name": "Ly tim 500ml",
       "price": 660,
@@ -181,17 +592,17 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-6mte",
+      "id": "p-1793177484625-b894",
       "code": "t5nhamapp",
       "name": "Ly tim nhám 500ml",
-      "price": 750,
-      "costPrice": 560,
+      "price": 700,
+      "costPrice": 520,
       "unit": "Thùng",
       "category": "Ly tim",
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-0d7b",
+      "id": "p-1793177484625-4vp8",
       "code": "q500app",
       "name": "Ly đáy bầu 360ml",
       "price": 660,
@@ -201,7 +612,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-dmnl",
+      "id": "p-1793177484625-ld5g",
       "code": "q500ht",
       "name": "Ly đáy bầu 360ml",
       "price": 620,
@@ -211,7 +622,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-9rw2",
+      "id": "p-1793177484625-23dj",
       "code": "q500qd",
       "name": "Ly đáy bầu 360ml",
       "price": 630,
@@ -221,7 +632,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-1lz2",
+      "id": "p-1793177484625-w4fc",
       "code": "q360viet",
       "name": "Ly đáy bầu 360ml",
       "price": 600,
@@ -231,7 +642,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-cb6n",
+      "id": "p-1793177484625-q8yq",
       "code": "q360qd",
       "name": "Ly đáy bầu 360ml",
       "price": 600,
@@ -241,7 +652,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-pxr1",
+      "id": "p-1793177484625-hmc5",
       "code": "p7qd-m",
       "name": "Ly đáy bằng 700ml",
       "price": 670,
@@ -251,7 +662,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-mgtu",
+      "id": "p-1793177484625-z012",
       "code": "p7qd-d",
       "name": "Ly đáy bằng 700ml",
       "price": 700,
@@ -261,7 +672,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-u0uh",
+      "id": "p-1793177484625-au0h",
       "code": "p7app-du",
       "name": "Ly đáy bằng 700ml Đ",
       "price": 780,
@@ -271,7 +682,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-0gwp",
+      "id": "p-1793177484625-yuov",
       "code": "p700aapp-m",
       "name": "Ly đáy bằng 700ml",
       "price": 690,
@@ -281,7 +692,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-5qsk",
+      "id": "p-1793177484625-5x2e",
       "code": "p700app-d",
       "name": "Ly đáy bằng 700ml",
       "price": 720,
@@ -291,7 +702,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-04y6",
+      "id": "p-1793177484625-cms7",
       "code": "p650app",
       "name": "Ly đáy bằng 650ml",
       "price": 700,
@@ -301,7 +712,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-3nqa",
+      "id": "p-1793177484625-urlt",
       "code": "p5appd",
       "name": "Ly đáy bằng 500ml",
       "price": 610,
@@ -311,7 +722,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-knbm",
+      "id": "p-1793177484625-b59t",
       "code": "p5nham",
       "name": "Ly đáy bằng 500ml Nhám",
       "price": 690,
@@ -321,7 +732,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-nkkb",
+      "id": "p-1793177484625-wmxc",
       "code": "p5appm",
       "name": "Ly đáy bằng 500ml",
       "price": 600,
@@ -331,7 +742,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-9eg3",
+      "id": "p-1793177484625-t2sw",
       "code": "P5ht",
       "name": "Ly đáy bằng 500ml",
       "price": 570,
@@ -341,17 +752,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-89g7",
-      "code": "p5qd-d",
-      "name": "Ly đáy bằng 500ml",
-      "price": 600,
-      "costPrice": 425,
-      "unit": "Thùng",
-      "category": "Ly đáy bằng",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793091057699-oovb",
+      "id": "p-1793177484625-d0dr",
       "code": "p5qd-m",
       "name": "Ly đáy bằng 500ml",
       "price": 580,
@@ -361,7 +762,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-reh8",
+      "id": "p-1793177484625-w61j",
       "code": "p4da",
       "name": "Ly đáy bằng 400ml",
       "price": 550,
@@ -371,7 +772,17 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-cvn2",
+      "id": "p-1793177484625-en9t",
+      "code": "p5qd-d",
+      "name": "Ly đáy bằng 500ml",
+      "price": 600,
+      "costPrice": 425,
+      "unit": "Thùng",
+      "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793177484624-b2ld",
       "code": "p360ht",
       "name": "Ly đáy bằng 360ml",
       "price": 540,
@@ -381,7 +792,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-a60s",
+      "id": "p-1793177484624-gcw0",
       "code": "p360qd",
       "name": "Ly đáy bằng 360ml",
       "price": 530,
@@ -391,7 +802,7 @@
       "isPopular": true
     },
     {
-      "id": "p-1793091057699-1zu5",
+      "id": "p-1793177484624-ux03",
       "code": "p360app",
       "name": "Ly đáy bằng 360ml",
       "price": 570,
@@ -412,6 +823,31 @@
     }
   ],
   "orders": [
+    {
+      "id": "ord-1793178694715",
+      "code": "#DH-1004",
+      "customerName": "Khach Khong SDT Da Sua",
+      "customerPhone": "",
+      "customerAddress": "",
+      "items": [
+        {
+          "id": "row-1793178420631-zsbmp",
+          "code": "pet593ukp",
+          "name": "Ly Pet500ml/93 Ukp",
+          "amount": 750,
+          "quantity": 1,
+          "costPrice": 565,
+          "productId": "p-1793177484625-0fm0",
+          "unitPrice": 750
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 750,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-28T09:11:34.715Z",
+      "updatedAt": "2026-10-28T09:16:36.871Z"
+    },
     {
       "id": "ord-1793169298026",
       "code": "#DH-1003",
@@ -464,15 +900,25 @@
           "quantity": 1,
           "amount": 700,
           "costPrice": 0
+        },
+        {
+          "id": "row-1793177449822-xf82d",
+          "productId": "p-1793091057699-0d7b",
+          "code": "q500app",
+          "name": "Ly đáy bầu 360ml",
+          "unitPrice": 660,
+          "quantity": 1,
+          "amount": 660,
+          "costPrice": 480
         }
       ],
-      "totalQuantity": 1,
-      "totalAmount": 700,
+      "totalQuantity": 2,
+      "totalAmount": 1360,
       "notes": "",
       "status": "Chờ in",
       "createdAt": "15:52:21 27/10/2026",
-      "updatedAt": "2026-10-27T08:54:59.380Z"
+      "updatedAt": "2026-10-28T08:50:55.069Z"
     }
   ],
-  "lastUpdated": "2026-10-28T08:39:26.372Z"
+  "lastUpdated": "2026-10-28T09:16:36.889Z"
 }

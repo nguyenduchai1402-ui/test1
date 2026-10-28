@@ -312,8 +312,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     if (cust) {
       setCustomerId(cust.id);
       setCustomerName(cust.name);
-      setCustomerPhone(cust.phone);
-      setCustomerAddress(cust.address);
+      setCustomerPhone(cust.phone || '');
+      setCustomerAddress(cust.address || '');
       setCustomerSearchQuery(cust.name);
       onShowToast(`Đã chọn: ${cust.name}`);
     }
@@ -327,16 +327,16 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     const newCust: Customer = {
       id: 'c-' + Date.now(),
       name: newCustName.trim(),
-      phone: newCustPhone.trim(),
-      address: newCustAddress.trim(),
+      phone: (newCustPhone || '').trim(),
+      address: (newCustAddress || '').trim(),
       createdAt: new Date().toISOString()
     };
 
     posDb.saveCustomer(newCust);
     setCustomerId(newCust.id);
     setCustomerName(newCust.name);
-    setCustomerPhone(newCust.phone);
-    setCustomerAddress(newCust.address);
+    setCustomerPhone(newCust.phone || '');
+    setCustomerAddress(newCust.address || '');
     setCustomerSearchQuery(newCust.name);
     setShowAddCustomerModal(false);
     setNewCustName('');
@@ -382,12 +382,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       code: orderCode,
       customerId: customerId,
       customerName: finalCustName,
-      customerPhone: customerPhone.trim(),
-      customerAddress: customerAddress.trim(),
+      customerPhone: (customerPhone || '').trim(),
+      customerAddress: (customerAddress || '').trim(),
       items: validOrderItems,
       totalQuantity,
       totalAmount,
-      notes: orderNotes.trim(),
+      notes: (orderNotes || '').trim(),
       status: editingOrder ? editingOrder.status : 'Chờ in',
       createdAt: editingOrder ? (editingOrder.createdAt || new Date().toISOString()) : new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -412,12 +412,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       code: orderCode,
       customerId: customerId,
       customerName: finalCustName,
-      customerPhone: customerPhone.trim(),
-      customerAddress: customerAddress.trim(),
+      customerPhone: (customerPhone || '').trim(),
+      customerAddress: (customerAddress || '').trim(),
       items: validOrderItems,
       totalQuantity,
       totalAmount,
-      notes: orderNotes.trim(),
+      notes: (orderNotes || '').trim(),
       status: editingOrder ? editingOrder.status : 'Chờ in',
       createdAt: editingOrder ? (editingOrder.createdAt || new Date().toISOString()) : new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -553,9 +553,9 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       id: 'temp',
       code: orderCode,
       customerId,
-      customerName: customerName.trim() || 'Khách hàng',
-      customerPhone,
-      customerAddress,
+      customerName: (customerName || customerSearchQuery || '').trim() || 'Khách hàng',
+      customerPhone: (customerPhone || '').trim(),
+      customerAddress: (customerAddress || '').trim(),
       items: validOrderItems,
       totalQuantity,
       totalAmount,
@@ -860,7 +860,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                   type="tel" 
                   className="pos-input pos-input-sm" 
                   placeholder="Số điện thoại"
-                  value={customerPhone}
+                  value={customerPhone || ''}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                 />
               </div>
@@ -870,7 +870,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
               type="text" 
               className="pos-input pos-input-sm" 
               placeholder="Địa chỉ giao hàng / Nhà xe nhận hàng"
-              value={customerAddress}
+              value={customerAddress || ''}
               onChange={(e) => setCustomerAddress(e.target.value)}
             />
           </div>
