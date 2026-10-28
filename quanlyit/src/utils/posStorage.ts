@@ -122,15 +122,24 @@ export async function syncFromSupabase(): Promise<{
     if (cRes.error) throw cRes.error;
     if (oRes.error) throw oRes.error;
 
-    const cloudProducts: Product[] = (pRes.data || []).map((row: any) => ({
-      id: row.id,
-      code: row.code,
-      name: row.name,
-      price: Number(row.price),
-      unit: row.unit || 'thiên',
-      category: row.category || 'Cốc Tim',
-      isPopular: row.is_popular !== false
-    }));
+    const currentLocalProducts = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, []);
+    const localMap = new Map(currentLocalProducts.map(p => [p.id, p]));
+
+    const cloudProducts: Product[] = (pRes.data || []).map((row: any) => {
+      const local = localMap.get(row.id);
+      const rawCost = row.cost_price ?? row.costPrice ?? local?.costPrice;
+      const costPrice = rawCost !== undefined && rawCost !== null && rawCost !== '' ? Number(rawCost) : undefined;
+      return {
+        id: row.id,
+        code: row.code,
+        name: row.name,
+        price: Number(row.price),
+        costPrice,
+        unit: row.unit || 'thiên',
+        category: row.category || 'Cốc Tim',
+        isPopular: row.is_popular !== false
+      };
+    });
 
     const cloudCustomers: Customer[] = (cRes.data || []).map((row: any) => ({
       id: row.id,
@@ -200,12 +209,27 @@ export async function pushAllToSupabase(): Promise<{ ok: boolean; message: strin
         code: p.code,
         name: p.name,
         price: p.price,
+        cost_price: p.costPrice !== undefined && p.costPrice !== null ? Number(p.costPrice) : null,
         unit: p.unit,
         category: p.category,
         is_popular: p.isPopular ?? true,
         created_at: new Date().toISOString()
       }));
-      await client.from('pos_products').upsert(pRows, { onConflict: 'id' });
+      try {
+        await client.from('pos_products').upsert(pRows, { onConflict: 'id' });
+      } catch {
+        const pRowsFallback = products.map(p => ({
+          id: p.id,
+          code: p.code,
+          name: p.name,
+          price: p.price,
+          unit: p.unit,
+          category: p.category,
+          is_popular: p.isPopular ?? true,
+          created_at: new Date().toISOString()
+        }));
+        await client.from('pos_products').upsert(pRowsFallback, { onConflict: 'id' });
+      }
     }
 
     if (customers.length > 0) {
@@ -630,7 +654,15 @@ export async function syncFromLocalApi(): Promise<boolean> {
     let hasChanges = false;
 
     if (Array.isArray(data.products) && data.products.length > 0) {
-      setStorage(STORAGE_KEYS.PRODUCTS, data.products);
+      const existing = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, []);
+      const exMap = new Map(existing.map(p => [p.id, p]));
+      const mergedProducts = data.products.map((p: any) => ({
+        ...p,
+        costPrice: p.costPrice !== undefined && p.costPrice !== null && p.costPrice !== '' 
+          ? Number(p.costPrice) 
+          : exMap.get(p.id)?.costPrice
+      }));
+      setStorage(STORAGE_KEYS.PRODUCTS, mergedProducts);
       window.dispatchEvent(new Event('pos_products_updated'));
       hasChanges = true;
     }
@@ -685,7 +717,7 @@ export const posDb = {
     if (client) {
       void (async () => {
         try {
-          const { error } = await client.from('pos_products').upsert({
+          const payload: any = {
             id: prod.id,
             code: prod.code,
             name: prod.name,
@@ -694,8 +726,15 @@ export const posDb = {
             category: prod.category,
             is_popular: prod.isPopular ?? true,
             created_at: new Date().toISOString()
-          }, { onConflict: 'id' });
-          if (error) console.warn('Lỗi lưu SP lên Supabase:', error.message);
+          };
+          if (prod.costPrice !== undefined && prod.costPrice !== null && prod.costPrice !== ('' as any)) {
+            payload.cost_price = Number(prod.costPrice);
+          }
+          const { error } = await client.from('pos_products').upsert(payload, { onConflict: 'id' });
+          if (error) {
+            delete payload.cost_price;
+            await client.from('pos_products').upsert(payload, { onConflict: 'id' });
+          }
         } catch (err) {
           console.warn('Lỗi mạng Supabase:', err);
         }

@@ -17,6 +17,8 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
   // Modal / Bottom Sheet Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,6 +67,17 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
       setSelectedCategory('Tất cả');
     }
   }, [categories, selectedCategory]);
+
+  // Đóng dropdown tìm kiếm nhanh khi bấm ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Cuộn danh mục sang trái / phải
   const handleScrollCategories = (direction: 'left' | 'right') => {
@@ -234,19 +247,30 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     <div className="pos-content" style={{ paddingBottom: 'calc(var(--bottom-nav-height) + 20px)' }}>
       {/* SEARCH AND ACTION BUTTONS */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-        <div className="pos-search-input-wrap" style={{ flex: 1 }}>
+        <div className="pos-search-input-wrap" ref={searchWrapRef} style={{ flex: 1, position: 'relative' }}>
           <Search size={18} className="pos-search-icon" />
           <input
             type="text"
             className="pos-input pos-search-input"
-            placeholder="Tìm theo mã (T7, TT2...) hoặc tên..."
+            placeholder="🔍 Tìm nhanh để sửa sản phẩm (mã, tên)..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setIsSearchDropdownOpen(true);
+            }}
+            onFocus={() => {
+              if (searchQuery.trim()) {
+                setIsSearchDropdownOpen(true);
+              }
+            }}
           />
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setIsSearchDropdownOpen(false);
+              }}
               style={{
                 position: 'absolute', right: 10, background: 'none', border: 'none',
                 color: '#94a3b8', cursor: 'pointer', padding: 4
@@ -254,6 +278,84 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
             >
               <X size={16} />
             </button>
+          )}
+
+          {/* QUICK SEARCH TO EDIT DROPDOWN */}
+          {isSearchDropdownOpen && searchQuery.trim() && (
+            <div 
+              className="pos-autocomplete-list"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#ffffff',
+                border: '1.5px solid #15803d',
+                borderRadius: 8,
+                marginTop: 4,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                maxHeight: 280,
+                overflowY: 'auto',
+                zIndex: 100
+              }}
+            >
+              {filteredProducts.length === 0 ? (
+                <div style={{ padding: '12px 14px', fontSize: 13, color: '#64748b', textAlign: 'center' }}>
+                  Không tìm thấy sản phẩm nào khớp với "{searchQuery}"
+                </div>
+              ) : (
+                filteredProducts.slice(0, 10).map(p => (
+                  <div
+                    key={p.id}
+                    className="pos-autocomplete-item"
+                    onClick={() => {
+                      setIsSearchDropdownOpen(false);
+                      handleOpenEdit(p);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottom: '1px solid #f1f5f9',
+                      cursor: 'pointer'
+                    }}
+                    title="Bấm để mở form sửa sản phẩm này"
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span className="pos-item-code-badge" style={{ fontSize: 11, padding: '2px 6px' }}>{p.code}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {p.name}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                        {p.category} • ĐVT: {p.unit}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#15803d' }}>
+                          {p.price}k
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: p.costPrice !== undefined ? '#0284c7' : '#94a3b8' }}>
+                          {p.costPrice !== undefined ? 'Giá nhập: ' + p.costPrice + 'k' : 'Chưa có giá nhập'}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="pos-btn pos-btn-secondary"
+                        style={{ height: 28, padding: '0 8px', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Edit2 size={12} />
+                        <span>Sửa</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
         </div>
 
@@ -513,41 +615,59 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                 <div style={{ fontSize: 11, color: '#64748b' }}>
                   {formatVND(prod.price)}
                 </div>
-                {prod.costPrice !== undefined && prod.costPrice !== null && (
+                {prod.costPrice !== undefined && prod.costPrice !== null && prod.costPrice !== ('' as any) ? (
                   <div style={{ 
-                    fontSize: 10, 
+                    fontSize: 11, 
                     color: '#0284c7', 
                     fontWeight: 700, 
                     marginTop: 2,
                     background: '#f0f9ff',
-                    border: '1px solid #e0f2fe',
-                    padding: '1px 5px',
+                    border: '1px solid #bae6fd',
+                    padding: '2px 6px',
                     borderRadius: 4,
                     display: 'inline-block'
                   }}>
-                    Giá nhập: {prod.costPrice}k ({formatVND(prod.costPrice)})
+                    Giá nhập: {prod.costPrice}k <span style={{ fontWeight: 500, color: '#0369a1' }}>({formatVND(prod.costPrice)})</span>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    fontSize: 10, 
+                    color: '#94a3b8', 
+                    fontStyle: 'italic',
+                    marginTop: 2 
+                  }}>
+                    Chưa có giá nhập
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   type="button"
-                  className="pos-item-del-btn"
-                  onClick={() => handleOpenEdit(prod)}
+                  className="pos-btn pos-btn-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(prod);
+                  }}
                   title="Sửa sản phẩm"
                   aria-label="Sửa sản phẩm"
+                  style={{ height: 32, padding: '0 8px', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
                 >
-                  <Edit2 size={16} />
+                  <Edit2 size={13} />
+                  <span>Sửa</span>
                 </button>
                 <button
                   type="button"
                   className="pos-item-del-btn"
-                  onClick={() => handleDeleteProduct(prod)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteProduct(prod);
+                  }}
                   title="Xóa sản phẩm"
                   aria-label="Xóa sản phẩm"
+                  style={{ width: 32, height: 32 }}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
@@ -699,14 +819,14 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4, color: '#15803d' }}>
                     Đơn giá bán (k) *
                   </label>
                   <input
                     type="number"
                     required
                     min="0"
-                    step="1"
+                    step="any"
                     className="pos-input"
                     placeholder="750 = 750.000đ"
                     value={formPrice}
@@ -720,15 +840,15 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4, color: '#0369a1' }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4, color: '#0284c7' }}>
                     Giá nhập (k)
                   </label>
                   <input
                     type="number"
                     min="0"
-                    step="1"
+                    step="any"
                     className="pos-input"
-                    placeholder="Ví dụ: 550 = 550.000đ"
+                    placeholder="Ví dụ: 550"
                     value={formCostPrice}
                     onChange={(e) => setFormCostPrice(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -738,26 +858,26 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                    Danh mục
-                  </label>
-                  <input
-                    list="product-categories-datalist"
-                    type="text"
-                    className="pos-input"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    placeholder="Chọn hoặc nhập danh mục mới"
-                    required
-                  />
-                  <datalist id="product-categories-datalist">
-                    {categories.filter(c => c !== 'Tất cả').map(c => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
-                </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                  Danh mục
+                </label>
+                <input
+                  list="product-categories-datalist"
+                  type="text"
+                  className="pos-input"
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                  placeholder="Chọn hoặc nhập danh mục mới"
+                  required
+                />
+                <datalist id="product-categories-datalist">
+                  {categories.filter(c => c !== 'Tất cả').map(c => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

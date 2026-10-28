@@ -1,6 +1,16 @@
 {
   "products": [
     {
+      "id": "p-1793156444215-b6q9",
+      "code": "PET7UKP",
+      "name": "Ly Pet700ml/98 Ukp",
+      "price": 1080,
+      "costPrice": 920,
+      "unit": "Thùng",
+      "category": "Ly pet",
+      "isPopular": true
+    },
+    {
       "id": "p-1793091057699-th0r",
       "code": "pet7ukp",
       "name": "Ly Pet700ml/98 Ukp",
@@ -429,5 +439,5 @@
       "updatedAt": "2026-10-27T08:54:59.380Z"
     }
   ],
-  "lastUpdated": "2026-10-27T08:54:59.383Z"
+  "lastUpdated": "2026-10-28T03:48:17.879Z"
 }
