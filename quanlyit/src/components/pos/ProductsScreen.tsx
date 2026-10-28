@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Edit2, Trash2, X, Check, Package, FileSpreadsheet, Upload, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../../types/pos';
 import { posDb, formatVND, formatK } from '../../utils/posStorage';
-import { downloadProductExcelTemplate, parseProductsFromExcel } from '../../utils/excelHelper';
+import { downloadProductExcelTemplate, parseProductsFromExcel, exportProductsToExcel } from '../../utils/excelHelper';
 import { Pagination } from './Pagination';
 
 interface ProductsScreenProps {
@@ -215,6 +215,22 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     }
   };
 
+  // Xuất danh sách sản phẩm ra Excel
+  const handleExportExcel = () => {
+    const listToExport = filteredProducts.length > 0 ? filteredProducts : products;
+    if (listToExport.length === 0) {
+      alert('Không có sản phẩm nào để xuất Excel!');
+      return;
+    }
+    try {
+      exportProductsToExcel(listToExport);
+      onShowToast(`Đã xuất file Excel cho ${listToExport.length} sản phẩm thành công!`);
+    } catch (err) {
+      console.error('Lỗi xuất Excel:', err);
+      alert('Không thể xuất file Excel. Vui lòng thử lại!');
+    }
+  };
+
   // Handle Excel File Upload
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -359,16 +375,28 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
           )}
         </div>
 
+        {/* XUẤT EXCEL BUTTON */}
+        <button
+          type="button"
+          className="pos-btn pos-btn-secondary"
+          onClick={handleExportExcel}
+          title="Xuất danh sách sản phẩm ra file Excel"
+          style={{ padding: '0 8px' }}
+        >
+          <FileSpreadsheet size={15} color="#15803d" />
+          <span>Xuất</span>
+        </button>
+
         {/* NẠP EXCEL BUTTON */}
         <button
           type="button"
           className="pos-btn pos-btn-secondary"
           onClick={() => setIsImportModalOpen(true)}
           title="Nạp dữ liệu từ file Excel"
-          style={{ padding: '0 10px' }}
+          style={{ padding: '0 8px' }}
         >
-          <Upload size={15} color="#15803d" />
-          <span>Nhập Excel</span>
+          <Upload size={15} color="#0284c7" />
+          <span>Nhập</span>
         </button>
 
         {/* THÊM SẢN PHẨM BUTTON */}
@@ -377,7 +405,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
           className="pos-btn pos-btn-primary"
           onClick={handleOpenCreate}
           title="Thêm sản phẩm mới"
-          style={{ padding: '0 12px' }}
+          style={{ padding: '0 10px' }}
         >
           <Plus size={16} />
           <span>Thêm</span>
@@ -746,8 +774,20 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                   className="pos-btn pos-btn-secondary"
                   onClick={downloadProductExcelTemplate}
                 >
-                  <Download size={15} color="#15803d" />
+                  <Download size={15} color="#0284c7" />
                   <span>Tải File Excel Mẫu Chuẩn</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="pos-btn pos-btn-secondary"
+                  onClick={() => {
+                    handleExportExcel();
+                    setIsImportModalOpen(false);
+                  }}
+                >
+                  <FileSpreadsheet size={15} color="#15803d" />
+                  <span>Xuất Toàn Bộ Sản Phẩm Ra Excel</span>
                 </button>
               </div>
             </div>

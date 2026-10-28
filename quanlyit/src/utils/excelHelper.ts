@@ -1,3 +1,40 @@
+// EXPORT PRODUCTS TO EXCEL
+export function exportProductsToExcel(products: Product[]) {
+  const data = products.map((p, idx) => ({
+    'STT': idx + 1,
+    'Mã sản phẩm': p.code,
+    'Tên sản phẩm': p.name,
+    'Danh mục': p.category,
+    'Đơn vị tính': p.unit,
+    'Đơn giá bán (k)': p.price,
+    'Đơn giá bán (VNĐ)': p.price * 1000,
+    'Giá nhập (k)': p.costPrice !== undefined && p.costPrice !== null ? p.costPrice : '',
+    'Giá nhập (VNĐ)': p.costPrice !== undefined && p.costPrice !== null ? p.costPrice * 1000 : '',
+    'Lợi nhuận dự kiến (k)': p.costPrice !== undefined && p.costPrice !== null ? (p.price - p.costPrice) : '',
+    'Lợi nhuận dự kiến (VNĐ)': p.costPrice !== undefined && p.costPrice !== null ? (p.price - p.costPrice) * 1000 : ''
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [
+    { wch: 6 },  // STT
+    { wch: 14 }, // Mã sản phẩm
+    { wch: 30 }, // Tên sản phẩm
+    { wch: 16 }, // Danh mục
+    { wch: 12 }, // Đơn vị tính
+    { wch: 15 }, // Đơn giá bán (k)
+    { wch: 18 }, // Đơn giá bán (VNĐ)
+    { wch: 14 }, // Giá nhập (k)
+    { wch: 16 }, // Giá nhập (VNĐ)
+    { wch: 20 }, // Lợi nhuận dự kiến (k)
+    { wch: 22 }  // Lợi nhuận dự kiến (VNĐ)
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Bang_Gia_San_Pham');
+  const filename = `Bang_Gia_San_Pham_Ly_Nhua_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+}
+
 import * as XLSX from 'xlsx';
 import { Product, Customer, Order } from '../types/pos';
 import { formatVND } from './posStorage';
