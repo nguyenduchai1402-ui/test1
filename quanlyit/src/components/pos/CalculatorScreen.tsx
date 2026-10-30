@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Product, Customer, Order, OrderItem } from '../../types/pos';
-import { posDb, formatVND, formatK, generateOrderCode, generateZaloMessage, formatVietnamDateTime } from '../../utils/posStorage';
+import { posDb, formatVND, formatK, generateOrderCode, generateZaloMessage, formatVietnamDateTime, parseOrderTimestamp } from '../../utils/posStorage';
 
 const KHACH_LE_ID = 'khach-le';
 const KHACH_LE_NAME = 'Khách Lẻ';
@@ -336,7 +336,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       name: newCustName.trim(),
       phone: (newCustPhone || '').trim(),
       address: (newCustAddress || '').trim(),
-      createdAt: formatVietnamDateTime()
+      createdAt: new Date().toISOString()
     };
 
     posDb.saveCustomer(newCust);
@@ -363,8 +363,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       (c.code && c.code.toLowerCase().includes(clean))
     );
   }).sort((a, b) => {
-    const tA = new Date(a.createdAt || 0).getTime();
-    const tB = new Date(b.createdAt || 0).getTime();
+    const tA = parseOrderTimestamp(a.createdAt);
+    const tB = parseOrderTimestamp(b.createdAt);
     if (tA && tB && tA !== tB) return tB - tA;
     return (a.name || '').localeCompare(b.name || '');
   });
@@ -432,7 +432,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       name: cleanName,
       phone: cleanPhone,
       address: cleanAddress,
-      createdAt: formatVietnamDateTime()
+      createdAt: new Date().toISOString()
     };
     posDb.saveCustomer(newCust);
     setCustomers(posDb.getCustomers());

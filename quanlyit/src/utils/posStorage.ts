@@ -27,6 +27,39 @@ export function getSupabaseConfig(): SupabaseConfig {
 }
 
 let _supabaseInstance: SupabaseClient | null = null;
+// Track recently saved customers locally so Realtime/Cloud sync never overwrites them before upsert completes
+const _recentlySavedCustomers = new Map<string, { customer: Customer; savedAt: number }>();
+
+export function toIsoTimestamp(dateStr?: string): string {
+  if (!dateStr) return new Date().toISOString();
+  const ts = parseOrderTimestamp(dateStr);
+  if (ts > 0) return new Date(ts).toISOString();
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+function mergeWithRecentlySavedCustomers(incoming: Customer[]): Customer[] {
+  const now = Date.now();
+  const map = new Map<string, Customer>();
+  // First add incoming customers
+  for (const c of incoming) {
+    map.set(c.id, c);
+  }
+  // Ensure any recently saved customer (within last 2 minutes) is preserved at the front
+  const recentToPrepend: Customer[] = [];
+  for (const [id, entry] of _recentlySavedCustomers.entries()) {
+    if (now - entry.savedAt > 120_000) {
+      _recentlySavedCustomers.delete(id);
+      continue;
+    }
+    if (!map.has(id)) {
+      recentToPrepend.push(entry.customer);
+    } else {
+      map.set(id, { ...map.get(id)!, ...entry.customer });
+    }
+  }
+  return [...recentToPrepend, ...Array.from(map.values())];
+}
 let _isListeningRealtime = false;
 
 export function getSupabaseClient(): SupabaseClient | null {
@@ -171,8 +204,9 @@ export async function syncFromSupabase(): Promise<{
       setStorage(STORAGE_KEYS.PRODUCTS, cloudProducts);
       window.dispatchEvent(new Event('pos_products_updated'));
     }
-    if (cloudCustomers.length > 0) {
-      setStorage(STORAGE_KEYS.CUSTOMERS, cloudCustomers);
+    const mergedCloudCustomers = mergeWithRecentlySavedCustomers(cloudCustomers);
+    if (mergedCloudCustomers.length > 0) {
+      setStorage(STORAGE_KEYS.CUSTOMERS, mergedCloudCustomers);
       window.dispatchEvent(new Event('pos_customers_updated'));
     }
     if (cloudOrders.length > 0) {
@@ -240,7 +274,7 @@ export async function pushAllToSupabase(): Promise<{ ok: boolean; message: strin
         phone: c.phone || null,
         address: c.address || null,
         notes: c.notes || null,
-        created_at: c.createdAt || new Date().toISOString()
+        created_at: toIsoTimestamp(c.createdAt)
       }));
       await client.from('pos_customers').upsert(cRows, { onConflict: 'id' });
     }
@@ -278,8 +312,61 @@ const STORAGE_KEYS = {
   PRODUCTS: 'pos_print_products_v2',
   CUSTOMERS: 'pos_print_customers_v2',
   ORDERS: 'pos_print_orders_v2',
-  SETTINGS: 'pos_print_settings_v2'
+  SETTINGS: 'pos_print_settings_v2',
+  DELETED_CUSTOMERS: 'pos_print_deleted_customers_v2'
 };
+
+const SEED_ORDER_IDS = new Set([
+  'ord-1025', 'ord-1024', 'ord-1023', 'ord-1022', 'ord-1021',
+  'ord-1020', 'ord-1019', 'ord-1018', 'ord-1017', 'ord-1016',
+  'ord-1015', 'ord-1014', 'ord-1013'
+]);
+
+function getDeletedCustomerSet(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.DELETED_CUSTOMERS);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function markCustomerDeleted(id?: string, name?: string): void {
+  const set = getDeletedCustomerSet();
+  if (id) set.add(`id:${id}`);
+  if (name && name.trim()) set.add(`name:${name.trim().toLowerCase()}`);
+  try {
+    localStorage.setItem(STORAGE_KEYS.DELETED_CUSTOMERS, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+function unmarkCustomerDeleted(id?: string, name?: string): void {
+  const set = getDeletedCustomerSet();
+  if (id) set.delete(`id:${id}`);
+  if (name && name.trim()) set.delete(`name:${name.trim().toLowerCase()}`);
+  try {
+    localStorage.setItem(STORAGE_KEYS.DELETED_CUSTOMERS, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+async function upsertCustomerToSupabase(client: SupabaseClient, cust: Customer): Promise<void> {
+  const basePayload: any = {
+    id: cust.id,
+    name: cust.name,
+    phone: cust.phone || null,
+    address: cust.address || null,
+    notes: cust.notes || null,
+    created_at: toIsoTimestamp(cust.createdAt)
+  };
+  if (cust.code) {
+    const { error } = await client.from('pos_customers').upsert({ ...basePayload, code: cust.code }, { onConflict: 'id' });
+    if (!error) return;
+  }
+  const { error: err2 } = await client.from('pos_customers').upsert(basePayload, { onConflict: 'id' });
+  if (err2) {
+    console.warn('Lỗi lưu khách lên Supabase:', err2.message);
+  }
+}
 
 // Seed Products extracted from printing workshop price sheets
 export const INITIAL_PRODUCTS: Product[] = [
@@ -732,7 +819,8 @@ export async function syncFromLocalApi(): Promise<boolean> {
       hasChanges = true;
     }
     if (Array.isArray(data.customers) && data.customers.length > 0) {
-      setStorage(STORAGE_KEYS.CUSTOMERS, data.customers);
+      const mergedCustomers = mergeWithRecentlySavedCustomers(data.customers);
+      setStorage(STORAGE_KEYS.CUSTOMERS, mergedCustomers);
       window.dispatchEvent(new Event('pos_customers_updated'));
       hasChanges = true;
     }
@@ -829,9 +917,47 @@ export const posDb = {
   // CUSTOMERS
   getCustomers(): Customer[] {
     const list = getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
+    const orders = getStorage<Order[]>(STORAGE_KEYS.ORDERS, []);
+    const deletedSet = getDeletedCustomerSet();
+    let addedFromOrders = false;
+
+    for (const o of orders) {
+      if (!o || SEED_ORDER_IDS.has(o.id)) continue;
+      const cleanName = (o.customerName || '').trim();
+      if (!cleanName || cleanName.toLowerCase() === 'khách lẻ') continue;
+      if ((o.customerId && deletedSet.has(`id:${o.customerId}`)) || deletedSet.has(`name:${cleanName.toLowerCase()}`)) {
+        continue;
+      }
+      const exists = list.some(c =>
+        (o.customerId && o.customerId !== 'existing-cust' && c.id === o.customerId) ||
+        (c.name && c.name.trim().toLowerCase() === cleanName.toLowerCase())
+      );
+      if (!exists) {
+        const autoCust: Customer = {
+          id: (o.customerId && o.customerId !== 'existing-cust') ? o.customerId : ('c-' + o.id.replace(/^ord-/, '')),
+          name: cleanName,
+          phone: (o.customerPhone || '').trim(),
+          address: (o.customerAddress || '').trim(),
+          createdAt: toIsoTimestamp(o.createdAt || o.updatedAt)
+        };
+        list.unshift(autoCust);
+        _recentlySavedCustomers.set(autoCust.id, { customer: autoCust, savedAt: Date.now() });
+        addedFromOrders = true;
+        void postLocalApi({ action: 'saveCustomer', customer: autoCust });
+        const client = getSupabaseClient();
+        if (client) {
+          void upsertCustomerToSupabase(client, autoCust);
+        }
+      }
+    }
+
+    if (addedFromOrders) {
+      setStorage(STORAGE_KEYS.CUSTOMERS, list);
+    }
+
     return [...list].sort((a, b) => {
-      const tA = new Date(a.createdAt || 0).getTime();
-      const tB = new Date(b.createdAt || 0).getTime();
+      const tA = parseOrderTimestamp(a.createdAt);
+      const tB = parseOrderTimestamp(b.createdAt);
       if (tA && tB && tA !== tB) return tB - tA;
       const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
       const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
@@ -841,44 +967,34 @@ export const posDb = {
   },
 
   saveCustomer(cust: Customer): Customer {
+    unmarkCustomerDeleted(cust.id, cust.name);
     const list = this.getCustomers();
     const idx = list.findIndex(c => c.id === cust.id);
     const updatedCust: Customer = {
       ...cust,
-      createdAt: cust.createdAt || (idx >= 0 ? list[idx].createdAt : undefined) || new Date().toISOString()
+      createdAt: toIsoTimestamp(cust.createdAt || (idx >= 0 ? list[idx].createdAt : undefined))
     };
     if (idx >= 0) {
       list.splice(idx, 1);
     }
     list.unshift(updatedCust);
+    _recentlySavedCustomers.set(updatedCust.id, { customer: updatedCust, savedAt: Date.now() });
     setStorage(STORAGE_KEYS.CUSTOMERS, list);
     window.dispatchEvent(new Event('pos_customers_updated'));
-    void postLocalApi({ action: 'saveCustomer', customer: cust });
+    void postLocalApi({ action: 'saveCustomer', customer: updatedCust });
 
     const client = getSupabaseClient();
     if (client) {
-      void (async () => {
-        try {
-          const { error } = await client.from('pos_customers').upsert({
-            id: cust.id,
-            code: cust.code || null,
-            name: cust.name,
-            phone: cust.phone || null,
-            address: cust.address || null,
-            notes: cust.notes || null,
-            created_at: cust.createdAt || new Date().toISOString()
-          }, { onConflict: 'id' });
-          if (error) console.warn('Lỗi lưu khách lên Supabase:', error.message);
-        } catch (err) {
-          console.warn('Lỗi mạng Supabase:', err);
-        }
-      })();
+      void upsertCustomerToSupabase(client, updatedCust);
     }
-    return cust;
+    return updatedCust;
   },
 
   deleteCustomer(id: string): void {
-    const list = this.getCustomers().filter(c => c.id !== id);
+    _recentlySavedCustomers.delete(id);
+    const existing = getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, []).find(c => c.id === id);
+    markCustomerDeleted(id, existing?.name);
+    const list = getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, []).filter(c => c.id !== id);
     setStorage(STORAGE_KEYS.CUSTOMERS, list);
     window.dispatchEvent(new Event('pos_customers_updated'));
     void postLocalApi({ action: 'deleteCustomer', id });
@@ -915,10 +1031,57 @@ export const posDb = {
   },
 
   saveOrder(order: Order): Order {
+    // Auto-ensure customer exists in customers database whenever saving an order with non-"Khách Lẻ" customer
+    let resolvedCustomerId = order.customerId;
+    let customerToSync: Customer | null = null;
+    const cleanCustName = (order.customerName || '').trim();
+    if (cleanCustName && cleanCustName.toLowerCase() !== 'khách lẻ') {
+      unmarkCustomerDeleted(resolvedCustomerId, cleanCustName);
+      const custList = this.getCustomers();
+      const existingCust = (resolvedCustomerId && resolvedCustomerId !== 'existing-cust')
+        ? custList.find(c => c.id === resolvedCustomerId)
+        : custList.find(c => c.name.trim().toLowerCase() === cleanCustName.toLowerCase());
+
+      if (existingCust) {
+        const nextPhone = (order.customerPhone || '').trim() || existingCust.phone || '';
+        const nextAddress = (order.customerAddress || '').trim() || existingCust.address || '';
+        const updatedCust: Customer = {
+          ...existingCust,
+          name: cleanCustName,
+          phone: nextPhone,
+          address: nextAddress,
+          createdAt: toIsoTimestamp(existingCust.createdAt)
+        };
+        resolvedCustomerId = updatedCust.id;
+        customerToSync = updatedCust;
+        const cIdx = custList.findIndex(c => c.id === updatedCust.id);
+        if (cIdx >= 0) custList.splice(cIdx, 1);
+        custList.unshift(updatedCust);
+        _recentlySavedCustomers.set(updatedCust.id, { customer: updatedCust, savedAt: Date.now() });
+        setStorage(STORAGE_KEYS.CUSTOMERS, custList);
+        window.dispatchEvent(new Event('pos_customers_updated'));
+      } else {
+        const newCust: Customer = {
+          id: (resolvedCustomerId && resolvedCustomerId !== 'existing-cust') ? resolvedCustomerId : ('c-' + Date.now()),
+          name: cleanCustName,
+          phone: (order.customerPhone || '').trim(),
+          address: (order.customerAddress || '').trim(),
+          createdAt: new Date().toISOString()
+        };
+        resolvedCustomerId = newCust.id;
+        customerToSync = newCust;
+        custList.unshift(newCust);
+        _recentlySavedCustomers.set(newCust.id, { customer: newCust, savedAt: Date.now() });
+        setStorage(STORAGE_KEYS.CUSTOMERS, custList);
+        window.dispatchEvent(new Event('pos_customers_updated'));
+      }
+    }
+
     const list = this.getOrders();
     const idx = list.findIndex(o => o.id === order.id);
     const updated: Order = {
       ...order,
+      customerId: resolvedCustomerId,
       createdAt: order.createdAt ? formatVietnamDateTime(order.createdAt) : formatVietnamDateTime(),
       updatedAt: formatVietnamDateTime()
     };
@@ -928,12 +1091,16 @@ export const posDb = {
     list.unshift(updated);
     setStorage(STORAGE_KEYS.ORDERS, list);
     window.dispatchEvent(new Event('pos_orders_updated'));
-    void postLocalApi({ action: 'saveOrder', order: updated });
+    void postLocalApi({ action: 'saveOrder', order: updated, customer: customerToSync });
 
     const client = getSupabaseClient();
     if (client) {
       void (async () => {
         try {
+          if (customerToSync) {
+            await upsertCustomerToSupabase(client, customerToSync);
+          }
+
           const { error } = await client.from('pos_orders').upsert({
             id: updated.id,
             code: updated.code,
@@ -999,7 +1166,14 @@ export const posDb = {
   // BATCH DELETE & CLEAR CUSTOMERS
   deleteMultipleCustomers(ids: string[]): void {
     const idSet = new Set(ids);
-    const list = this.getCustomers().filter(c => !idSet.has(c.id));
+    const currentList = getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, []);
+    currentList.forEach(c => {
+      if (idSet.has(c.id)) {
+        _recentlySavedCustomers.delete(c.id);
+        markCustomerDeleted(c.id, c.name);
+      }
+    });
+    const list = currentList.filter(c => !idSet.has(c.id));
     setStorage(STORAGE_KEYS.CUSTOMERS, list);
     window.dispatchEvent(new Event('pos_customers_updated'));
     void postLocalApi({ action: 'deleteMultipleCustomers', ids });
@@ -1017,6 +1191,11 @@ export const posDb = {
   },
 
   clearAllCustomers(): void {
+    _recentlySavedCustomers.clear();
+    const currentList = getStorage<Customer[]>(STORAGE_KEYS.CUSTOMERS, []);
+    currentList.forEach(c => markCustomerDeleted(c.id, c.name));
+    const orders = getStorage<Order[]>(STORAGE_KEYS.ORDERS, []);
+    orders.forEach(o => markCustomerDeleted(o.customerId, o.customerName));
     setStorage(STORAGE_KEYS.CUSTOMERS, []);
     window.dispatchEvent(new Event('pos_customers_updated'));
     void postLocalApi({ action: 'clearAllCustomers' });

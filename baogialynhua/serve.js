@@ -71,6 +71,13 @@ const server = http.createServer((req, res) => {
           } else if (payload.action === 'clearAllProducts') {
             current.products = [];
           } else if (payload.action === 'saveOrder') {
+            if (payload.customer && payload.customer.id) {
+              const custList = current.customers || [];
+              const cIdx = custList.findIndex(c => c.id === payload.customer.id);
+              if (cIdx >= 0) custList[cIdx] = payload.customer;
+              else custList.unshift(payload.customer);
+              current.customers = custList;
+            }
             const list = current.orders || [];
             const idx = list.findIndex(o => o.id === payload.order.id);
             if (idx >= 0) list[idx] = payload.order;

@@ -4,7 +4,7 @@ import {
   X, Check, Users, FileSpreadsheet, Upload, Download 
 } from 'lucide-react';
 import { Customer, Order } from '../../types/pos';
-import { posDb, formatVND } from '../../utils/posStorage';
+import { posDb, formatVND, parseOrderTimestamp } from '../../utils/posStorage';
 import { 
   exportCustomersToExcel, 
   downloadCustomerExcelTemplate, 
@@ -47,7 +47,10 @@ export const CustomersScreen: React.FC<CustomersScreenProps> = ({
 
   useEffect(() => {
     const handleCustUpdate = () => setCustomers(posDb.getCustomers());
-    const handleOrdersUpdate = () => setOrders(posDb.getOrders());
+    const handleOrdersUpdate = () => {
+      setOrders(posDb.getOrders());
+      setCustomers(posDb.getCustomers());
+    };
 
     window.addEventListener('pos_customers_updated', handleCustUpdate);
     window.addEventListener('pos_orders_updated', handleOrdersUpdate);
@@ -76,8 +79,8 @@ export const CustomersScreen: React.FC<CustomersScreenProps> = ({
 
   // Sắp xếp khách hàng mới nhất lên đầu tiên (Newest first)
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
-    const tA = new Date(a.createdAt || 0).getTime();
-    const tB = new Date(b.createdAt || 0).getTime();
+    const tA = parseOrderTimestamp(a.createdAt);
+    const tB = parseOrderTimestamp(b.createdAt);
     if (tA && tB && tA !== tB) return tB - tA;
     const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
     const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
