@@ -37,14 +37,14 @@ export function exportProductsToExcel(products: Product[]) {
 
 import * as XLSX from 'xlsx';
 import { Product, Customer, Order } from '../types/pos';
-import { formatVND } from './posStorage';
+import { formatVND, formatVietnamDateTime } from './posStorage';
 
 // EXPORT ORDERS TO EXCEL
 export function exportOrdersToExcel(orders: Order[]) {
   const data = orders.map((ord, idx) => ({
     'STT': idx + 1,
     'Mã đơn': ord.code,
-    'Ngày đặt': ord.createdAt,
+    'Ngày đặt': formatVietnamDateTime(ord.createdAt),
     'Tên khách / Quán': ord.customerName,
     'Số điện thoại': ord.customerPhone || '',
     'Địa chỉ giao hàng': ord.customerAddress || '',

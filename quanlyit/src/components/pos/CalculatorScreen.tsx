@@ -5,7 +5,10 @@ import {
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Product, Customer, Order, OrderItem } from '../../types/pos';
-import { posDb, formatVND, formatK, generateOrderCode, generateZaloMessage } from '../../utils/posStorage';
+import { posDb, formatVND, formatK, generateOrderCode, generateZaloMessage, formatVietnamDateTime } from '../../utils/posStorage';
+
+const KHACH_LE_ID = 'khach-le';
+const KHACH_LE_NAME = 'Khách Lẻ';
 
 interface CalculatorScreenProps {
   editingOrder: Order | null;
@@ -28,13 +31,9 @@ const createEmptyRow = (): OrderItem => ({
   amount: 0
 });
 
-// Helper to ensure at least 3 rows
+// Helper to keep items list without pre-populating 3 empty rows
 const ensureMinimumThreeRows = (items: OrderItem[]): OrderItem[] => {
-  const list = [...items];
-  while (list.length < 3) {
-    list.push(createEmptyRow());
-  }
-  return list;
+  return [...items];
 };
 
 export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
@@ -54,17 +53,18 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Order state - ALWAYS AT LEAST 3 ROWS
-  const [orderItems, setOrderItems] = useState<OrderItem[]>(() => ensureMinimumThreeRows([]));
-  const [customerName, setCustomerName] = useState('');
+  // Order state - starts empty (no pre-populated 3 empty items)
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [customerName, setCustomerName] = useState(KHACH_LE_NAME);
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
+  const [customerId, setCustomerId] = useState<string | undefined>(KHACH_LE_ID);
   const [orderNotes, setOrderNotes] = useState('');
   const [orderCode, setOrderCode] = useState(generateOrderCode());
+  const [captureTimeStr, setCaptureTimeStr] = useState<string>(() => formatVietnamDateTime());
 
-  // Collapsible customer card (default collapsed on mobile)
-  const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
+  // Customer card is always displayed (no need to click to expand)
+  const [isCustomerExpanded, setIsCustomerExpanded] = useState(true);
 
   // Customer search autocomplete state
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -117,13 +117,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     if (editingOrder) {
       setOrderCode(editingOrder.code);
       setOrderItems(ensureMinimumThreeRows(editingOrder.items || []));
-      setCustomerName(editingOrder.customerName || '');
+      const isWalkIn = !editingOrder.customerName || editingOrder.customerName.trim().toLowerCase() === 'khách lẻ';
+      setCustomerName(isWalkIn ? KHACH_LE_NAME : editingOrder.customerName);
       setCustomerPhone(editingOrder.customerPhone || '');
       setCustomerAddress(editingOrder.customerAddress || '');
-      setCustomerId(editingOrder.customerId);
+      setCustomerId(isWalkIn ? KHACH_LE_ID : (editingOrder.customerId || 'existing-cust'));
       setOrderNotes(editingOrder.notes || '');
-      setIsCustomerExpanded(Boolean(editingOrder.customerName));
-      setCustomerSearchQuery(editingOrder.customerName || '');
+      setIsCustomerExpanded(!isWalkIn);
+      setCustomerSearchQuery(isWalkIn ? '' : (editingOrder.customerName || ''));
     }
   }, [editingOrder]);
 
@@ -226,7 +227,6 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
     setOrderItems(ensureMinimumThreeRows(updatedRows));
     setSearchQuery('');
-    setCustomerSearchQuery('');
     setIsCustDropdownOpen(false);
     setFilteredProducts([]);
     setIsDropdownOpen(false);
@@ -277,25 +277,41 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     }));
   };
 
-  // Remove row or clear back to empty slot (keeping minimum 3 rows)
+  // Remove row directly
   const handleRemoveOrClearRow = (rowId: string) => {
-    if (orderItems.length > 3) {
-      // More than 3 rows: delete this row
-      setOrderItems(prev => ensureMinimumThreeRows(prev.filter(r => r.id !== rowId)));
-    } else {
-      // 3 or fewer rows: reset this row to a blank empty slot
-      setOrderItems(prev => prev.map(r => {
-        if (r.id === rowId) {
-          return createEmptyRow();
-        }
-        return r;
-      }));
-    }
+    setOrderItems(prev => prev.filter(r => r.id !== rowId));
   };
 
   // Add a new empty row
   const handleAddNewEmptyRow = () => {
     setOrderItems(prev => [...prev, createEmptyRow()]);
+  };
+
+  // Inline add customer from the directly visible customer inputs
+  const handleInlineAddCustomer = () => {
+    const rawName = (customerId === KHACH_LE_ID ? '' : customerName).trim();
+    if (!rawName) {
+      alert('Vui lòng nhập Tên khách / Quán trước khi bấm Thêm khách hàng!');
+      return;
+    }
+
+    const newCust: Customer = {
+      id: 'c-' + Date.now(),
+      name: rawName,
+      phone: (customerPhone || '').trim(),
+      address: (customerAddress || '').trim(),
+      createdAt: formatVietnamDateTime()
+    };
+
+    posDb.saveCustomer(newCust);
+    setCustomers(posDb.getCustomers());
+    setCustomerId(newCust.id);
+    setCustomerName(newCust.name);
+    setCustomerPhone(newCust.phone || '');
+    setCustomerAddress(newCust.address || '');
+    setCustomerSearchQuery(newCust.name);
+    setIsCustDropdownOpen(false);
+    onShowToast(`Đã thêm khách hàng: ${newCust.name}`);
   };
 
   // Quick Customer Select from existing list
@@ -306,6 +322,16 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       setCustomerPhone('');
       setCustomerAddress('');
       setCustomerSearchQuery('');
+      return;
+    }
+    if (cId === KHACH_LE_ID) {
+      setCustomerId(KHACH_LE_ID);
+      setCustomerName(KHACH_LE_NAME);
+      setCustomerPhone('');
+      setCustomerAddress('');
+      setCustomerSearchQuery('');
+      setIsCustDropdownOpen(false);
+      onShowToast('Đã chọn: Khách Lẻ');
       return;
     }
     const cust = customers.find(c => c.id === cId);
@@ -329,7 +355,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       name: newCustName.trim(),
       phone: (newCustPhone || '').trim(),
       address: (newCustAddress || '').trim(),
-      createdAt: new Date().toISOString()
+      createdAt: formatVietnamDateTime()
     };
 
     posDb.saveCustomer(newCust);
@@ -374,13 +400,17 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   const totalQuantity = validOrderItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = validOrderItems.reduce((sum, item) => sum + item.amount, 0);
 
+  // Check if a valid customer is selected (either Khách Lẻ or a selected customer)
+  const hasSelectedCustomer = Boolean(customerId && customerName && customerName.trim());
+
   // Save Order to Database
   const performSaveOrder = (): Order => {
-    const finalCustName = (customerName || customerSearchQuery).trim() || 'Khách Lẻ';
+    const finalCustName = customerName.trim() || KHACH_LE_NAME;
+    const nowVN = formatVietnamDateTime();
     const order: Order = {
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
       code: orderCode,
-      customerId: customerId,
+      customerId: customerId === KHACH_LE_ID ? undefined : customerId,
       customerName: finalCustName,
       customerPhone: (customerPhone || '').trim(),
       customerAddress: (customerAddress || '').trim(),
@@ -389,8 +419,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       totalAmount,
       notes: (orderNotes || '').trim(),
       status: editingOrder ? editingOrder.status : 'Chờ in',
-      createdAt: editingOrder ? (editingOrder.createdAt || new Date().toISOString()) : new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: editingOrder ? (editingOrder.createdAt ? formatVietnamDateTime(editingOrder.createdAt) : nowVN) : nowVN,
+      updatedAt: nowVN
     };
 
     posDb.saveOrder(order);
@@ -399,18 +429,25 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   };
 
   const handleManualSave = () => {
+    if (!hasSelectedCustomer) {
+      alert('Vui lòng chọn khách hàng (hoặc tích chọn Khách Lẻ) trước khi tạo đơn!');
+      setIsCustomerExpanded(true);
+      return;
+    }
+
     if (validOrderItems.length === 0) {
       alert('Vui lòng chọn ít nhất 1 sản phẩm vào đơn!');
       return;
     }
 
     const isEditing = Boolean(editingOrder);
-    const finalCustName = (customerName || customerSearchQuery).trim() || 'Khách Lẻ';
+    const finalCustName = customerName.trim() || KHACH_LE_NAME;
+    const nowVN = formatVietnamDateTime();
 
     const orderToSave: Order = {
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
       code: orderCode,
-      customerId: customerId,
+      customerId: customerId === KHACH_LE_ID ? undefined : customerId,
       customerName: finalCustName,
       customerPhone: (customerPhone || '').trim(),
       customerAddress: (customerAddress || '').trim(),
@@ -419,8 +456,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       totalAmount,
       notes: (orderNotes || '').trim(),
       status: editingOrder ? editingOrder.status : 'Chờ in',
-      createdAt: editingOrder ? (editingOrder.createdAt || new Date().toISOString()) : new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: editingOrder ? (editingOrder.createdAt ? formatVietnamDateTime(editingOrder.createdAt) : nowVN) : nowVN,
+      updatedAt: nowVN
     };
 
     const savedOrder = posDb.saveOrder(orderToSave);
@@ -442,6 +479,11 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
   // Trigger Zalo Screenshot Action: prompt save confirmation
   const handleInitiateZaloAction = () => {
+    if (!hasSelectedCustomer) {
+      alert('Vui lòng chọn khách hàng (hoặc tích chọn Khách Lẻ) trước khi tạo đơn / chụp ảnh!');
+      setIsCustomerExpanded(true);
+      return;
+    }
     if (validOrderItems.length === 0) {
       alert('Vui lòng chọn ít nhất 1 sản phẩm vào đơn trước khi chụp ảnh gửi Zalo!');
       return;
@@ -453,6 +495,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   // Execute Capture Receipt Image
   const executeCaptureScreenshot = async (saveOrderFirst: boolean) => {
     setShowSaveConfirmModal(false);
+    setCaptureTimeStr(formatVietnamDateTime());
 
     if (saveOrderFirst) {
       performSaveOrder();
@@ -549,11 +592,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
   // Copy Text format for Zalo as fallback
   const handleCopyTextZalo = () => {
+    const nowVN = formatVietnamDateTime();
     const dummyOrder: Order = {
       id: 'temp',
       code: orderCode,
-      customerId,
-      customerName: (customerName || customerSearchQuery || '').trim() || 'Khách hàng',
+      customerId: customerId === KHACH_LE_ID ? undefined : customerId,
+      customerName: customerName.trim() || KHACH_LE_NAME,
       customerPhone: (customerPhone || '').trim(),
       customerAddress: (customerAddress || '').trim(),
       items: validOrderItems,
@@ -561,8 +605,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       totalAmount,
       notes: orderNotes,
       status: 'Chờ in',
-      createdAt: new Date().toLocaleString('vi-VN'),
-      updatedAt: new Date().toISOString()
+      createdAt: nowVN,
+      updatedAt: nowVN
     };
 
     const text = generateZaloMessage(dummyOrder);
@@ -573,19 +617,20 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     });
   };
 
-  // Reset Form for New Order (Always restores 3 empty rows)
+  // Reset Form for New Order (Always restores 3 empty rows and defaults to Khách Lẻ ticked)
   const handleResetForm = (showToastNotice?: boolean) => {
     setOrderCode(generateOrderCode());
     setOrderItems(ensureMinimumThreeRows([]));
-    setCustomerName('');
+    setCustomerName(KHACH_LE_NAME);
     setCustomerPhone('');
     setCustomerAddress('');
-    setCustomerId(undefined);
+    setCustomerId(KHACH_LE_ID);
     setCustomerSearchQuery('');
     setIsCustDropdownOpen(false);
     setOrderNotes('');
     setSearchQuery('');
     setCapturedImageUrl(null);
+    setCaptureTimeStr(formatVietnamDateTime());
     if (editingOrder && onClearEditingOrder) onClearEditingOrder();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (showToastNotice !== false) {
@@ -635,249 +680,344 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
 
 
-      {/* COLLAPSIBLE CUSTOMER INFORMATION CARD */}
-      <div className="pos-customer-box">
-        <div 
+      {/* CUSTOMER INFORMATION CARD - ALWAYS DISPLAYED DIRECTLY */}
+      <div
+        className="pos-customer-box"
+        style={{
+          border: hasSelectedCustomer ? undefined : '1.5px solid #ef4444',
+          background: hasSelectedCustomer ? undefined : '#fff5f5'
+        }}
+      >
+        <div
           className="pos-customer-header"
-          onClick={() => setIsCustomerExpanded(!isCustomerExpanded)}
+          style={{ gap: 8, cursor: 'default' }}
         >
-          <div className="pos-customer-header-title">
-            <UserCheck size={16} color={customerName ? '#15803d' : '#64748b'} />
-            <span>
-              {customerName ? (
-                <>Khách: <strong>{customerName}</strong> {customerPhone && `(${customerPhone})`}</>
+          <div className="pos-customer-header-title" style={{ flex: 1, minWidth: 0 }}>
+            <UserCheck size={16} color={hasSelectedCustomer ? '#15803d' : '#dc2626'} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {hasSelectedCustomer ? (
+                <>
+                  Khách: <strong style={{ color: '#15803d' }}>{customerName}</strong>{' '}
+                  {customerPhone && `(${customerPhone})`}
+                </>
               ) : (
-                'Khách hàng: Chọn hoặc thêm mới'
+                <span style={{ color: '#dc2626', fontWeight: 700 }}>
+                  * Bắt buộc chọn hoặc thêm khách hàng
+                </span>
               )}
             </span>
           </div>
-          {isCustomerExpanded ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {/* KHÁCH LẺ ALWAYS DISPLAYED WITH TICK */}
+            <button
+              type="button"
+              onClick={() => handleSelectCustomer(KHACH_LE_ID)}
+              title="Chọn Khách Lẻ"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '3px 9px',
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                border: customerId === KHACH_LE_ID ? '1.5px solid #16a34a' : '1px solid #86efac',
+                background: customerId === KHACH_LE_ID ? '#dcfce7' : '#f0fdf4',
+                color: '#15803d',
+                cursor: 'pointer'
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 15,
+                  height: 15,
+                  borderRadius: 4,
+                  background: customerId === KHACH_LE_ID ? '#16a34a' : '#ffffff',
+                  border: '1.5px solid #16a34a',
+                  color: customerId === KHACH_LE_ID ? '#ffffff' : '#16a34a',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  lineHeight: 1
+                }}
+              >
+                ✓
+              </span>
+              <span>Khách lẻ</span>
+            </button>
+          </div>
         </div>
 
-        {isCustomerExpanded && (
-          <div className="pos-customer-body">
-            <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
-              <div ref={custSearchContainerRef} style={{ position: 'relative', flex: 1 }}>
-                <Search 
-                  size={15} 
-                  color="#64748b" 
-                  style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} 
-                />
-                <input
-                  type="text"
-                  className="pos-input pos-input-sm"
-                  style={{ paddingLeft: 32, paddingRight: customerSearchQuery || customerId || customerName ? 30 : 10 }}
-                  placeholder="🔍 Tìm khách quen (nhập Tên hoặc SĐT)..."
-                  value={customerSearchQuery}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomerSearchQuery(val);
-                    setCustomerName(val);
-                    setCustomerId(undefined);
-                    setIsCustDropdownOpen(true);
-                  }}
-                  onFocus={() => setIsCustDropdownOpen(true)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      if (sortedCustMatches.length > 0) {
-                        const firstCust = sortedCustMatches[0];
-                        handleSelectCustomer(firstCust.id);
-                        setCustomerSearchQuery(firstCust.name);
-                        setIsCustDropdownOpen(false);
-                      }
-                    } else if (e.key === 'Escape') {
+        <div className="pos-customer-body">
+          {/* Ô TÌM KIẾM KHÁCH QUEN */}
+          <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
+            <div ref={custSearchContainerRef} style={{ position: 'relative', flex: 1 }}>
+              <Search 
+                size={15} 
+                color="#64748b" 
+                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} 
+              />
+              <input
+                type="text"
+                className="pos-input pos-input-sm"
+                style={{
+                  paddingLeft: 32,
+                  paddingRight: customerSearchQuery || (customerId && customerId !== KHACH_LE_ID) ? 30 : 10,
+                  borderColor: !hasSelectedCustomer ? '#ef4444' : undefined
+                }}
+                placeholder="🔍 Tìm chọn khách quen có sẵn (nhập Tên hoặc SĐT)..."
+                value={customerSearchQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomerSearchQuery(val);
+                  setCustomerName(val);
+                  setCustomerId(undefined);
+                  setIsCustDropdownOpen(true);
+                }}
+                onFocus={() => setIsCustDropdownOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (sortedCustMatches.length > 0) {
+                      const firstCust = sortedCustMatches[0];
+                      handleSelectCustomer(firstCust.id);
+                      setCustomerSearchQuery(firstCust.name);
                       setIsCustDropdownOpen(false);
                     }
+                  } else if (e.key === 'Escape') {
+                    setIsCustDropdownOpen(false);
+                  }
+                }}
+              />
+              {(customerSearchQuery || (customerId && customerId !== KHACH_LE_ID)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerSearchQuery('');
+                    setCustomerId(undefined);
+                    setCustomerName('');
+                    setCustomerPhone('');
+                    setCustomerAddress('');
+                    setIsCustDropdownOpen(false);
+                    onShowToast('Vui lòng chọn khách hàng, thêm khách mới hoặc tích Khách lẻ');
                   }}
-                />
-                {(customerSearchQuery || customerId || customerName) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCustomerSearchQuery('');
-                      setCustomerId(undefined);
-                      setCustomerName('');
-                      setCustomerPhone('');
-                      setCustomerAddress('');
-                      setIsCustDropdownOpen(false);
-                      onShowToast('Đã xóa chọn khách quen');
-                    }}
-                    title="Xóa tìm kiếm / Bỏ chọn khách quen"
+                  title="Xóa tìm kiếm / Chọn lại khách hàng"
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              )}
+
+              {/* AUTOCOMPLETE DROPDOWN */}
+              {isCustDropdownOpen && (
+                <div
+                  className="pos-autocomplete-list"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: '#ffffff',
+                    border: '1.5px solid #16a34a',
+                    borderRadius: 8,
+                    marginTop: 4,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                    maxHeight: 280,
+                    overflowY: 'auto',
+                    zIndex: 110
+                  }}
+                >
+                  {/* LUÔN HIỂN THỊ KHÁCH LẺ CÓ DẤU TÍCH Ở ĐẦU DANH SÁCH */}
+                  <div
+                    className={`pos-autocomplete-item ${customerId === KHACH_LE_ID ? 'active' : ''}`}
+                    onClick={() => handleSelectCustomer(KHACH_LE_ID)}
                     style={{
-                      position: 'absolute',
-                      right: 8,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      color: '#94a3b8',
-                      cursor: 'pointer',
-                      padding: 2,
+                      padding: '8px 12px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'space-between',
+                      borderBottom: '1.5px solid #e2e8f0',
+                      cursor: 'pointer',
+                      background: customerId === KHACH_LE_ID ? '#f0fdf4' : '#fafafa'
                     }}
                   >
-                    <X size={15} />
-                  </button>
-                )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 16,
+                          height: 16,
+                          borderRadius: 4,
+                          background: customerId === KHACH_LE_ID ? '#16a34a' : '#ffffff',
+                          border: '1.5px solid #16a34a',
+                          color: customerId === KHACH_LE_ID ? '#ffffff' : '#16a34a',
+                          fontSize: 11,
+                          fontWeight: 900
+                        }}
+                      >
+                        ✓
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>
+                        Khách Lẻ
+                      </span>
+                    </div>
+                    <span style={{ color: '#16a34a', fontSize: 11, fontWeight: 700 }}>
+                      {customerId === KHACH_LE_ID ? '✓ Đang chọn' : '✓ Chọn nhanh'}
+                    </span>
+                  </div>
 
-                {/* AUTOCOMPLETE DROPDOWN */}
-                {isCustDropdownOpen && (
-                  <div
-                    className="pos-autocomplete-list"
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      background: '#ffffff',
-                      border: '1.5px solid #16a34a',
-                      borderRadius: 8,
-                      marginTop: 4,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-                      maxHeight: 280,
-                      overflowY: 'auto',
-                      zIndex: 110
-                    }}
-                  >
-                    {sortedCustMatches.length === 0 ? (
-                      <div style={{ padding: '12px 14px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
-                        <div>Không tìm thấy khách nào khớp với <strong>"{customerSearchQuery}"</strong></div>
-                        <button
-                          type="button"
-                          className="pos-btn pos-btn-primary pos-btn-sm"
-                          style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                          onClick={() => {
-                            setIsCustDropdownOpen(false);
-                            if (/^\d+$/.test(customerSearchQuery.trim())) {
-                              setNewCustPhone(customerSearchQuery.trim());
-                              setNewCustName('');
-                            } else {
-                              setNewCustName(customerSearchQuery.trim());
-                              setNewCustPhone('');
-                            }
-                            setShowAddCustomerModal(true);
-                          }}
-                        >
-                          <UserPlus size={13} />
-                          <span>+ Thêm khách mới này</span>
-                        </button>
+                  {sortedCustMatches.length === 0 ? (
+                    <div style={{ padding: '12px 14px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                      <div>Không tìm thấy khách quen nào khớp với <strong>"{customerSearchQuery}"</strong></div>
+                      <button
+                        type="button"
+                        className="pos-btn pos-btn-primary pos-btn-sm"
+                        style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        onClick={handleInlineAddCustomer}
+                      >
+                        <UserPlus size={13} />
+                        <span>+ Thêm khách hàng này</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ padding: '6px 10px', fontSize: 11, fontWeight: 600, color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{customerSearchQuery.trim() ? `Kết quả tìm kiếm (${sortedCustMatches.length})` : `Danh sách khách quen (${sortedCustMatches.length})`}</span>
+                        <span style={{ fontSize: 10, color: '#94a3b8' }}>Bấm để chọn</span>
                       </div>
-                    ) : (
-                      <>
-                        <div style={{ padding: '6px 10px', fontSize: 11, fontWeight: 600, color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
-                          <span>{customerSearchQuery.trim() ? `Kết quả tìm kiếm (${sortedCustMatches.length})` : `Danh sách khách quen (${sortedCustMatches.length})`}</span>
-                          <span style={{ fontSize: 10, color: '#94a3b8' }}>Bấm để chọn</span>
-                        </div>
-                        {sortedCustMatches.map(c => {
-                          const isSelected = customerId === c.id;
-                          return (
-                            <div
-                              key={c.id}
-                              className={`pos-autocomplete-item ${isSelected ? 'active' : ''}`}
-                              onClick={() => {
-                                handleSelectCustomer(c.id);
-                                setCustomerSearchQuery(c.name);
-                                setIsCustDropdownOpen(false);
-                              }}
-                              style={{
-                                padding: '8px 12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                borderBottom: '1px solid #f1f5f9',
-                                cursor: 'pointer',
-                                background: isSelected ? '#f0fdf4' : undefined
-                              }}
-                            >
-                              <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                  {c.code && (
-                                    <span style={{ fontSize: 10, background: '#e2e8f0', color: '#475569', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
-                                      {c.code}
-                                    </span>
-                                  )}
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
-                                    {c.name}
+                      {sortedCustMatches.map(c => {
+                        const isSelected = customerId === c.id;
+                        return (
+                          <div
+                            key={c.id}
+                            className={`pos-autocomplete-item ${isSelected ? 'active' : ''}`}
+                            onClick={() => {
+                              handleSelectCustomer(c.id);
+                              setCustomerSearchQuery(c.name);
+                              setIsCustDropdownOpen(false);
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              borderBottom: '1px solid #f1f5f9',
+                              cursor: 'pointer',
+                              background: isSelected ? '#f0fdf4' : undefined
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                {c.code && (
+                                  <span style={{ fontSize: 10, background: '#e2e8f0', color: '#475569', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
+                                    {c.code}
                                   </span>
-                                  {c.phone && (
-                                    <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600, background: '#dcfce7', padding: '1px 6px', borderRadius: 4 }}>
-                                      📞 {c.phone}
-                                    </span>
-                                  )}
-                                </div>
-                                {c.address && (
-                                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    📍 {c.address}
-                                  </div>
+                                )}
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                                  {c.name}
+                                </span>
+                                {c.phone && (
+                                  <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600, background: '#dcfce7', padding: '1px 6px', borderRadius: 4 }}>
+                                    📞 {c.phone}
+                                  </span>
                                 )}
                               </div>
-                              {isSelected && (
-                                <span style={{ color: '#16a34a', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                                  ✓ Đang chọn
-                                </span>
+                              {c.address && (
+                                <div style={{ fontSize: 11, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  📍 {c.address}
+                                </div>
                               )}
                             </div>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                className="pos-btn pos-btn-secondary pos-btn-sm"
-                onClick={() => setShowAddCustomerModal(true)}
-                title="Thêm khách mới"
-                style={{ flexShrink: 0 }}
-              >
-                <UserPlus size={14} />
-                <span>+ Khách mới</span>
-              </button>
+                            {isSelected && (
+                              <span style={{ color: '#16a34a', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                                ✓ Đang chọn
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
+          </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              <div>
-                <input 
-                  type="text" 
-                  className="pos-input pos-input-sm" 
-                  placeholder="Tên khách / Quán (mặc định: Khách Lẻ)"
-                  value={customerName}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomerName(val);
-                    setCustomerSearchQuery(val);
-                    setCustomerId(undefined);
-                  }}
-                />
-              </div>
-              <div>
-                <input 
-                  type="tel" 
-                  className="pos-input pos-input-sm" 
-                  placeholder="Số điện thoại"
-                  value={customerPhone || ''}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                />
-              </div>
+          {/* Ô NHẬP TRỰC TIẾP THÔNG TIN KHÁCH HÀNG & NÚT THÊM KHÁCH HÀNG */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <div>
+              <input 
+                type="text" 
+                className="pos-input pos-input-sm" 
+                placeholder="Nhập tên khách / Quán..."
+                value={customerId === KHACH_LE_ID ? '' : customerName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomerName(val);
+                  setCustomerSearchQuery(val);
+                  setCustomerId(undefined);
+                }}
+              />
             </div>
+            <div>
+              <input 
+                type="tel" 
+                className="pos-input pos-input-sm" 
+                placeholder="Số điện thoại"
+                value={customerPhone || ''}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+              />
+            </div>
+          </div>
 
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <input 
               type="text" 
               className="pos-input pos-input-sm" 
+              style={{ flex: 1 }}
               placeholder="Địa chỉ giao hàng / Nhà xe nhận hàng"
               value={customerAddress || ''}
               onChange={(e) => setCustomerAddress(e.target.value)}
             />
+            <button
+              type="button"
+              className="pos-btn pos-btn-primary pos-btn-sm"
+              onClick={handleInlineAddCustomer}
+              title="Lưu thông tin vừa nhập vào danh sách khách hàng và chọn cho đơn này"
+              style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 10px' }}
+            >
+              <UserPlus size={14} />
+              <span>Thêm khách hàng</span>
+            </button>
           </div>
-        )}
+
+          {!hasSelectedCustomer && (
+            <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600 }}>
+              ⚠️ Bạn đang nhập thông tin khách mới — vui lòng bấm nút <strong>"Thêm khách hàng"</strong> (hoặc chọn khách từ danh sách / tích <strong>"✓ Khách lẻ"</strong>) để tạo đơn.
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ORDER ITEMS LIST - ALWAYS AT LEAST 3 ROWS, ONLY SHOW PRODUCT NAME */}
+      {/* ORDER ITEMS LIST - KHÔNG HIỂN THỊ SẴN 3 MỤC TRỐNG */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ 
           display: 'flex', 
@@ -894,154 +1034,166 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
           </span>
         </div>
 
-        {orderItems.map((item, index) => {
-          const isFilled = Boolean(item.productId && item.name);
+        {orderItems.length === 0 ? (
+          <div style={{
+            background: '#f8fafc',
+            border: '1.5px dashed #cbd5e1',
+            borderRadius: 8,
+            padding: '16px 12px',
+            textAlign: 'center',
+            color: '#64748b',
+            fontSize: 13
+          }}>
+            Chưa có sản phẩm nào trong đơn. Tìm kiếm sản phẩm bên dưới hoặc bấm <strong>+ Thêm hàng</strong> để chọn món.
+          </div>
+        ) : (
+          orderItems.map((item, index) => {
+            const isFilled = Boolean(item.productId && item.name);
 
-          return (
-            <div key={item.id} className="pos-item-row" style={{
-              background: isFilled ? '#ffffff' : '#f8fafc',
-              border: isFilled ? '1px solid var(--border)' : '1.5px dashed #cbd5e1'
-            }}>
-              {/* IF ROW HAS PRODUCT: SHOW ONLY PRODUCT NAME */}
-              {isFilled ? (
-                <>
-                  <div className="pos-item-top">
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>
-                        {item.name}
-                      </div>
-                      {item.code && (
-                        <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 2 }}>
-                          Mã SP: <span style={{ color: '#15803d' }}>{item.code}</span>
+            return (
+              <div key={item.id} className="pos-item-row" style={{
+                background: isFilled ? '#ffffff' : '#f8fafc',
+                border: isFilled ? '1px solid var(--border)' : '1.5px dashed #cbd5e1'
+              }}>
+                {/* IF ROW HAS PRODUCT: SHOW ONLY PRODUCT NAME */}
+                {isFilled ? (
+                  <>
+                    <div className="pos-item-top">
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>
+                          {item.name}
                         </div>
-                      )}
+                        {item.code && (
+                          <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 2 }}>
+                            Mã SP: <span style={{ color: '#15803d' }}>{item.code}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="pos-item-del-btn"
+                        onClick={() => handleRemoveOrClearRow(item.id)}
+                        title="Xóa hàng này"
+                        aria-label="Xóa hàng"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    <div className="pos-item-bottom">
+                      <div className="pos-item-price-info" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Đ.Giá:</span>
+                        <div className="pos-unitprice-wrapper" style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          background: '#ffffff',
+                          border: '1.5px solid #cbd5e1',
+                          borderRadius: 6,
+                          padding: '1px 6px',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                        }}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            className="pos-unitprice-input"
+                            value={item.unitPrice === 0 ? '' : item.unitPrice}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                              handleUpdateUnitPrice(item.id, isNaN(val) ? 0 : val);
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            placeholder="0"
+                            style={{
+                              width: 52,
+                              border: 'none',
+                              outline: 'none',
+                              fontSize: 13,
+                              fontWeight: 700,
+                              color: '#15803d',
+                              textAlign: 'right',
+                              background: 'transparent',
+                              padding: 0
+                            }}
+                            title="Chạm để nhập đơn giá mới (k)"
+                          />
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', marginLeft: 2 }}>k</span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {/* Quantity Stepper */}
+                        <div className="pos-qty-control">
+                          <button
+                            type="button"
+                            className="pos-qty-btn"
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                          >
+                            -
+                          </button>
+                          <input
+                            ref={el => { quantityInputRefs.current[item.id] = el; }}
+                            type="number"
+                            min="1"
+                            className="pos-qty-input"
+                            value={item.quantity}
+                            onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
+                            onFocus={(e) => e.target.select()}
+                          />
+                          <button
+                            type="button"
+                            className="pos-qty-btn"
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Line Total */}
+                        <div className="pos-item-amount" style={{ minWidth: 72, textAlign: 'right' }}>
+                          {formatVND(item.amount)}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* IF EMPTY ROW: SHOW PRODUCT SELECTOR PICKER */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', width: 20 }}>
+                      #{index + 1}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <select
+                        className="pos-select pos-input-sm"
+                        value=""
+                        onChange={(e) => {
+                          const prod = products.find(p => p.id === e.target.value);
+                          if (prod) handleSelectProduct(prod, item.id);
+                        }}
+                        style={{ background: '#ffffff', fontWeight: 500 }}
+                      >
+                        <option value="">-- Chạm để chọn sản phẩm hàng #{index + 1} --</option>
+                        {products.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} [Mã: {p.code}] - {p.price}k
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <button
                       type="button"
                       className="pos-item-del-btn"
                       onClick={() => handleRemoveOrClearRow(item.id)}
-                      title="Xóa hàng này"
-                      aria-label="Xóa hàng"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-
-                  <div className="pos-item-bottom">
-                    <div className="pos-item-price-info" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Đ.Giá:</span>
-                      <div className="pos-unitprice-wrapper" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        background: '#ffffff',
-                        border: '1.5px solid #cbd5e1',
-                        borderRadius: 6,
-                        padding: '1px 6px',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                      }}>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          className="pos-unitprice-input"
-                          value={item.unitPrice === 0 ? '' : item.unitPrice}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                            handleUpdateUnitPrice(item.id, isNaN(val) ? 0 : val);
-                          }}
-                          onFocus={(e) => e.target.select()}
-                          placeholder="0"
-                          style={{
-                            width: 52,
-                            border: 'none',
-                            outline: 'none',
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: '#15803d',
-                            textAlign: 'right',
-                            background: 'transparent',
-                            padding: 0
-                          }}
-                          title="Chạm để nhập đơn giá mới (k)"
-                        />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', marginLeft: 2 }}>k</span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {/* Quantity Stepper */}
-                      <div className="pos-qty-control">
-                        <button
-                          type="button"
-                          className="pos-qty-btn"
-                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        >
-                          -
-                        </button>
-                        <input
-                          ref={el => { quantityInputRefs.current[item.id] = el; }}
-                          type="number"
-                          min="1"
-                          className="pos-qty-input"
-                          value={item.quantity}
-                          onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
-                          onFocus={(e) => e.target.select()}
-                        />
-                        <button
-                          type="button"
-                          className="pos-qty-btn"
-                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      {/* Line Total */}
-                      <div className="pos-item-amount" style={{ minWidth: 72, textAlign: 'right' }}>
-                        {formatVND(item.amount)}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                /* IF EMPTY ROW: SHOW PRODUCT SELECTOR PICKER (HÀNG TRỐNG TỰ ĐỘNG) */
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', width: 20 }}>
-                    #{index + 1}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <select
-                      className="pos-select pos-input-sm"
-                      value=""
-                      onChange={(e) => {
-                        const prod = products.find(p => p.id === e.target.value);
-                        if (prod) handleSelectProduct(prod, item.id);
-                      }}
-                      style={{ background: '#ffffff', fontWeight: 500 }}
-                    >
-                      <option value="">-- Chạm để chọn sản phẩm hàng #{index + 1} --</option>
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} [Mã: {p.code}] - {p.price}k
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {orderItems.length > 3 && (
-                    <button
-                      type="button"
-                      className="pos-item-del-btn"
-                      onClick={() => handleRemoveOrClearRow(item.id)}
-                      title="Xóa hàng trống thừa"
+                      title="Xóa hàng trống"
                     >
                       <X size={15} />
                     </button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
 
         {/* + Thêm hàng button */}
         <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
@@ -1074,7 +1226,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
         <div className="receipt-header-box">
           <div className="receipt-shop-title">XƯỞNG IN LY NHỰA</div>
           <div className="receipt-sub-title">HÓA ĐƠN ĐẶT IN LY & PHỤ KIỆN</div>
-          <div className="receipt-date-time">{new Date().toLocaleString('vi-VN')}</div>
+          <div className="receipt-date-time">{captureTimeStr || formatVietnamDateTime()}</div>
         </div>
 
         <div className="receipt-customer-box">

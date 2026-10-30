@@ -4,7 +4,7 @@ import {
   Phone, MapPin, X, FileSpreadsheet, TrendingUp, PackageCheck, Coins 
 } from 'lucide-react';
 import { Order } from '../../types/pos';
-import { posDb, formatVND, formatK, generateZaloMessage } from '../../utils/posStorage';
+import { posDb, formatVND, formatK, generateZaloMessage, formatVietnamDateTime, parseOrderTimestamp } from '../../utils/posStorage';
 import { exportOrdersToExcel } from '../../utils/excelHelper';
 import { Pagination } from './Pagination';
 import html2canvas from 'html2canvas';
@@ -16,33 +16,17 @@ interface OrdersScreenProps {
 
 const ITEMS_PER_PAGE = 10;
 
-// Helper to reliably parse date from various formats
+// Helper to reliably parse date from various formats in Vietnam timezone
 function parseOrderDate(dateStr: string): { day: number; month: number; year: number } | null {
   if (!dateStr) return null;
+  const normalized = formatVietnamDateTime(dateStr);
   // Format DD/MM/YYYY
-  const vnMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const vnMatch = normalized.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (vnMatch) {
     return {
       day: parseInt(vnMatch[1]),
       month: parseInt(vnMatch[2]),
       year: parseInt(vnMatch[3])
-    };
-  }
-  // Format YYYY-MM-DD
-  const isoMatch = dateStr.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (isoMatch) {
-    return {
-      year: parseInt(isoMatch[1]),
-      month: parseInt(isoMatch[2]),
-      day: parseInt(isoMatch[3])
-    };
-  }
-  const d = new Date(dateStr);
-  if (!isNaN(d.getTime())) {
-    return {
-      day: d.getDate(),
-      month: d.getMonth() + 1,
-      year: d.getFullYear()
     };
   }
   return null;
@@ -124,9 +108,9 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
   // Sắp xếp đơn hàng mới nhất lên đầu tiên (Newest first)
   const sortedOrders = [...filteredOrders].sort((a, b) => {
-    const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
-    const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-    if (!isNaN(tA) && !isNaN(tB) && tA !== tB) {
+    const tA = parseOrderTimestamp(a.createdAt || a.updatedAt);
+    const tB = parseOrderTimestamp(b.createdAt || b.updatedAt);
+    if (tA && tB && tA !== tB) {
       return tB - tA;
     }
     const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
@@ -735,7 +719,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Calendar size={12} />
-                  <span>{order.createdAt}</span>
+                  <span>{formatVietnamDateTime(order.createdAt)}</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -873,7 +857,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
               <div className="receipt-shop-title">XƯỞNG IN LY NHỰA</div>
               <div className="receipt-sub-title">HÓA ĐƠN ĐẶT IN LY & PHỤ KIỆN</div>
               <div className="receipt-date-time">
-                Mã đơn: <strong>{selectedOrderForCapture.code}</strong> | Ngày: {selectedOrderForCapture.createdAt || new Date().toLocaleString('vi-VN')}
+                Mã đơn: <strong>{selectedOrderForCapture.code}</strong> | Ngày: {formatVietnamDateTime(selectedOrderForCapture.createdAt)}
               </div>
             </div>
 

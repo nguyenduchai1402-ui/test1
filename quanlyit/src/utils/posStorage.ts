@@ -610,9 +610,74 @@ export function generateOrderCode(): string {
   return `#DH-${nextNum}`;
 }
 
+// VIETNAM 24H DATE-TIME UTILITIES (Asia/Ho_Chi_Minh, UTC+7)
+export function formatVietnamDateTime(dateInput?: Date | string | number): string {
+  if (typeof dateInput === 'string') {
+    const trimmed = dateInput.trim();
+    // Already in "HH:mm(:ss) DD/MM/YYYY" 24h format
+    const vn24Match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (vn24Match) {
+      const hh = vn24Match[1].padStart(2, '0');
+      const mm = vn24Match[2].padStart(2, '0');
+      const ss = (vn24Match[3] || '00').padStart(2, '0');
+      const dd = vn24Match[4].padStart(2, '0');
+      const mo = vn24Match[5].padStart(2, '0');
+      const yyyy = vn24Match[6];
+      return `${hh}:${mm}:${ss} ${dd}/${mo}/${yyyy}`;
+    }
+    // Format "YYYY-MM-DD HH:mm(:ss)"
+    const ymdMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (ymdMatch) {
+      const yyyy = ymdMatch[1];
+      const mo = ymdMatch[2].padStart(2, '0');
+      const dd = ymdMatch[3].padStart(2, '0');
+      const hh = ymdMatch[4].padStart(2, '0');
+      const mm = ymdMatch[5].padStart(2, '0');
+      const ss = (ymdMatch[6] || '00').padStart(2, '0');
+      return `${hh}:${mm}:${ss} ${dd}/${mo}/${yyyy}`;
+    }
+  }
+
+  const d = dateInput !== undefined && dateInput !== null && dateInput !== '' ? new Date(dateInput) : new Date();
+  const validDate = isNaN(d.getTime()) ? new Date() : d;
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).formatToParts(validDate);
+
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '00';
+  let hour = get('hour');
+  if (hour === '24') hour = '00';
+  return `${hour}:${get('minute')}:${get('second')} ${get('day')}/${get('month')}/${get('year')}`;
+}
+
+export function parseOrderTimestamp(dateStr?: string): number {
+  if (!dateStr) return 0;
+  const trimmed = dateStr.trim();
+  const m1 = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m1) {
+    const [, hh, mm, ss = '0', dd, mo, yyyy] = m1;
+    return new Date(Number(yyyy), Number(mo) - 1, Number(dd), Number(hh), Number(mm), Number(ss)).getTime();
+  }
+  const m2 = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (m2) {
+    const [, dd, mo, yyyy, hh, mm, ss = '0'] = m2;
+    return new Date(Number(yyyy), Number(mo) - 1, Number(dd), Number(hh), Number(mm), Number(ss)).getTime();
+  }
+  const t = new Date(trimmed).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
 // ZALO MESSAGE BUILDER
 export function generateZaloMessage(order: Order): string {
-  const dateStr = order.createdAt ? order.createdAt.slice(0, 16) : new Date().toLocaleString('vi-VN');
+  const dateStr = order.createdAt ? formatVietnamDateTime(order.createdAt) : formatVietnamDateTime();
   const itemsText = order.items.map((it, idx) => {
     return `${idx + 1}. ${it.name} [${it.code}]\n   ${it.quantity} x ${it.unitPrice}k = ${formatVND(it.amount)}`;
   }).join('\n');
@@ -835,9 +900,9 @@ export const posDb = {
   getOrders(): Order[] {
     const list = getStorage<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
     return [...list].sort((a, b) => {
-      const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
-      const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-      if (!isNaN(tA) && !isNaN(tB) && tA !== tB) return tB - tA;
+      const tA = parseOrderTimestamp(a.createdAt || a.updatedAt);
+      const tB = parseOrderTimestamp(b.createdAt || b.updatedAt);
+      if (tA && tB && tA !== tB) return tB - tA;
       const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
       const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
       if (numA !== numB) return numB - numA;
@@ -854,8 +919,8 @@ export const posDb = {
     const idx = list.findIndex(o => o.id === order.id);
     const updated: Order = {
       ...order,
-      createdAt: order.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: order.createdAt ? formatVietnamDateTime(order.createdAt) : formatVietnamDateTime(),
+      updatedAt: formatVietnamDateTime()
     };
     if (idx >= 0) {
       list.splice(idx, 1);
