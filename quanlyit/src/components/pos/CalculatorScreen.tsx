@@ -53,12 +53,12 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Order state - starts empty (no pre-populated 3 empty items)
+  // Order state - starts empty (no pre-populated 3 empty items) and Khách lẻ is NOT checked by default
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [customerName, setCustomerName] = useState(KHACH_LE_NAME);
+  const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [customerId, setCustomerId] = useState<string | undefined>(KHACH_LE_ID);
+  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
   const [orderNotes, setOrderNotes] = useState('');
   const [orderCode, setOrderCode] = useState(generateOrderCode());
   const [captureTimeStr, setCaptureTimeStr] = useState<string>(() => formatVietnamDateTime());
@@ -314,7 +314,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     onShowToast(`Đã thêm khách hàng: ${newCust.name}`);
   };
 
-  // Quick Customer Select from existing list
+  // Quick Customer Select from existing list (toggle Khách Lẻ when clicked)
   const handleSelectCustomer = (cId: string) => {
     if (!cId) {
       setCustomerId(undefined);
@@ -325,13 +325,21 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       return;
     }
     if (cId === KHACH_LE_ID) {
-      setCustomerId(KHACH_LE_ID);
-      setCustomerName(KHACH_LE_NAME);
-      setCustomerPhone('');
-      setCustomerAddress('');
-      setCustomerSearchQuery('');
-      setIsCustDropdownOpen(false);
-      onShowToast('Đã chọn: Khách Lẻ');
+      if (customerId === KHACH_LE_ID) {
+        // Bỏ tích Khách lẻ khi bấm lại
+        setCustomerId(undefined);
+        setCustomerName('');
+        setIsCustDropdownOpen(false);
+        onShowToast('Đã bỏ chọn Khách Lẻ');
+      } else {
+        setCustomerId(KHACH_LE_ID);
+        setCustomerName(KHACH_LE_NAME);
+        setCustomerPhone('');
+        setCustomerAddress('');
+        setCustomerSearchQuery('');
+        setIsCustDropdownOpen(false);
+        onShowToast('Đã tích chọn: Khách Lẻ');
+      }
       return;
     }
     const cust = customers.find(c => c.id === cId);
@@ -400,12 +408,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   const totalQuantity = validOrderItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = validOrderItems.reduce((sum, item) => sum + item.amount, 0);
 
-  // Check if a valid customer is selected (either Khách Lẻ or a selected customer)
-  const hasSelectedCustomer = Boolean(customerId && customerName && customerName.trim());
+  // Valid customer info when either customerName is entered/selected OR Khách Lẻ is ticked
+  const hasSelectedCustomer = Boolean(
+    customerId === KHACH_LE_ID || (customerName && customerName.trim().length > 0)
+  );
 
   // Save Order to Database
   const performSaveOrder = (): Order => {
-    const finalCustName = customerName.trim() || KHACH_LE_NAME;
+    const finalCustName = customerId === KHACH_LE_ID ? KHACH_LE_NAME : customerName.trim();
     const nowVN = formatVietnamDateTime();
     const order: Order = {
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
@@ -430,7 +440,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
   const handleManualSave = () => {
     if (!hasSelectedCustomer) {
-      alert('Vui lòng chọn khách hàng (hoặc tích chọn Khách Lẻ) trước khi tạo đơn!');
+      alert('Không thể tạo đơn! Vui lòng nhập thông tin khách hàng, nếu không có thông tin bắt buộc phải tích vào nút "Khách lẻ"!');
       setIsCustomerExpanded(true);
       return;
     }
@@ -441,7 +451,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     }
 
     const isEditing = Boolean(editingOrder);
-    const finalCustName = customerName.trim() || KHACH_LE_NAME;
+    const finalCustName = customerId === KHACH_LE_ID ? KHACH_LE_NAME : customerName.trim();
     const nowVN = formatVietnamDateTime();
 
     const orderToSave: Order = {
@@ -480,7 +490,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   // Trigger Zalo Screenshot Action: prompt save confirmation
   const handleInitiateZaloAction = () => {
     if (!hasSelectedCustomer) {
-      alert('Vui lòng chọn khách hàng (hoặc tích chọn Khách Lẻ) trước khi tạo đơn / chụp ảnh!');
+      alert('Không thể tạo đơn! Vui lòng nhập thông tin khách hàng, nếu không có thông tin bắt buộc phải tích vào nút "Khách lẻ"!');
       setIsCustomerExpanded(true);
       return;
     }
@@ -617,14 +627,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     });
   };
 
-  // Reset Form for New Order (Always restores 3 empty rows and defaults to Khách Lẻ ticked)
+  // Reset Form for New Order (Khách Lẻ is NOT ticked by default)
   const handleResetForm = (showToastNotice?: boolean) => {
     setOrderCode(generateOrderCode());
     setOrderItems(ensureMinimumThreeRows([]));
-    setCustomerName(KHACH_LE_NAME);
+    setCustomerName('');
     setCustomerPhone('');
     setCustomerAddress('');
-    setCustomerId(KHACH_LE_ID);
+    setCustomerId(undefined);
     setCustomerSearchQuery('');
     setIsCustDropdownOpen(false);
     setOrderNotes('');
@@ -697,34 +707,34 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {hasSelectedCustomer ? (
                 <>
-                  Khách: <strong style={{ color: '#15803d' }}>{customerName}</strong>{' '}
+                  Khách: <strong style={{ color: '#15803d' }}>{customerId === KHACH_LE_ID ? KHACH_LE_NAME : customerName}</strong>{' '}
                   {customerPhone && `(${customerPhone})`}
                 </>
               ) : (
                 <span style={{ color: '#dc2626', fontWeight: 700 }}>
-                  * Bắt buộc chọn hoặc thêm khách hàng
+                  * Chưa có thông tin khách hàng (Nhập TT hoặc tích Khách lẻ)
                 </span>
               )}
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            {/* KHÁCH LẺ ALWAYS DISPLAYED WITH TICK */}
+            {/* NÚT TÍCH KHÁCH LẺ (KHÔNG TÍCH SẴN, KHI CẦN THÌ TÍCH) */}
             <button
               type="button"
               onClick={() => handleSelectCustomer(KHACH_LE_ID)}
-              title="Chọn Khách Lẻ"
+              title="Tích chọn Khách Lẻ nếu không có thông tin khách hàng"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 5,
-                padding: '3px 9px',
+                gap: 6,
+                padding: '4px 10px',
                 borderRadius: 6,
                 fontSize: 12,
                 fontWeight: 700,
-                border: customerId === KHACH_LE_ID ? '1.5px solid #16a34a' : '1px solid #86efac',
-                background: customerId === KHACH_LE_ID ? '#dcfce7' : '#f0fdf4',
-                color: '#15803d',
+                border: customerId === KHACH_LE_ID ? '1.5px solid #16a34a' : '1.5px solid #94a3b8',
+                background: customerId === KHACH_LE_ID ? '#dcfce7' : '#ffffff',
+                color: customerId === KHACH_LE_ID ? '#15803d' : '#334155',
                 cursor: 'pointer'
               }}
             >
@@ -737,14 +747,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                   height: 15,
                   borderRadius: 4,
                   background: customerId === KHACH_LE_ID ? '#16a34a' : '#ffffff',
-                  border: '1.5px solid #16a34a',
-                  color: customerId === KHACH_LE_ID ? '#ffffff' : '#16a34a',
+                  border: customerId === KHACH_LE_ID ? '1.5px solid #16a34a' : '1.5px solid #64748b',
+                  color: '#ffffff',
                   fontSize: 11,
                   fontWeight: 900,
                   lineHeight: 1
                 }}
               >
-                ✓
+                {customerId === KHACH_LE_ID ? '✓' : ''}
               </span>
               <span>Khách lẻ</span>
             </button>
@@ -802,7 +812,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                     setCustomerPhone('');
                     setCustomerAddress('');
                     setIsCustDropdownOpen(false);
-                    onShowToast('Vui lòng chọn khách hàng, thêm khách mới hoặc tích Khách lẻ');
+                    onShowToast('Đã xóa thông tin khách hàng');
                   }}
                   title="Xóa tìm kiếm / Chọn lại khách hàng"
                   style={{
@@ -843,47 +853,6 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                     zIndex: 110
                   }}
                 >
-                  {/* LUÔN HIỂN THỊ KHÁCH LẺ CÓ DẤU TÍCH Ở ĐẦU DANH SÁCH */}
-                  <div
-                    className={`pos-autocomplete-item ${customerId === KHACH_LE_ID ? 'active' : ''}`}
-                    onClick={() => handleSelectCustomer(KHACH_LE_ID)}
-                    style={{
-                      padding: '8px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderBottom: '1.5px solid #e2e8f0',
-                      cursor: 'pointer',
-                      background: customerId === KHACH_LE_ID ? '#f0fdf4' : '#fafafa'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 16,
-                          height: 16,
-                          borderRadius: 4,
-                          background: customerId === KHACH_LE_ID ? '#16a34a' : '#ffffff',
-                          border: '1.5px solid #16a34a',
-                          color: customerId === KHACH_LE_ID ? '#ffffff' : '#16a34a',
-                          fontSize: 11,
-                          fontWeight: 900
-                        }}
-                      >
-                        ✓
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>
-                        Khách Lẻ
-                      </span>
-                    </div>
-                    <span style={{ color: '#16a34a', fontSize: 11, fontWeight: 700 }}>
-                      {customerId === KHACH_LE_ID ? '✓ Đang chọn' : '✓ Chọn nhanh'}
-                    </span>
-                  </div>
-
                   {sortedCustMatches.length === 0 ? (
                     <div style={{ padding: '12px 14px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
                       <div>Không tìm thấy khách quen nào khớp với <strong>"{customerSearchQuery}"</strong></div>
@@ -1011,7 +980,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
 
           {!hasSelectedCustomer && (
             <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600 }}>
-              ⚠️ Bạn đang nhập thông tin khách mới — vui lòng bấm nút <strong>"Thêm khách hàng"</strong> (hoặc chọn khách từ danh sách / tích <strong>"✓ Khách lẻ"</strong>) để tạo đơn.
+              ⚠️ Bắt buộc nhập thông tin khách hàng! Nếu không có thông tin, vui lòng tích vào nút <strong>"Khách lẻ"</strong> để tạo đơn.
             </div>
           )}
         </div>
