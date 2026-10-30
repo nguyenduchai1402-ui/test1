@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, Plus, Trash2, ChevronDown, ChevronUp, UserCheck, 
-  Send, Save, RotateCcw, UserPlus, X, Check, Camera, Download, Copy, Share2
+  Send, Save, RotateCcw, X, Check, Camera, Download, Copy, Share2
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Product, Customer, Order, OrderItem } from '../../types/pos';
@@ -287,33 +287,6 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     setOrderItems(prev => [...prev, createEmptyRow()]);
   };
 
-  // Inline add customer from the directly visible customer inputs
-  const handleInlineAddCustomer = () => {
-    const rawName = (customerId === KHACH_LE_ID ? '' : customerName).trim();
-    if (!rawName) {
-      alert('Vui lòng nhập Tên khách / Quán trước khi bấm Thêm khách hàng!');
-      return;
-    }
-
-    const newCust: Customer = {
-      id: 'c-' + Date.now(),
-      name: rawName,
-      phone: (customerPhone || '').trim(),
-      address: (customerAddress || '').trim(),
-      createdAt: formatVietnamDateTime()
-    };
-
-    posDb.saveCustomer(newCust);
-    setCustomers(posDb.getCustomers());
-    setCustomerId(newCust.id);
-    setCustomerName(newCust.name);
-    setCustomerPhone(newCust.phone || '');
-    setCustomerAddress(newCust.address || '');
-    setCustomerSearchQuery(newCust.name);
-    setIsCustDropdownOpen(false);
-    onShowToast(`Đã thêm khách hàng: ${newCust.name}`);
-  };
-
   // Quick Customer Select from existing list (toggle Khách Lẻ when clicked)
   const handleSelectCustomer = (cId: string) => {
     if (!cId) {
@@ -413,17 +386,76 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     customerId === KHACH_LE_ID || (customerName && customerName.trim().length > 0)
   );
 
+  // Automatically save new customer (or update existing customer info) when saving an order
+  const ensureCustomerForOrder = (): { id?: string; name: string; phone: string; address: string; isNewCustomer: boolean } => {
+    const cleanPhone = (customerPhone || '').trim();
+    const cleanAddress = (customerAddress || '').trim();
+
+    if (customerId === KHACH_LE_ID) {
+      return { id: undefined, name: KHACH_LE_NAME, phone: cleanPhone, address: cleanAddress, isNewCustomer: false };
+    }
+
+    const cleanName = customerName.trim();
+    if (!cleanName || cleanName.toLowerCase() === KHACH_LE_NAME.toLowerCase()) {
+      return { id: undefined, name: cleanName || KHACH_LE_NAME, phone: cleanPhone, address: cleanAddress, isNewCustomer: false };
+    }
+
+    const currentCustomers = posDb.getCustomers();
+    const existingCust = customerId
+      ? currentCustomers.find(c => c.id === customerId)
+      : currentCustomers.find(c => c.name.trim().toLowerCase() === cleanName.toLowerCase());
+
+    if (existingCust) {
+      const nextPhone = cleanPhone || existingCust.phone || '';
+      const nextAddress = cleanAddress || existingCust.address || '';
+      if (nextPhone !== (existingCust.phone || '') || nextAddress !== (existingCust.address || '') || existingCust.name !== cleanName) {
+        const updatedCust: Customer = {
+          ...existingCust,
+          name: cleanName,
+          phone: nextPhone,
+          address: nextAddress
+        };
+        posDb.saveCustomer(updatedCust);
+        setCustomers(posDb.getCustomers());
+      }
+      return {
+        id: existingCust.id,
+        name: cleanName,
+        phone: nextPhone,
+        address: nextAddress,
+        isNewCustomer: false
+      };
+    }
+
+    const newCust: Customer = {
+      id: 'c-' + Date.now(),
+      name: cleanName,
+      phone: cleanPhone,
+      address: cleanAddress,
+      createdAt: formatVietnamDateTime()
+    };
+    posDb.saveCustomer(newCust);
+    setCustomers(posDb.getCustomers());
+    return {
+      id: newCust.id,
+      name: newCust.name,
+      phone: newCust.phone || '',
+      address: newCust.address || '',
+      isNewCustomer: true
+    };
+  };
+
   // Save Order to Database
   const performSaveOrder = (): Order => {
-    const finalCustName = customerId === KHACH_LE_ID ? KHACH_LE_NAME : customerName.trim();
+    const resolvedCust = ensureCustomerForOrder();
     const nowVN = formatVietnamDateTime();
     const order: Order = {
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
       code: orderCode,
-      customerId: customerId === KHACH_LE_ID ? undefined : customerId,
-      customerName: finalCustName,
-      customerPhone: (customerPhone || '').trim(),
-      customerAddress: (customerAddress || '').trim(),
+      customerId: resolvedCust.id,
+      customerName: resolvedCust.name,
+      customerPhone: resolvedCust.phone,
+      customerAddress: resolvedCust.address,
       items: validOrderItems,
       totalQuantity,
       totalAmount,
@@ -451,16 +483,16 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
     }
 
     const isEditing = Boolean(editingOrder);
-    const finalCustName = customerId === KHACH_LE_ID ? KHACH_LE_NAME : customerName.trim();
+    const resolvedCust = ensureCustomerForOrder();
     const nowVN = formatVietnamDateTime();
 
     const orderToSave: Order = {
       id: editingOrder ? editingOrder.id : 'ord-' + Date.now(),
       code: orderCode,
-      customerId: customerId === KHACH_LE_ID ? undefined : customerId,
-      customerName: finalCustName,
-      customerPhone: (customerPhone || '').trim(),
-      customerAddress: (customerAddress || '').trim(),
+      customerId: resolvedCust.id,
+      customerName: resolvedCust.name,
+      customerPhone: resolvedCust.phone,
+      customerAddress: resolvedCust.address,
       items: validOrderItems,
       totalQuantity,
       totalAmount,
@@ -483,7 +515,11 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       }
     } else {
       handleResetForm(true);
-      onShowToast(`Đã lưu đơn hàng của ${savedOrder.customerName}!`);
+      onShowToast(
+        resolvedCust.isNewCustomer
+          ? `Đã lưu đơn & tự động thêm khách hàng mới: ${savedOrder.customerName}!`
+          : `Đã lưu đơn hàng của ${savedOrder.customerName}!`
+      );
     }
   };
 
@@ -856,15 +892,9 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
                   {sortedCustMatches.length === 0 ? (
                     <div style={{ padding: '12px 14px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
                       <div>Không tìm thấy khách quen nào khớp với <strong>"{customerSearchQuery}"</strong></div>
-                      <button
-                        type="button"
-                        className="pos-btn pos-btn-primary pos-btn-sm"
-                        style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                        onClick={handleInlineAddCustomer}
-                      >
-                        <UserPlus size={13} />
-                        <span>+ Thêm khách hàng này</span>
-                      </button>
+                      <div style={{ fontSize: 11, color: '#16a34a', marginTop: 4, fontWeight: 600 }}>
+                        Khách hàng này sẽ tự động được thêm vào danh sách khi Lưu đơn.
+                      </div>
                     </div>
                   ) : (
                     <>
@@ -930,7 +960,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             </div>
           </div>
 
-          {/* Ô NHẬP TRỰC TIẾP THÔNG TIN KHÁCH HÀNG & NÚT THÊM KHÁCH HÀNG */}
+          {/* Ô NHẬP TRỰC TIẾP THÔNG TIN KHÁCH HÀNG (TỰ ĐỘNG LƯU THÀNH KHÁCH HÀNG MỚI KHI LƯU ĐƠN) */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             <div>
               <input 
@@ -957,25 +987,14 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div>
             <input 
               type="text" 
               className="pos-input pos-input-sm" 
-              style={{ flex: 1 }}
               placeholder="Địa chỉ giao hàng / Nhà xe nhận hàng"
               value={customerAddress || ''}
               onChange={(e) => setCustomerAddress(e.target.value)}
             />
-            <button
-              type="button"
-              className="pos-btn pos-btn-primary pos-btn-sm"
-              onClick={handleInlineAddCustomer}
-              title="Lưu thông tin vừa nhập vào danh sách khách hàng và chọn cho đơn này"
-              style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 10px' }}
-            >
-              <UserPlus size={14} />
-              <span>Thêm khách hàng</span>
-            </button>
           </div>
 
           {!hasSelectedCustomer && (
