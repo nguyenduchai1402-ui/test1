@@ -98,19 +98,26 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const receiptCaptureRef = useRef<HTMLDivElement>(null);
 
-  // Sync products and customers on custom events
+  // Sync products, customers, and next order code on custom events
   useEffect(() => {
     const handleProductsChange = () => setProducts(posDb.getProducts());
     const handleCustomersChange = () => setCustomers(posDb.getCustomers());
+    const handleOrdersChange = () => {
+      if (!editingOrder) {
+        setOrderCode(generateOrderCode());
+      }
+    };
 
     window.addEventListener('pos_products_updated', handleProductsChange);
     window.addEventListener('pos_customers_updated', handleCustomersChange);
+    window.addEventListener('pos_orders_updated', handleOrdersChange);
 
     return () => {
       window.removeEventListener('pos_products_updated', handleProductsChange);
       window.removeEventListener('pos_customers_updated', handleCustomersChange);
+      window.removeEventListener('pos_orders_updated', handleOrdersChange);
     };
-  }, []);
+  }, [editingOrder]);
 
   // Handle Editing Order load
   useEffect(() => {
@@ -216,6 +223,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             code: product.code,
             name: product.name,
             unitPrice: product.price,
+            costPrice: product.costPrice || 0,
             quantity: 1,
             amount: product.price
           };

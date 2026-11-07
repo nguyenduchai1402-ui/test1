@@ -34,6 +34,7 @@ function parseOrderDate(dateStr: string): { day: number; month: number; year: nu
 
 export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowToast }) => {
   const [orders, setOrders] = useState<Order[]>(posDb.getOrders());
+  const [products, setProducts] = useState(posDb.getProducts());
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
@@ -55,8 +56,13 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
   useEffect(() => {
     const handleUpdate = () => setOrders(posDb.getOrders());
+    const handleProductsUpdate = () => setProducts(posDb.getProducts());
     window.addEventListener('pos_orders_updated', handleUpdate);
-    return () => window.removeEventListener('pos_orders_updated', handleUpdate);
+    window.addEventListener('pos_products_updated', handleProductsUpdate);
+    return () => {
+      window.removeEventListener('pos_orders_updated', handleUpdate);
+      window.removeEventListener('pos_products_updated', handleProductsUpdate);
+    };
   }, []);
 
   // Reset to page 1 whenever search or filter changes
@@ -121,7 +127,6 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
 
   // Bảng tra giá vốn sản phẩm để tính lợi nhuận
-  const products = posDb.getProducts();
   const productCostMap = new Map<string, number>();
   products.forEach(p => {
     if (p.costPrice !== undefined && p.costPrice !== null) {
@@ -647,6 +652,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
       ) : (
         paginatedOrders.map(order => {
           const isExpanded = expandedOrderId === order.id;
+          const orderProfit = getOrderProfit(order);
 
           return (
             <div 
@@ -707,19 +713,38 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
                 </div>
               </div>
 
-              {/* SECOND LINE: DATE + ITEM COUNT */}
+              {/* SECOND LINE: DATE + PROFIT + ITEM COUNT */}
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 6,
                 fontSize: 12, 
                 color: '#64748b',
                 paddingBottom: isExpanded ? 8 : 0,
                 borderBottom: isExpanded ? '1px dashed #e2e8f0' : 'none'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Calendar size={12} />
-                  <span>{formatVietnamDateTime(order.createdAt)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Calendar size={12} />
+                    <span>{formatVietnamDateTime(order.createdAt)}</span>
+                  </div>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#2563eb',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    padding: '1px 6px',
+                    borderRadius: 4
+                  }}>
+                    <Coins size={11} />
+                    <span>Lợi nhuận: {formatVND(orderProfit)} ({formatK(orderProfit)})</span>
+                  </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

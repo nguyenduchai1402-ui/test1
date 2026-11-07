@@ -693,8 +693,20 @@ export function formatK(amountInK: number): string {
 
 export function generateOrderCode(): string {
   const orders = posDb.getOrders();
-  const nextNum = 1000 + orders.length + 1;
-  return `#DH-${nextNum}`;
+  let maxNum = 0;
+  for (const o of orders) {
+    if (!o || !o.code) continue;
+    const match = o.code.match(/(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      // Chỉ tính dãy số mới bắt đầu từ 001 (< 1000), giữ nguyên không ảnh hưởng các đơn cũ (#DH-1001...)
+      if (!isNaN(num) && num > 0 && num < 1000 && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  }
+  const nextNum = maxNum + 1;
+  return `#DH-${String(nextNum).padStart(3, '0')}`;
 }
 
 // VIETNAM 24H DATE-TIME UTILITIES (Asia/Ho_Chi_Minh, UTC+7)
