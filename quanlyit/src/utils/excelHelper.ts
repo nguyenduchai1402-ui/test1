@@ -207,22 +207,34 @@ export async function parseProductsFromExcel(file: File): Promise<Product[]> {
 
   const products: Product[] = [];
 
-  for (const r of rows) {
+  for (const rawRow of rows) {
+    // Normalize column names by trimming whitespace
+    const r: Record<string, any> = {};
+    for (const [k, v] of Object.entries(rawRow)) {
+      r[k.trim()] = v;
+    }
+
     // Find fields with flexible column naming
-    const code = String(r['Mã sản phẩm'] || r['Mã'] || r['Ma'] || r['Code'] || '').trim();
-    const name = String(r['Tên sản phẩm'] || r['Tên'] || r['Ten'] || r['Name'] || '').trim();
+    const code = String(r['Mã sản phẩm'] || r['Mã SP'] || r['Mã'] || r['Ma'] || r['Code'] || '').trim();
+    const name = String(r['Tên sản phẩm'] || r['Tên SP'] || r['Tên'] || r['Ten'] || r['Name'] || '').trim();
     
     // Price could be in k or full VND (e.g. 750 or 750000)
-    let rawPrice = Number(r['Đơn giá (k)'] || r['Đơn giá'] || r['Don gia'] || r['Giá'] || r['Price'] || 0);
+    const rawPriceVal = r['Đơn giá bán (k)'] ?? r['Đơn giá (k)'] ?? r['Đơn giá bán'] ?? r['Đơn giá'] ?? r['Don gia'] ?? r['Giá bán'] ?? r['Giá'] ?? r['Price'] ?? 0;
+    let rawPrice = Number(String(rawPriceVal).replace(',', '.')) || 0;
     if (rawPrice >= 10000) {
       rawPrice = Math.round(rawPrice / 1000); // Convert 750000 to 750k
     }
 
-    const unit = String(r['Đơn vị tính'] || r['Đơn vị'] || r['Don vi'] || r['Unit'] || 'thiên').trim();
+    const unit = String(r['Đơn vị tính'] || r['ĐVT'] || r['Đơn vị'] || r['Don vi'] || r['Unit'] || 'thiên').trim();
     const category = String(r['Danh mục'] || r['Danh muc'] || r['Loại'] || r['Category'] || 'Khác').trim();
-    let rawCostPrice = Number(r['Giá nhập (k)'] || r['Giá nhập'] || r['Gia nhap'] || r['Cost'] || 0);
-    if (rawCostPrice >= 10000) {
-      rawCostPrice = Math.round(rawCostPrice / 1000);
+
+    const rawCostVal = r['Giá nhập (k)'] ?? r['Giá nhập'] ?? r['Giá nhập vào'] ?? r['Giá vốn (k)'] ?? r['Giá vốn'] ?? r['Giá gốc'] ?? r['Gia nhap'] ?? r['Gia von'] ?? r['Cost'];
+    let parsedCostPrice: number | undefined = undefined;
+    if (rawCostVal !== undefined && rawCostVal !== null && String(rawCostVal).trim() !== '') {
+      const numCost = Number(String(rawCostVal).trim().replace(',', '.'));
+      if (!isNaN(numCost)) {
+        parsedCostPrice = numCost >= 10000 ? Math.round(numCost / 1000) : numCost;
+      }
     }
 
     if (name) {
@@ -231,7 +243,7 @@ export async function parseProductsFromExcel(file: File): Promise<Product[]> {
         code: code || ('SP' + (products.length + 1)),
         name,
         price: rawPrice || 0,
-        costPrice: rawCostPrice || undefined,
+        costPrice: parsedCostPrice,
         unit: unit || 'thiên',
         category: category || 'Khác',
         isPopular: true

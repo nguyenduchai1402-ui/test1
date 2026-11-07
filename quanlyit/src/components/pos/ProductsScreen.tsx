@@ -25,8 +25,8 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formCode, setFormCode] = useState('');
   const [formName, setFormName] = useState('');
-  const [formPrice, setFormPrice] = useState<number | ''>('');
-  const [formCostPrice, setFormCostPrice] = useState<number | ''>('');
+  const [formPrice, setFormPrice] = useState<string>('');
+  const [formCostPrice, setFormCostPrice] = useState<string>('');
   const [formUnit, setFormUnit] = useState('thiên');
   const [formCategory, setFormCategory] = useState('Cốc Tim');
 
@@ -132,8 +132,8 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
     setEditingId(prod.id);
     setFormCode(prod.code);
     setFormName(prod.name);
-    setFormPrice(prod.price);
-    setFormCostPrice(prod.costPrice !== undefined && prod.costPrice !== null ? prod.costPrice : '');
+    setFormPrice(prod.price !== undefined && prod.price !== null ? String(prod.price) : '');
+    setFormCostPrice(prod.costPrice !== undefined && prod.costPrice !== null ? String(prod.costPrice) : '');
     setFormUnit(prod.unit);
     setFormCategory(prod.category);
     setIsModalOpen(true);
@@ -142,23 +142,31 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
   // Save product
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formCode.trim() || !formName.trim() || formPrice === '') {
+    const cleanPriceStr = String(formPrice).trim().replace(',', '.');
+    const cleanCostStr = String(formCostPrice).trim().replace(',', '.');
+
+    if (!formCode.trim() || !formName.trim() || cleanPriceStr === '' || isNaN(Number(cleanPriceStr))) {
       alert('Vui lòng nhập đủ mã, tên và đơn giá sản phẩm!');
       return;
     }
+
+    const parsedCostPrice = cleanCostStr !== '' && !isNaN(Number(cleanCostStr))
+      ? Number(cleanCostStr)
+      : undefined;
 
     const prod: Product = {
       id: editingId || 'p-' + Date.now(),
       code: formCode.trim().toUpperCase(),
       name: formName.trim(),
-      price: Number(formPrice),
-      costPrice: formCostPrice !== '' ? Number(formCostPrice) : undefined,
+      price: Number(cleanPriceStr),
+      costPrice: parsedCostPrice,
       unit: formUnit.trim() || 'thiên',
       category: formCategory,
       isPopular: true
     };
 
     posDb.saveProduct(prod);
+    setProducts(posDb.getProducts());
     onShowToast(editingId ? `Đã cập nhật sản phẩm [${prod.code}]!` : `Đã thêm sản phẩm mới [${prod.code}]!`);
     setIsModalOpen(false);
   };
@@ -246,8 +254,18 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
         return;
       }
 
-      // Save each imported product
-      importedProducts.forEach(p => posDb.saveProduct(p));
+      // Save each imported product (matching existing product ID by code if present)
+      const currentProds = posDb.getProducts();
+      const byCode = new Map(currentProds.map(cp => [(cp.code || '').trim().toUpperCase(), cp]));
+      importedProducts.forEach(p => {
+        const existing = byCode.get((p.code || '').trim().toUpperCase());
+        posDb.saveProduct({
+          ...p,
+          id: existing ? existing.id : p.id,
+          costPrice: p.costPrice !== undefined && p.costPrice !== null ? p.costPrice : existing?.costPrice
+        });
+      });
+      setProducts(posDb.getProducts());
       onShowToast(`Đã nạp thành công ${importedProducts.length} sản phẩm từ file Excel!`);
       setIsImportModalOpen(false);
     } catch (err) {
@@ -870,11 +888,11 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                     className="pos-input"
                     placeholder="750 = 750.000đ"
                     value={formPrice}
-                    onChange={(e) => setFormPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setFormPrice(e.target.value)}
                   />
-                  {formPrice !== '' && (
+                  {String(formPrice).trim() !== '' && !isNaN(Number(String(formPrice).replace(',', '.'))) && (
                     <div style={{ fontSize: 11, color: '#15803d', fontWeight: 600, marginTop: 2 }}>
-                      = {formatVND(Number(formPrice))}
+                      = {formatVND(Number(String(formPrice).replace(',', '.')))}
                     </div>
                   )}
                 </div>
@@ -890,11 +908,11 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ onShowToast }) =
                     className="pos-input"
                     placeholder="Ví dụ: 550"
                     value={formCostPrice}
-                    onChange={(e) => setFormCostPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setFormCostPrice(e.target.value)}
                   />
-                  {formCostPrice !== '' && (
+                  {String(formCostPrice).trim() !== '' && !isNaN(Number(String(formCostPrice).replace(',', '.'))) && (
                     <div style={{ fontSize: 11, color: '#0284c7', fontWeight: 600, marginTop: 2 }}>
-                      = {formatVND(Number(formCostPrice))}
+                      = {formatVND(Number(String(formCostPrice).replace(',', '.')))}
                     </div>
                   )}
                 </div>

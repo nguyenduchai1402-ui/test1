@@ -27,8 +27,79 @@ export function getSupabaseConfig(): SupabaseConfig {
 }
 
 let _supabaseInstance: SupabaseClient | null = null;
-// Track recently saved customers locally so Realtime/Cloud sync never overwrites them before upsert completes
+// Track recently saved customers and products locally so Realtime/Cloud sync never overwrites them before upsert completes
 const _recentlySavedCustomers = new Map<string, { customer: Customer; savedAt: number }>();
+const _recentlySavedProducts = new Map<string, { product: Product; savedAt: number }>();
+
+const PRODUCT_COSTS_STORAGE_KEY = 'pos_print_product_costs_v2';
+
+function getStoredProductCostMap(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(PRODUCT_COSTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveProductCostToLocalMap(id?: string, code?: string, costPrice?: number): void {
+  if (costPrice === undefined || costPrice === null || String(costPrice).trim() === '' || isNaN(Number(costPrice))) return;
+  const num = Number(costPrice);
+  const map = getStoredProductCostMap();
+  if (id) map[`id:${id}`] = num;
+  if (code && code.trim()) {
+    const cleanCode = code.trim().toUpperCase();
+    map[`code:${cleanCode}`] = num;
+    map[`code:${cleanCode.replace(/-/g, '')}`] = num;
+  }
+  try {
+    localStorage.setItem(PRODUCT_COSTS_STORAGE_KEY, JSON.stringify(map));
+  } catch {}
+}
+
+export function encodeUnitWithCost(unit: string, costPrice?: number): string {
+  const cleanUnit = String(unit || 'thiên').split('||')[0].trim() || 'thiên';
+  if (costPrice !== undefined && costPrice !== null && String(costPrice).trim() !== '' && !isNaN(Number(costPrice))) {
+    return `${cleanUnit}||${Number(costPrice)}`;
+  }
+  return cleanUnit;
+}
+
+export function decodeUnitAndCost(rawUnit?: string, rawCost?: any, fallbackCost?: number): { unit: string; costPrice?: number } {
+  const str = String(rawUnit || 'thiên');
+  const parts = str.split('||');
+  const cleanUnit = parts[0].trim() || 'thiên';
+  let costPrice: number | undefined = undefined;
+  if (rawCost !== undefined && rawCost !== null && String(rawCost).trim() !== '' && !isNaN(Number(rawCost))) {
+    costPrice = Number(rawCost);
+  } else if (parts.length > 1 && parts[1].trim() !== '' && !isNaN(Number(parts[1]))) {
+    costPrice = Number(parts[1]);
+  } else if (fallbackCost !== undefined && fallbackCost !== null && !isNaN(Number(fallbackCost))) {
+    costPrice = Number(fallbackCost);
+  }
+  return { unit: cleanUnit, costPrice };
+}
+
+function mergeWithRecentlySavedProducts(incoming: Product[]): Product[] {
+  const now = Date.now();
+  const map = new Map<string, Product>();
+  for (const p of incoming) {
+    map.set(p.id, p);
+  }
+  const recentToPrepend: Product[] = [];
+  for (const [id, entry] of _recentlySavedProducts.entries()) {
+    if (now - entry.savedAt > 120_000) {
+      _recentlySavedProducts.delete(id);
+      continue;
+    }
+    if (!map.has(id)) {
+      recentToPrepend.push(entry.product);
+    } else {
+      map.set(id, { ...map.get(id)!, ...entry.product });
+    }
+  }
+  return [...recentToPrepend, ...Array.from(map.values())];
+}
 
 export function toIsoTimestamp(dateStr?: string): string {
   if (!dateStr) return new Date().toISOString();
@@ -156,19 +227,29 @@ export async function syncFromSupabase(): Promise<{
     if (oRes.error) throw oRes.error;
 
     const currentLocalProducts = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, []);
-    const localMap = new Map(currentLocalProducts.map(p => [p.id, p]));
+    const localById = new Map(currentLocalProducts.map(p => [p.id, p]));
+    const localByCode = new Map(currentLocalProducts.map(p => [(p.code || '').trim().toUpperCase(), p]));
+    const storedCostMap = getStoredProductCostMap();
 
     const cloudProducts: Product[] = (pRes.data || []).map((row: any) => {
-      const local = localMap.get(row.id);
-      const rawCost = row.cost_price ?? row.costPrice ?? local?.costPrice;
-      const costPrice = rawCost !== undefined && rawCost !== null && rawCost !== '' ? Number(rawCost) : undefined;
+      const codeKey = String(row.code || '').trim().toUpperCase();
+      const local = localById.get(row.id) || localByCode.get(codeKey);
+      const fallbackCost =
+        local?.costPrice ??
+        storedCostMap[`id:${row.id}`] ??
+        storedCostMap[`code:${codeKey}`] ??
+        storedCostMap[`code:${codeKey.replace(/-/g, '')}`];
+      const { unit, costPrice } = decodeUnitAndCost(row.unit, row.cost_price ?? row.costPrice, fallbackCost);
+      if (costPrice !== undefined) {
+        saveProductCostToLocalMap(row.id, row.code, costPrice);
+      }
       return {
         id: row.id,
         code: row.code,
         name: row.name,
         price: Number(row.price),
         costPrice,
-        unit: row.unit || 'thiên',
+        unit,
         category: row.category || 'Cốc Tim',
         isPopular: row.is_popular !== false
       };
@@ -200,8 +281,9 @@ export async function syncFromSupabase(): Promise<{
       updatedAt: row.updated_at
     }));
 
-    if (cloudProducts.length > 0) {
-      setStorage(STORAGE_KEYS.PRODUCTS, cloudProducts);
+    const mergedCloudProducts = mergeWithRecentlySavedProducts(cloudProducts);
+    if (mergedCloudProducts.length > 0) {
+      setStorage(STORAGE_KEYS.PRODUCTS, mergedCloudProducts);
       window.dispatchEvent(new Event('pos_products_updated'));
     }
     const mergedCloudCustomers = mergeWithRecentlySavedCustomers(cloudCustomers);
@@ -243,27 +325,12 @@ export async function pushAllToSupabase(): Promise<{ ok: boolean; message: strin
         code: p.code,
         name: p.name,
         price: p.price,
-        cost_price: p.costPrice !== undefined && p.costPrice !== null ? Number(p.costPrice) : null,
-        unit: p.unit,
+        unit: encodeUnitWithCost(p.unit, p.costPrice),
         category: p.category,
         is_popular: p.isPopular ?? true,
         created_at: new Date().toISOString()
       }));
-      try {
-        await client.from('pos_products').upsert(pRows, { onConflict: 'id' });
-      } catch {
-        const pRowsFallback = products.map(p => ({
-          id: p.id,
-          code: p.code,
-          name: p.name,
-          price: p.price,
-          unit: p.unit,
-          category: p.category,
-          is_popular: p.isPopular ?? true,
-          created_at: new Date().toISOString()
-        }));
-        await client.from('pos_products').upsert(pRowsFallback, { onConflict: 'id' });
-      }
+      await client.from('pos_products').upsert(pRows, { onConflict: 'id' });
     }
 
     if (customers.length > 0) {
@@ -819,12 +886,26 @@ export async function syncFromLocalApi(): Promise<boolean> {
 
     if (Array.isArray(data.products) && data.products.length > 0) {
       const existing = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, []);
-      const exMap = new Map(existing.map(p => [p.id, p]));
-      const mergedProducts = data.products.map((p: any) => ({
-        ...p,
-        costPrice: p.costPrice !== undefined && p.costPrice !== null && p.costPrice !== '' 
-          ? Number(p.costPrice) 
-          : exMap.get(p.id)?.costPrice
+      const exById = new Map(existing.map(p => [p.id, p]));
+      const exByCode = new Map(existing.map(p => [(p.code || '').trim().toUpperCase(), p]));
+      const storedCostMap = getStoredProductCostMap();
+      const mergedProducts = mergeWithRecentlySavedProducts(data.products.map((p: any) => {
+        const codeKey = String(p.code || '').trim().toUpperCase();
+        const fallback =
+          exById.get(p.id)?.costPrice ??
+          exByCode.get(codeKey)?.costPrice ??
+          storedCostMap[`id:${p.id}`] ??
+          storedCostMap[`code:${codeKey}`] ??
+          storedCostMap[`code:${codeKey.replace(/-/g, '')}`];
+        const { unit, costPrice } = decodeUnitAndCost(p.unit, p.costPrice ?? p.cost_price, fallback);
+        if (costPrice !== undefined) {
+          saveProductCostToLocalMap(p.id, p.code, costPrice);
+        }
+        return {
+          ...p,
+          unit,
+          costPrice
+        };
       }));
       setStorage(STORAGE_KEYS.PRODUCTS, mergedProducts);
       window.dispatchEvent(new Event('pos_products_updated'));
@@ -850,7 +931,21 @@ export async function syncFromLocalApi(): Promise<boolean> {
 export const posDb = {
   // PRODUCTS
   getProducts(): Product[] {
-    const list = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    const rawList = getStorage<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    const storedCostMap = getStoredProductCostMap();
+    const list = rawList.map(p => {
+      const codeKey = String(p.code || '').trim().toUpperCase();
+      const fallback =
+        storedCostMap[`id:${p.id}`] ??
+        storedCostMap[`code:${codeKey}`] ??
+        storedCostMap[`code:${codeKey.replace(/-/g, '')}`];
+      const { unit, costPrice } = decodeUnitAndCost(p.unit, p.costPrice, fallback);
+      return {
+        ...p,
+        unit,
+        costPrice
+      };
+    });
     return [...list].sort((a, b) => {
       const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
       const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
@@ -865,8 +960,16 @@ export const posDb = {
   saveProduct(prod: Product): void {
     const list = this.getProducts();
     const idx = list.findIndex(p => p.id === prod.id);
+    const cleanUnit = String(prod.unit || 'thiên').split('||')[0].trim() || 'thiên';
+    const hasValidCost = prod.costPrice !== undefined && prod.costPrice !== null && String(prod.costPrice).trim() !== '' && !isNaN(Number(prod.costPrice));
+    const resolvedCostPrice = hasValidCost
+      ? Number(prod.costPrice)
+      : (idx >= 0 ? list[idx].costPrice : undefined);
+
     const updatedProd: Product = {
       ...prod,
+      unit: cleanUnit,
+      costPrice: resolvedCostPrice,
       createdAt: prod.createdAt || (idx >= 0 ? list[idx].createdAt : undefined) || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -874,32 +977,30 @@ export const posDb = {
       list.splice(idx, 1);
     }
     list.unshift(updatedProd);
+    _recentlySavedProducts.set(updatedProd.id, { product: updatedProd, savedAt: Date.now() });
+    if (resolvedCostPrice !== undefined) {
+      saveProductCostToLocalMap(updatedProd.id, updatedProd.code, resolvedCostPrice);
+    }
     setStorage(STORAGE_KEYS.PRODUCTS, list);
     window.dispatchEvent(new Event('pos_products_updated'));
-    void postLocalApi({ action: 'saveProduct', product: prod });
+    void postLocalApi({ action: 'saveProduct', product: updatedProd });
 
     const client = getSupabaseClient();
     if (client) {
       void (async () => {
         try {
           const payload: any = {
-            id: prod.id,
-            code: prod.code,
-            name: prod.name,
-            price: prod.price,
-            unit: prod.unit,
-            category: prod.category,
-            is_popular: prod.isPopular ?? true,
+            id: updatedProd.id,
+            code: updatedProd.code,
+            name: updatedProd.name,
+            price: updatedProd.price,
+            unit: encodeUnitWithCost(updatedProd.unit, updatedProd.costPrice),
+            category: updatedProd.category,
+            is_popular: updatedProd.isPopular ?? true,
             created_at: new Date().toISOString()
           };
-          if (prod.costPrice !== undefined && prod.costPrice !== null && prod.costPrice !== ('' as any)) {
-            payload.cost_price = Number(prod.costPrice);
-          }
           const { error } = await client.from('pos_products').upsert(payload, { onConflict: 'id' });
-          if (error) {
-            delete payload.cost_price;
-            await client.from('pos_products').upsert(payload, { onConflict: 'id' });
-          }
+          if (error) console.warn('Lỗi lưu SP lên Supabase:', error.message);
         } catch (err) {
           console.warn('Lỗi mạng Supabase:', err);
         }
