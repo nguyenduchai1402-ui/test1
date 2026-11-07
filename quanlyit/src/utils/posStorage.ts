@@ -231,6 +231,7 @@ export async function syncFromSupabase(): Promise<{
     const localByCode = new Map(currentLocalProducts.map(p => [(p.code || '').trim().toUpperCase(), p]));
     const storedCostMap = getStoredProductCostMap();
 
+    const productsToPushCost: any[] = [];
     const cloudProducts: Product[] = (pRes.data || []).map((row: any) => {
       const codeKey = String(row.code || '').trim().toUpperCase();
       const local = localById.get(row.id) || localByCode.get(codeKey);
@@ -242,6 +243,18 @@ export async function syncFromSupabase(): Promise<{
       const { unit, costPrice } = decodeUnitAndCost(row.unit, row.cost_price ?? row.costPrice, fallbackCost);
       if (costPrice !== undefined) {
         saveProductCostToLocalMap(row.id, row.code, costPrice);
+        if (!String(row.unit || '').includes('||')) {
+          productsToPushCost.push({
+            id: row.id,
+            code: row.code,
+            name: row.name,
+            price: Number(row.price),
+            unit: encodeUnitWithCost(unit, costPrice),
+            category: row.category || 'Cốc Tim',
+            is_popular: row.is_popular !== false,
+            created_at: row.created_at || new Date().toISOString()
+          });
+        }
       }
       return {
         id: row.id,
@@ -254,6 +267,10 @@ export async function syncFromSupabase(): Promise<{
         isPopular: row.is_popular !== false
       };
     });
+
+    if (productsToPushCost.length > 0) {
+      void client.from('pos_products').upsert(productsToPushCost, { onConflict: 'id' });
+    }
 
     const cloudCustomers: Customer[] = (cRes.data || []).map((row: any) => ({
       id: row.id,
@@ -276,9 +293,22 @@ export async function syncFromSupabase(): Promise<{
       window.dispatchEvent(new Event('pos_customers_updated'));
     }
 
+    const shouldRecalcAllOrdersNow = localStorage.getItem('pos_orders_profit_recalc_v5') !== 'done';
+    const ordersToPushToSupabase: any[] = [];
+
     const cloudOrders: Order[] = (oRes.data || []).map((row: any) => {
       const rawItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
-      const { items: lockedItems } = freezeOrderItemsCost(rawItems, mergedCloudProducts);
+      const { items: lockedItems, changed } = freezeOrderItemsCost(
+        rawItems,
+        mergedCloudProducts,
+        shouldRecalcAllOrdersNow
+      );
+      if (changed) {
+        ordersToPushToSupabase.push({
+          ...row,
+          items: lockedItems
+        });
+      }
       return {
         id: row.id,
         code: row.code,
@@ -296,10 +326,27 @@ export async function syncFromSupabase(): Promise<{
       };
     });
 
+    if (shouldRecalcAllOrdersNow) {
+      localStorage.setItem('pos_orders_profit_recalc_v5', 'done');
+    }
+
+    if (ordersToPushToSupabase.length > 0) {
+      void client.from('pos_orders').upsert(ordersToPushToSupabase, { onConflict: 'id' });
+    }
+
     if (cloudOrders.length > 0) {
       setStorage(STORAGE_KEYS.ORDERS, cloudOrders);
       window.dispatchEvent(new Event('pos_orders_updated'));
     }
+
+    void postLocalApi({
+      action: 'syncAll',
+      data: {
+        products: mergedCloudProducts,
+        customers: mergedCloudCustomers,
+        orders: cloudOrders
+      }
+    });
 
     return {
       ok: true,
@@ -922,15 +969,18 @@ export async function syncFromLocalApi(): Promise<boolean> {
       window.dispatchEvent(new Event('pos_customers_updated'));
       hasChanges = true;
     }
-    if (Array.isArray(data.orders)) {
-      const currentProds = posDb.getProducts();
-      const lockedOrders = data.orders.map((o: Order) => {
-        const { items: lockedItems } = freezeOrderItemsCost(o.items || [], currentProds);
-        return { ...o, items: lockedItems };
-      });
-      setStorage(STORAGE_KEYS.ORDERS, lockedOrders);
-      window.dispatchEvent(new Event('pos_orders_updated'));
-      hasChanges = true;
+    if (Array.isArray(data.orders) && data.orders.length > 0) {
+      const currentOrders = getStorage<Order[]>(STORAGE_KEYS.ORDERS, []);
+      if (data.orders.length >= currentOrders.length) {
+        const currentProds = posDb.getProducts();
+        const lockedOrders = data.orders.map((o: Order) => {
+          const { items: lockedItems } = freezeOrderItemsCost(o.items || [], currentProds, false);
+          return { ...o, items: lockedItems };
+        });
+        setStorage(STORAGE_KEYS.ORDERS, lockedOrders);
+        window.dispatchEvent(new Event('pos_orders_updated'));
+        hasChanges = true;
+      }
     }
     return hasChanges;
   } catch {
@@ -938,11 +988,27 @@ export async function syncFromLocalApi(): Promise<boolean> {
   }
 }
 
+// Chuẩn hóa giá vốn theo đơn vị tính của đơn giá bán (chiếc vs thiên/thùng 1000 chiếc)
+export function normalizeItemCostForUnitPrice(rawCost: number | undefined, unitPrice: number | undefined): number {
+  if (rawCost === undefined || rawCost === null || Number.isNaN(Number(rawCost)) || Number(rawCost) <= 0) return 0;
+  const c = Number(rawCost);
+  const u = Number(unitPrice || 0);
+  if (u > 0 && u < 10 && c >= 50) {
+    return Number((c / 1000).toFixed(4));
+  }
+  if (u >= 100 && c > 0 && c < 2) {
+    return Number((c * 1000).toFixed(4));
+  }
+  return c;
+}
+
 // Chốt cố định giá vốn (costPrice) vào từng món của đơn hàng để khi giá sản phẩm thay đổi sau này,
 // lợi nhuận của những đơn hàng đã tạo trước đó hoàn toàn KHÔNG bị thay đổi.
+// Nếu forceRefreshFromProducts = true (khi tạo mới hoặc bấm Sửa & Lưu đơn đã tạo), cập nhật lại giá vốn theo giá hiện tại.
 function freezeOrderItemsCost(
   items: OrderItem[],
-  productsList?: Product[]
+  productsList?: Product[],
+  forceRefreshFromProducts: boolean = false
 ): { items: OrderItem[]; changed: boolean } {
   if (!Array.isArray(items) || items.length === 0) {
     return { items: items || [], changed: false };
@@ -967,16 +1033,24 @@ function freezeOrderItemsCost(
 
   let changed = false;
   const lockedItems = items.map(it => {
-    if (it.costLocked && it.costPrice !== undefined && it.costPrice !== null && !Number.isNaN(Number(it.costPrice))) {
-      return it;
-    }
-    if (it.costPrice !== undefined && it.costPrice !== null && Number(it.costPrice) > 0) {
-      changed = true;
-      return {
-        ...it,
-        costPrice: Number(it.costPrice),
-        costLocked: true
-      };
+    if (!forceRefreshFromProducts) {
+      if (it.costLocked && it.costPrice !== undefined && it.costPrice !== null && !Number.isNaN(Number(it.costPrice))) {
+        const norm = normalizeItemCostForUnitPrice(Number(it.costPrice), it.unitPrice);
+        if (norm !== Number(it.costPrice)) {
+          changed = true;
+          return { ...it, costPrice: norm, costLocked: true };
+        }
+        return it;
+      }
+      if (it.costPrice !== undefined && it.costPrice !== null && Number(it.costPrice) > 0) {
+        const norm = normalizeItemCostForUnitPrice(Number(it.costPrice), it.unitPrice);
+        changed = true;
+        return {
+          ...it,
+          costPrice: norm,
+          costLocked: true
+        };
+      }
     }
 
     ensureCostMaps();
@@ -987,10 +1061,17 @@ function freezeOrderItemsCost(
       resolvedCost = prodCostByCode!.get(String(it.code).trim().toUpperCase());
     }
 
-    changed = true;
+    const baseCost = (resolvedCost !== undefined && resolvedCost > 0)
+      ? resolvedCost
+      : (Number(it.costPrice) || 0);
+    const finalCost = normalizeItemCostForUnitPrice(baseCost, it.unitPrice);
+
+    if (!it.costLocked || Number(it.costPrice) !== finalCost) {
+      changed = true;
+    }
     return {
       ...it,
-      costPrice: resolvedCost !== undefined ? resolvedCost : (Number(it.costPrice) || 0),
+      costPrice: finalCost,
       costLocked: true
     };
   });
@@ -1283,7 +1364,8 @@ export const posDb = {
 
     const list = this.getOrders();
     const idx = list.findIndex(o => o.id === order.id);
-    const { items: lockedItems } = freezeOrderItemsCost(order.items || [], this.getProducts());
+    // Khi tạo mới đơn hoặc bấm Sửa & Lưu đơn đã tạo, cập nhật giá vốn theo giá hiện tại của sản phẩm và khóa lại
+    const { items: lockedItems } = freezeOrderItemsCost(order.items || [], this.getProducts(), true);
     const updated: Order = {
       ...order,
       items: lockedItems,

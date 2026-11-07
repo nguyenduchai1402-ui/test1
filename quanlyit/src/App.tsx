@@ -7,7 +7,7 @@ import { OrdersScreen } from './components/pos/OrdersScreen';
 import { ProductsScreen } from './components/pos/ProductsScreen';
 import { CustomersScreen } from './components/pos/CustomersScreen';
 import { Toast } from './components/pos/Toast';
-import { posDb, initAutoSupabaseSync, syncFromLocalApi } from './utils/posStorage';
+import { posDb, initAutoSupabaseSync, syncFromLocalApi, syncFromSupabase } from './utils/posStorage';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -39,9 +39,9 @@ export function App() {
     // 1. Tải dữ liệu từ database dùng chung (/api/db) ngay lập tức
     syncFromLocalApi();
 
-    // 2. Khi chuyển tab hoặc đổi trình duyệt quay lại, tự động cập nhật
+    // 2. Khi chuyển tab hoặc đổi trình duyệt quay lại, tự động đồng bộ từ Supabase
     const handleFocus = () => {
-      syncFromLocalApi();
+      void syncFromSupabase();
     };
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', () => {

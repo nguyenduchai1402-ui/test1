@@ -4,7 +4,7 @@ import {
   Phone, MapPin, X, FileSpreadsheet, TrendingUp, PackageCheck, Coins 
 } from 'lucide-react';
 import { Order } from '../../types/pos';
-import { posDb, formatVND, formatK, generateZaloMessage, formatVietnamDateTime, parseOrderTimestamp } from '../../utils/posStorage';
+import { posDb, formatVND, formatK, generateZaloMessage, formatVietnamDateTime, parseOrderTimestamp, normalizeItemCostForUnitPrice } from '../../utils/posStorage';
 import { exportOrdersToExcel } from '../../utils/excelHelper';
 import { Pagination } from './Pagination';
 import html2canvas from 'html2canvas';
@@ -136,21 +136,22 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
   });
 
   const getOrderItemCost = (it: any): number => {
-    const qty = it.quantity || 0;
+    const qty = Number(it.quantity || 0);
+    const uPrice = Number(it.unitPrice || 0);
     // Khi đơn hàng đã tạo, giá vốn (costPrice) được chốt cố định trong từng món của đơn hàng.
     // Luôn ưu tiên dùng giá vốn đã lưu trong đơn để khi sản phẩm thay đổi giá sau này,
     // lợi nhuận của các đơn hàng đã tạo trước đó hoàn toàn KHÔNG bị thay đổi.
     if (it.costLocked && it.costPrice !== undefined && it.costPrice !== null && !Number.isNaN(Number(it.costPrice))) {
-      return Number(it.costPrice) * qty;
+      return normalizeItemCostForUnitPrice(Number(it.costPrice), uPrice) * qty;
     }
     if (it.costPrice !== undefined && it.costPrice !== null && Number(it.costPrice) > 0) {
-      return Number(it.costPrice) * qty;
+      return normalizeItemCostForUnitPrice(Number(it.costPrice), uPrice) * qty;
     }
     if (it.productId && productCostMap.has(it.productId)) {
-      return (productCostMap.get(it.productId) || 0) * qty;
+      return normalizeItemCostForUnitPrice(productCostMap.get(it.productId) || 0, uPrice) * qty;
     }
     if (it.code && productCostMap.has(String(it.code).toUpperCase())) {
-      return (productCostMap.get(String(it.code).toUpperCase()) || 0) * qty;
+      return normalizeItemCostForUnitPrice(productCostMap.get(String(it.code).toUpperCase()) || 0, uPrice) * qty;
     }
     return 0;
   };
@@ -160,7 +161,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
     (order.items || []).forEach(it => {
       cost += getOrderItemCost(it);
     });
-    return Math.max(0, order.totalAmount - cost);
+    return Math.max(0, Math.round((order.totalAmount - cost) * 1000) / 1000);
   };
 
   // Calculate Statistics for filtered data

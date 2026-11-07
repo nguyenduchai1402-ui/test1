@@ -21,19 +21,11 @@
       "isPopular": true
     },
     {
-      "id": "p-1793236923900",
-      "code": "MANGDAP",
-      "name": "Màng dập trong",
-      "price": 95,
-      "unit": "cuộn",
-      "category": "Túi",
-      "isPopular": true
-    },
-    {
       "id": "p-1793342801134",
       "code": "N90",
       "name": "Nắp trực tiếp 90",
       "price": 0.28,
+      "costPrice": 0.185,
       "unit": "chiếc",
       "category": "Ly đáy bầu",
       "isPopular": true
@@ -43,8 +35,19 @@
       "code": "TO1000",
       "name": "Tô giấy 1000ml + Nắp",
       "price": 590,
+      "costPrice": 470,
       "unit": "Thùng",
-      "category": "Ly đáy bầu",
+      "category": "Tô giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793236923900",
+      "code": "MANGDAP",
+      "name": "Màng dập trong",
+      "price": 95,
+      "costPrice": 75,
+      "unit": "cuộn",
+      "category": "Túi",
       "isPopular": true
     },
     {
@@ -108,15 +111,6 @@
       "isPopular": true
     },
     {
-      "id": "p-1793241246497",
-      "code": "N95TD",
-      "name": "Nắp trực tiếp 95 TĐ",
-      "price": 0.28,
-      "unit": "Chiếc",
-      "category": "Nắp trực tiếp",
-      "isPopular": true
-    },
-    {
       "id": "p-1793179331833-sa3a",
       "code": "93DT1",
       "name": "Nắp cầu 93D Ukp",
@@ -131,8 +125,19 @@
       "code": "P7HT",
       "name": "Ly nhựa 700ml",
       "price": 670,
+      "costPrice": 482,
       "unit": "Thùng",
       "category": "Ly đáy bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793241246497",
+      "code": "N95TD",
+      "name": "Nắp trực tiếp 95 TĐ",
+      "price": 0.28,
+      "costPrice": 0.155,
+      "unit": "Chiếc",
+      "category": "Nắp trực tiếp",
       "isPopular": true
     },
     {
@@ -225,39 +230,13 @@
       "isPopular": true
     },
     {
-      "id": "p-1793254906274",
-      "code": "90FTRONG",
-      "name": "Nắp tim trong Ukp",
-      "price": 0.34,
-      "unit": "Chiếc",
-      "category": "Nắp tim",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793581775417",
-      "code": "NAPTIMDAYTRONG",
-      "name": "Nắp tim dày trong",
-      "price": 460,
-      "unit": "Chiếc",
-      "category": "Nắp tim",
-      "isPopular": true
-    },
-    {
       "id": "p-1793776929928",
       "code": "HUT28CM",
       "name": "Hút 12 dài 28cm",
       "price": 32,
+      "costPrice": 26,
       "unit": "Bịch",
       "category": "Ống hút",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793776954751",
-      "code": "CUONMANG",
-      "name": "Cuộn màng trong",
-      "price": 95,
-      "unit": "Cuộn",
-      "category": "Cuộn màng",
       "isPopular": true
     },
     {
@@ -331,6 +310,36 @@
       "isPopular": true
     },
     {
+      "id": "p-1793776954751",
+      "code": "CUONMANG",
+      "name": "Cuộn màng trong",
+      "price": 95,
+      "costPrice": 75,
+      "unit": "Cuộn",
+      "category": "Cuộn màng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793581775417",
+      "code": "NAPTIMDAYTRONG",
+      "name": "Nắp tim dày trong",
+      "price": 460,
+      "costPrice": 360,
+      "unit": "Chiếc",
+      "category": "Nắp tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793254906274",
+      "code": "90FTRONG",
+      "name": "Nắp tim trong Ukp",
+      "price": 0.34,
+      "costPrice": 0.26,
+      "unit": "Chiếc",
+      "category": "Nắp tim",
+      "isPopular": true
+    },
+    {
       "id": "p-1793179331833-p3hg",
       "code": "98S",
       "name": "Nắp trực tiếp 98S-ukp",
@@ -338,33 +347,6 @@
       "costPrice": 0.3,
       "unit": "chiếc",
       "category": "Nắp trực tiếp",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793254967091",
-      "code": "90FDEN",
-      "name": "Nắp tim đen ukp",
-      "price": 0.35,
-      "unit": "Chiếc",
-      "category": "Ly đáy bầu",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793581848144",
-      "code": "NAPBAT90TRANG",
-      "name": "Nắp bật 90 màu trắng",
-      "price": 360,
-      "unit": "Chiếc",
-      "category": "Nắp bật",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793179331833-8ctc",
-      "code": "LYGIAY7002LOP",
-      "name": "Ly giấy 700ml 2 lớp - Nâu",
-      "price": 0,
-      "unit": "Thùng",
-      "category": "Ly giấy",
       "isPopular": true
     },
     {
@@ -382,6 +364,7 @@
       "code": "P900",
       "name": "Ly 1000ml App",
       "price": 980,
+      "costPrice": 700,
       "unit": "Thùng",
       "category": "Ly đáy bằng",
       "isPopular": true
@@ -437,6 +420,36 @@
       "isPopular": true
     },
     {
+      "id": "p-1793179331833-8ctc",
+      "code": "LYGIAY7002LOP",
+      "name": "Ly giấy 700ml 2 lớp - Nâu",
+      "price": 1340,
+      "costPrice": 1120,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793581848144",
+      "code": "NAPBAT90TRANG",
+      "name": "Nắp bật 90 màu trắng",
+      "price": 360,
+      "costPrice": 285,
+      "unit": "Chiếc",
+      "category": "Nắp bật",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793254967091",
+      "code": "90FDEN",
+      "name": "Nắp tim đen ukp",
+      "price": 0.35,
+      "costPrice": 270,
+      "unit": "Chiếc",
+      "category": "Nắp tim",
+      "isPopular": true
+    },
+    {
       "id": "p-1793179331833-reeb",
       "code": "lygiay7002pe",
       "name": "Ly giấy 700ml 2Pe",
@@ -446,21 +459,13 @@
       "isPopular": true
     },
     {
-      "id": "p-1793255012658",
-      "code": "CUONMANGIN",
-      "name": "Cuộn màng in",
-      "price": 210,
-      "unit": "Cuộn",
-      "category": "Túi",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793581885568",
-      "code": "NAPNUTLIEN90",
-      "name": "Nắp nút liền 90 - Trong",
-      "price": 560,
-      "unit": "Chiếc",
-      "category": "Nắp tim",
+      "id": "p-1793179331833-342i",
+      "code": "93S",
+      "name": "Nắp trực tiếp 93S UKP",
+      "price": 310,
+      "costPrice": 235,
+      "unit": "chiếc",
+      "category": "Nắp trực tiếp",
       "isPopular": true
     },
     {
@@ -468,8 +473,29 @@
       "code": "NAP117",
       "name": "Nắp bằng 117",
       "price": 280,
+      "costPrice": 200,
       "unit": "Thùng",
       "category": "Nắp bằng",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793581885568",
+      "code": "NAPNUTLIEN90",
+      "name": "Nắp nút liền 90 - Trong",
+      "price": 650,
+      "costPrice": 550,
+      "unit": "Chiếc",
+      "category": "Nắp tim",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793255012658",
+      "code": "CUONMANGIN",
+      "name": "Cuộn màng in",
+      "price": 210,
+      "costPrice": 170,
+      "unit": "Cuộn",
+      "category": "Túi",
       "isPopular": true
     },
     {
@@ -533,16 +559,6 @@
       "isPopular": true
     },
     {
-      "id": "p-1793179331833-342i",
-      "code": "93S",
-      "name": "Nắp trực tiếp 93S UKP",
-      "price": 310,
-      "costPrice": 23.5,
-      "unit": "chiếc",
-      "category": "Nắp trực tiếp",
-      "isPopular": true
-    },
-    {
       "id": "p-1793179331833-3wfc",
       "code": "T5APP",
       "name": "Ly tim 500ml",
@@ -553,15 +569,6 @@
       "isPopular": true
     },
     {
-      "id": "p-1793179331833-s4kn",
-      "code": "lygiay5002pe",
-      "name": "Ly giấy 500ml 2Pe",
-      "price": 0,
-      "unit": "Thùng",
-      "category": "Ly giấy",
-      "isPopular": true
-    },
-    {
       "id": "p-1793179331833-f4e7",
       "code": "Y95HT",
       "name": "Nắp Vuông 95 HT",
@@ -569,15 +576,6 @@
       "costPrice": 0.145,
       "unit": "chiếc",
       "category": "Nắp vuông",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793255231650",
-      "code": "THIA10CM",
-      "name": "Thìa 10cm (100c)",
-      "price": 10,
-      "unit": "Bịch",
-      "category": "Thìa",
       "isPopular": true
     },
     {
@@ -597,6 +595,26 @@
       "price": 0,
       "unit": "Chiếc",
       "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793179331833-s4kn",
+      "code": "LYGIAY5002PE",
+      "name": "Ly giấy 500ml 2Pe",
+      "price": 750,
+      "costPrice": 550,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793255231650",
+      "code": "THIA10CM",
+      "name": "Thìa 10cm (100c)",
+      "price": 10,
+      "costPrice": 8,
+      "unit": "Bịch",
+      "category": "Thìa",
       "isPopular": true
     },
     {
@@ -669,15 +687,6 @@
       "isPopular": true
     },
     {
-      "id": "p-1793179331833-gm1k",
-      "code": "lygiay3602pe",
-      "name": "Ly giấy 360ml 2Pe",
-      "price": 0,
-      "unit": "Thùng",
-      "category": "Ly giấy",
-      "isPopular": true
-    },
-    {
       "id": "p-1793179331833-5kxy",
       "code": "D95APP",
       "name": "Nắp cầu 95 App",
@@ -688,39 +697,13 @@
       "isPopular": true
     },
     {
-      "id": "p-1793255264138",
-      "code": "THIA20CM",
-      "name": "Thìa 20cm 50c",
-      "price": 12,
-      "unit": "Bịch",
-      "category": "Thìa",
-      "isPopular": true
-    },
-    {
       "id": "p-1793179331833-y5il",
       "code": "LYGIAY2702LOP",
       "name": "Ly giấy 270ml 2 lớp - Nâu",
-      "price": 0,
+      "price": 870,
+      "costPrice": 620,
       "unit": "Thùng",
       "category": "Ly giấy",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793583263223",
-      "code": "Q7APP",
-      "name": "Ly đáy bầu 700ml",
-      "price": 740,
-      "unit": "Thùng",
-      "category": "Ly đáy bầu",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793957540209",
-      "code": "PET5VUONG",
-      "name": "Ly Pet Vuông 500ml",
-      "price": 1080,
-      "unit": "Thùng",
-      "category": "Ly pet",
       "isPopular": true
     },
     {
@@ -774,12 +757,43 @@
       "isPopular": true
     },
     {
-      "id": "p-1793179331833-q0cz",
-      "code": "lygiay2702pe",
-      "name": "Ly giấy 270ml 2Pe",
-      "price": 0,
+      "id": "p-1793179331833-gm1k",
+      "code": "LYGIAY3602PE",
+      "name": "Ly giấy 360ml 2Pe",
+      "price": 680,
+      "costPrice": 460,
       "unit": "Thùng",
       "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793583263223",
+      "code": "Q7APP",
+      "name": "Ly đáy bầu 700ml",
+      "price": 740,
+      "costPrice": 560,
+      "unit": "Thùng",
+      "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793255264138",
+      "code": "THIA20CM",
+      "name": "Thìa 20cm 50c",
+      "price": 12,
+      "costPrice": 10,
+      "unit": "Bịch",
+      "category": "Thìa",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793957540209",
+      "code": "PET5VUONG",
+      "name": "Ly Pet Vuông 500ml",
+      "price": 1080,
+      "costPrice": 880,
+      "unit": "Thùng",
+      "category": "Ly pet",
       "isPopular": true
     },
     {
@@ -796,7 +810,18 @@
       "id": "p-1793179331833-04mc",
       "code": "LYGIAY3602LOPNAU",
       "name": "Ly giấy 360ml 2 lớp - Nâu",
-      "price": 1100,
+      "price": 1000,
+      "costPrice": 800,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793179331833-q0cz",
+      "code": "LYGIAY2702PE",
+      "name": "Ly giấy 270ml 2Pe",
+      "price": 560,
+      "costPrice": 340,
       "unit": "Thùng",
       "category": "Ly giấy",
       "isPopular": true
@@ -805,7 +830,8 @@
       "id": "p-1793594508339",
       "code": "LYGIAY3602LOPTRANG",
       "name": "Ly giấy 2 lớp 360ml - Trắng",
-      "price": 1080,
+      "price": 1000,
+      "costPrice": 800,
       "unit": "Thùng",
       "category": "Ly giấy",
       "isPopular": true
@@ -815,6 +841,7 @@
       "code": "PET7VUONG",
       "name": "Ly Pet vuông 700ml",
       "price": 1240,
+      "costPrice": 1040,
       "unit": "Thùng",
       "category": "Ly pet",
       "isPopular": true
@@ -824,6 +851,7 @@
       "code": "T7NHAMDAY",
       "name": "Ly tim 700ml nhám dày",
       "price": 1350,
+      "costPrice": 1160,
       "unit": "Thùng",
       "category": "Ly tim",
       "isPopular": true
@@ -833,7 +861,8 @@
       "code": "T5DAY",
       "name": "Ly tim 500ml nhám dày",
       "price": 1090,
-      "unit": "Thùng",
+      "costPrice": 840,
+      "unit": "Th?ng",
       "category": "Ly tim",
       "isPopular": true
     },
@@ -977,15 +1006,6 @@
       "isPopular": true
     },
     {
-      "id": "p-1793342594514",
-      "code": "U3VIET",
-      "name": "Ly đáy bầu 360ml",
-      "price": 600,
-      "unit": "Thùng",
-      "category": "Ly đáy bầu",
-      "isPopular": true
-    },
-    {
       "id": "p-1793179331833-0eh0",
       "code": "Y95APP",
       "name": "Nắp Vuông Y95 APP",
@@ -999,27 +1019,10 @@
       "id": "p-1793179331833-fg7l",
       "code": "LYGIAY5002LOPNAU",
       "name": "Ly giấy 500ml 2 lớp - Nâu",
-      "price": 1260,
-      "unit": "Thùng",
-      "category": "Ly giấy",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793594657323",
-      "code": "LYGIAY5002LOPTRANG",
-      "name": "Ly giấy 500ml 2 lớp - Trắng",
       "price": 1160,
+      "costPrice": 960,
       "unit": "Thùng",
       "category": "Ly giấy",
-      "isPopular": true
-    },
-    {
-      "id": "p-1793957700736",
-      "code": "NAPPETVUONG",
-      "name": "Nắp Pet Vuông",
-      "price": 0.39,
-      "unit": "Thùng",
-      "category": "Nắp trực tiếp",
       "isPopular": true
     },
     {
@@ -1061,34 +1064,559 @@
       "unit": "Thùng",
       "category": "Ly pet",
       "isPopular": true
+    },
+    {
+      "id": "p-1793342594514",
+      "code": "U3VIET",
+      "name": "Ly đáy bầu 360ml",
+      "price": 600,
+      "costPrice": 390,
+      "unit": "Thùng",
+      "category": "Ly đáy bầu",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793957700736",
+      "code": "NAPPETVUONG",
+      "name": "Nắp Pet Vuông",
+      "price": 0.39,
+      "costPrice": 310,
+      "unit": "Thùng",
+      "category": "Nắp trực tiếp",
+      "isPopular": true
+    },
+    {
+      "id": "p-1793594657323",
+      "code": "LYGIAY5002LOPTRANG",
+      "name": "Ly giấy 500ml 2 lớp - Trắng",
+      "price": 1160,
+      "costPrice": 960,
+      "unit": "Thùng",
+      "category": "Ly giấy",
+      "isPopular": true
     }
   ],
   "customers": [
+    {
+      "id": "c-1793335195111",
+      "name": "Happy - Bá Hiến",
+      "phone": "",
+      "address": "Ngõ 4 Trại Cúp",
+      "createdAt": "2026-10-30T04:39:55.111+00:00"
+    },
+    {
+      "id": "c-1793335597496",
+      "name": "Dương - Nova Coffee",
+      "phone": "0908175977",
+      "address": "108 nguyễn hồng đào f14,P. Tân Bình,TP. Hồ Chí Minh",
+      "createdAt": "2026-10-30T04:46:37.496+00:00"
+    },
+    {
+      "id": "c-1793340114076",
+      "name": "Hồng Nhung",
+      "phone": "",
+      "address": "Xuân Hòa",
+      "createdAt": "2026-10-30T13:01:54+00:00"
+    },
+    {
+      "id": "c-1793342279770",
+      "name": "Phan Thị Nga - Nga Coffee",
+      "phone": "0397065103",
+      "address": "KTĐC vịnh sơn,xã quảng đông,huyện quảng trạch,Quảng Bình",
+      "createdAt": "2026-10-30T06:37:59.77+00:00"
+    },
+    {
+      "id": "c-1793342507202",
+      "name": "Ngọc Như - Ngọc Bích",
+      "phone": "0849100979",
+      "address": "332 Nguyễn huệ, ấp 3 xã tân hồng đồng tháp",
+      "createdAt": "2026-10-30T06:41:47.202+00:00"
+    },
+    {
+      "id": "c-1793758157018",
+      "name": "Lê Thảo Chi - Mơ Coffee",
+      "phone": "0375235667",
+      "address": "53 Tây Cao Tốc - Thôn Bầu ,X. Thiên Lộc,TP. Hà Nội",
+      "createdAt": "2026-11-04T02:09:17.018+00:00"
+    },
+    {
+      "id": "c-1793434633013",
+      "name": "Dương coffee",
+      "phone": "",
+      "address": "Lào cai",
+      "createdAt": "2026-10-31T08:17:13.013+00:00"
+    },
+    {
+      "id": "c-1793434892171",
+      "name": "Dương nova",
+      "phone": "",
+      "address": "Hcm",
+      "createdAt": "2026-10-31T08:21:32.171+00:00"
+    },
+    {
+      "id": "c-1793537929006",
+      "name": "Đặng Thanh",
+      "phone": "",
+      "address": "Phú Thọ",
+      "createdAt": "2026-11-01T12:58:49.006+00:00"
+    },
+    {
+      "id": "c-1793581571824",
+      "name": "Lộc Vũ",
+      "phone": "0968862661",
+      "address": "Cầu Bầu ,X. Ứng Thiên,TP. Hà Nội",
+      "createdAt": "2026-11-02T01:06:11.824+00:00"
+    },
+    {
+      "id": "c-1793342992841",
+      "name": "Thu - Cokcok",
+      "phone": "",
+      "address": "Bá Hiến",
+      "createdAt": "2026-10-30T06:49:52.841+00:00"
+    },
+    {
+      "id": "c-1793582455664",
+      "name": "8789",
+      "phone": "",
+      "address": "Hương Canh",
+      "createdAt": "2026-11-02T01:20:55.664+00:00"
+    },
+    {
+      "id": "c-1793582775599",
+      "name": "Sam Bá Thiện",
+      "phone": "",
+      "address": "Bá Thiện",
+      "createdAt": "2026-11-02T01:26:15.599+00:00"
+    },
+    {
+      "id": "c-1793594942018",
+      "name": "Mlem - Đê Hến",
+      "phone": "",
+      "address": "Bá Hiến",
+      "createdAt": "2026-11-02T04:49:02.018+00:00"
+    },
     {
       "id": "c-1793091131376",
       "name": "Lâm Hảo",
       "phone": "0977943388",
       "address": "SN 23 Tổ 18B Khu 6,P. Uông Bí,TP. Quảng Ninh",
       "notes": "in logo trắng",
-      "createdAt": "2026-10-27T08:52:11.376Z"
+      "createdAt": "2026-10-27T08:52:11.376+00:00"
+    },
+    {
+      "id": "c-1793163099810",
+      "name": "Chị Vân - Gạo Milk Tea",
+      "phone": "0961294305",
+      "address": "Số nhà 60 phố ông đùng  Phường tân thịnh , thành phố hòa bình",
+      "createdAt": "2026-10-28T04:51:39.81+00:00"
+    },
+    {
+      "id": "c-1793169032301",
+      "name": "Thu Hương - Trà đào Bá Hiến",
+      "phone": "",
+      "address": "Bá Hiến",
+      "createdAt": "2026-10-28T06:30:32.301+00:00"
+    },
+    {
+      "id": "c-1793169267531",
+      "name": "Hà Mi - Zizi",
+      "phone": "0383.0383.98",
+      "address": "110.C Thanh Bình - CT1 - Hoàng Hoa Thám - Võ Cường - Bắc Ninh",
+      "createdAt": "2026-10-28T06:34:27.531+00:00"
+    },
+    {
+      "id": "c-1793236696518",
+      "name": "Min",
+      "phone": "",
+      "address": "Sơn Lôi",
+      "createdAt": "2026-10-29T01:18:16.518+00:00"
+    },
+    {
+      "id": "c-1793241121456",
+      "name": "Chị Vy - Vy Coffee",
+      "phone": "0987339739",
+      "address": "159/90/63 Trần Văn Đang, phường 11 quận 3, Tp. HCM,,P. Nhiêu Lộc,TP. Hồ Chí Minh",
+      "createdAt": "2026-10-29T02:32:01.456+00:00"
+    },
+    {
+      "id": "c-1793259121375",
+      "name": "Báo",
+      "phone": "",
+      "address": "Hương canh",
+      "createdAt": "2026-10-29T07:32:01.375+00:00"
+    },
+    {
+      "id": "c-1793265370017",
+      "name": "Lưu Tuyết Lan - Moaa",
+      "phone": "0968601984",
+      "address": "Nguyễn Du - Khai Quang - Vĩnh Yên",
+      "notes": "in trắng",
+      "createdAt": "2026-10-29T09:16:10.017+00:00"
+    },
+    {
+      "id": "c-1793334991689",
+      "name": "Phương Anh - Chà Trà",
+      "phone": "0329631276",
+      "address": "Sân bóng Văn Chỉ- Thái Phù- Mai Đình- Sóc Sơn- Hà Nội,X. Sóc Sơn,TP. Hà Nội",
+      "createdAt": "2026-10-30T04:36:31.689+00:00"
+    },
+    {
+      "id": "c-1793335051837",
+      "name": "Vinh Thành Đỏ - Phúc Yên",
+      "phone": "",
+      "address": "Phúc Yên",
+      "createdAt": "2026-10-30T04:37:31.837+00:00"
+    },
+    {
+      "id": "c-1794032269469",
+      "name": "Chà Bá - Thoa Ngô",
+      "phone": "",
+      "address": "",
+      "createdAt": "2026-11-07T06:17:49.469+00:00"
+    },
+    {
+      "id": "c-1793593841339",
+      "name": "Tiệm Bánh Mỳ Huy Hoàng _ Hea Miso",
+      "phone": "0974941154",
+      "address": "Đội Diện Trường THPT Lê Quý Đôn, Thạch Đài, TP. Hà Tỉnh",
+      "createdAt": "2026-11-02T04:30:41.339+00:00"
+    },
+    {
+      "id": "c-1793593902467",
+      "name": "Nguyễn Vân - Trà Trái Cây",
+      "phone": "0374329899",
+      "address": "Gs1 vinhome smart city tây mỗ. Nam từ liêm,P. Tây Mỗ,TP. Hà Nội",
+      "createdAt": "2026-11-02T04:31:42.467+00:00"
+    },
+    {
+      "id": "c-1793595382386",
+      "name": "Nhớ Coffee",
+      "phone": "",
+      "address": "Vinh Tiến - Bá Hiến",
+      "createdAt": "2026-11-02T04:56:22.386+00:00"
+    },
+    {
+      "id": "c-1793593716076",
+      "name": "Nguyễn Ngọc Huệ - Nhà Xoài",
+      "phone": "0379991552",
+      "address": "239 điện biên phủ, khu 7, mường tè, lai châu,X. Mường Tè,Tỉnh Lai Châu",
+      "createdAt": "2026-11-02T04:28:36.076+00:00"
+    },
+    {
+      "id": "c-1793594082531",
+      "name": "Như Ngọc - Lép Coffee",
+      "phone": "0814960567",
+      "address": "181/14/1 Quang Trung,P. Buôn Ma Thuột,Tỉnh Đắk Lắk",
+      "createdAt": "2026-11-02T04:34:42.531+00:00"
+    },
+    {
+      "id": "c-1793595441882",
+      "name": "Biii Coffee",
+      "phone": "",
+      "address": "Trung Mỹ",
+      "createdAt": "2026-11-02T04:57:21.882+00:00"
+    },
+    {
+      "id": "c-1793612676816",
+      "name": "Anh Hùng - Coffee & Tea",
+      "phone": "",
+      "address": "Đê Hến - Bá Hiến",
+      "createdAt": "2026-11-02T09:44:36.816+00:00"
+    },
+    {
+      "id": "c-1793612773879",
+      "name": "Phương Thùy",
+      "phone": "0976740875",
+      "address": "HH1 - FLC Đại Mỗ, Nam Từ Liêm, Hà Nội.,P. Xuân Phương,TP. Hà Nội",
+      "createdAt": "2026-11-02T09:46:13.879+00:00"
+    },
+    {
+      "id": "c-1793613221744",
+      "name": "Đậu Đậu Coffee",
+      "phone": "",
+      "address": "Đê Hến - Bá Hiến",
+      "createdAt": "2026-11-02T09:53:41.744+00:00"
+    },
+    {
+      "id": "c-1793765558859",
+      "name": "Hai chị em",
+      "phone": "",
+      "address": "Thăng Long 3 - Thiện kế",
+      "createdAt": "2026-11-04T04:12:38.859+00:00"
+    },
+    {
+      "id": "c-1793944934553",
+      "name": "Hương - 245 Coffee",
+      "phone": "0917512484",
+      "address": "số nhà 245 đường tân xuân,P. Đông Ngạc,TP. Hà Nội",
+      "createdAt": "2026-11-06T06:02:14.553+00:00"
+    },
+    {
+      "id": "c-1793673861338",
+      "name": "Tú Anh Quán",
+      "phone": "",
+      "address": "Bá Hiến",
+      "createdAt": "2026-11-03T02:44:21.338+00:00"
+    },
+    {
+      "id": "c-1793690856601",
+      "name": "3 Râu",
+      "phone": "",
+      "address": "Phúc Yên",
+      "createdAt": "2026-11-03T07:27:36.601+00:00"
+    },
+    {
+      "id": "c-1793690921249",
+      "name": "Annh",
+      "phone": "0365477565",
+      "address": "bến xe bộc bố - xã bằng thành - tỉnh thái nguyên ,X. Bằng Thành,Tỉnh Thái Nguyên",
+      "createdAt": "2026-11-03T07:28:41.249+00:00"
+    },
+    {
+      "id": "c-1793776867111",
+      "name": "Phương Thảo",
+      "phone": "",
+      "address": "Hương Canh",
+      "createdAt": "2026-11-04T07:21:07.111+00:00"
+    },
+    {
+      "id": "c-1793093904653",
+      "name": "Chị Thủy Phương",
+      "phone": "",
+      "address": "Thăng Long 3 - Thiện Kế - Bình Xuyên",
+      "createdAt": "2026-10-27T09:38:24.653+00:00"
+    },
+    {
+      "id": "c-1793667613378",
+      "name": "Chị Phượng",
+      "phone": "",
+      "address": "Hữu Bằng",
+      "createdAt": "2026-11-03T01:00:13.378+00:00"
+    },
+    {
+      "id": "c-1793831907491",
+      "name": "Đức - Laha Coffee",
+      "phone": "0352583829",
+      "address": "79 đinh bộ lĩnh p26, q binh thanh,P. Bình Thạnh,TP. Hồ Chí Minh",
+      "createdAt": "2026-11-04T22:38:27.491+00:00"
+    },
+    {
+      "id": "c-1793673806219",
+      "name": "Ngọc Linh Coffee",
+      "phone": "",
+      "address": "Thiện kế - Bình Xuyên",
+      "createdAt": "2026-11-03T02:43:26.219+00:00"
+    },
+    {
+      "id": "c-1793942296401",
+      "name": "Chị Vy - Vy Xinh",
+      "phone": "0364422192",
+      "address": "số nhà 39 ngõ 1 đào duy từ. Khu 2 ba đình  bỉm sơn thanh hoá",
+      "createdAt": "2026-11-06T05:18:16.401+00:00"
+    },
+    {
+      "id": "c-1793947447433",
+      "name": "You coffee",
+      "phone": "",
+      "address": "Quảng Khai",
+      "createdAt": "2026-11-06T06:44:07.433+00:00"
+    },
+    {
+      "id": "c-1793947104064",
+      "name": "Hạnh Anh - Hạnh Anh 1992",
+      "phone": "0979294896",
+      "address": "THÔN CẦU VĨNH KHÚC VĂN GIANG HƯNG YÊN",
+      "createdAt": "2026-11-06T06:38:24.064+00:00"
+    },
+    {
+      "id": "c-1793953314744",
+      "name": "Lan Anh - Hà Nội",
+      "phone": "0978421980",
+      "address": "Chung cư starup tower ngõ 91 đại mỗ Nam từ liêm hà nội,P. Xuân Phương,TP. Hà Nội",
+      "createdAt": "2026-11-06T08:21:54.744+00:00"
+    },
+    {
+      "id": "c-1793956936840",
+      "name": "88 Chill",
+      "phone": "",
+      "address": "Sơn Lôi",
+      "createdAt": "2026-11-06T09:22:16.84+00:00"
+    },
+    {
+      "id": "c-1793957006855",
+      "name": "Hai chị em - Huệ Chu",
+      "phone": "",
+      "address": "Thăng Long 3 - Thiện kế",
+      "createdAt": "2026-11-06T09:23:26.855+00:00"
+    },
+    {
+      "id": "c-1793957440783",
+      "name": "Trịnh Khuyến",
+      "phone": "",
+      "address": "Bá Hiến",
+      "createdAt": "2026-11-06T09:30:40.783+00:00"
+    },
+    {
+      "id": "c-1793583026439",
+      "name": "Thanh Zuzi",
+      "phone": "",
+      "address": "Bá Hiến",
+      "createdAt": "2026-11-02T01:30:26.439+00:00"
     }
   ],
   "orders": [
     {
-      "id": "ord-1793178694715",
-      "code": "#DH-1004",
-      "customerName": "Khach Khong SDT Da Sua",
-      "customerPhone": "",
-      "customerAddress": "",
+      "id": "ord-1793179206504",
+      "code": "#DH-1001",
+      "customerId": "c-1793091131376",
+      "customerName": "Lâm Hảo",
+      "customerPhone": "0977943388",
+      "customerAddress": "SN 23 Tổ 18B Khu 6,P. Uông Bí,TP. Quảng Ninh",
       "items": [
         {
-          "id": "row-1793178420631-zsbmp",
-          "code": "pet593ukp",
-          "name": "Ly Pet500ml/93 Ukp",
+          "id": "row-1793179187785-dh0jg",
+          "code": "p650app",
+          "name": "Ly đáy bằng 650ml",
+          "amount": 690,
+          "quantity": 1,
+          "costPrice": 515,
+          "productId": "p-1793179175999-1f29",
+          "unitPrice": 690,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 690,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-28T09:20:06.504Z",
+      "updatedAt": "2026-10-28T09:20:06.504Z"
+    },
+    {
+      "id": "ord-1793236877677",
+      "code": "#DH-1002",
+      "customerId": "c-1793236696518",
+      "customerName": "Min",
+      "customerPhone": "",
+      "customerAddress": "Sơn Lôi",
+      "items": [
+        {
+          "id": "row-1793236754765-7n8ch",
+          "code": "P700APPD",
+          "name": "Ly đáy bằng 700ml",
+          "amount": 690,
+          "quantity": 1,
+          "costPrice": 540,
+          "productId": "p-1793179331833-h4vs",
+          "unitPrice": 690,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793236754765-x0128",
+          "code": "p5appd",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 1180,
+          "quantity": 2,
+          "costPrice": 450,
+          "productId": "p-1793179331833-f8vr",
+          "unitPrice": 590,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793236754765-kbjai",
+          "code": "hut12trongt",
+          "name": "Hút 12 trong ( 10 bịch )",
+          "amount": 200,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-ioqn",
+          "unitPrice": 200,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793236803196-9p6v",
+          "code": "hut8trongt",
+          "name": "Hút 8 trong  ( 10 bịch )",
+          "amount": 200,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-3yef",
+          "unitPrice": 200,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793236968844-g3kur",
+          "code": "MANGDAP",
+          "name": "Màng dập trong",
+          "amount": 190,
+          "quantity": 2,
+          "costPrice": 75,
+          "productId": "p-1793236923900",
+          "unitPrice": 95,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 7,
+      "totalAmount": 2460,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-29T01:21:17.677Z",
+      "updatedAt": "2026-10-29T06:31:08.776Z"
+    },
+    {
+      "id": "ord-1793335012600",
+      "code": "#DH-1009",
+      "customerId": "c-1793334991689",
+      "customerName": "Phương Anh - Chà Trà",
+      "customerPhone": "0329631276",
+      "customerAddress": "Sân bóng Văn Chỉ- Thái Phù- Mai Đình- Sóc Sơn- Hà Nội,X. Sóc Sơn,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793334992857-d6e3t",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 760,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 760,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793334992857-m9ay8",
+          "code": "hut12trongt",
+          "name": "Hút 12 trong ( 10 bịch )",
+          "amount": 230,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-ioqn",
+          "unitPrice": 230,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 990,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-30T04:36:52.600Z",
+      "updatedAt": "2026-10-30T04:39:18.880Z"
+    },
+    {
+      "id": "ord-1793265383856",
+      "code": "#DH-1006",
+      "customerId": "c-1793265370017",
+      "customerName": "Lưu Tuyết Lan - Moaa",
+      "customerPhone": "0968601984",
+      "customerAddress": "Nguyễn Du - Khai Quang - Vĩnh Yên",
+      "items": [
+        {
+          "id": "row-1793265370914-6pzya",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
           "amount": 750,
           "quantity": 1,
-          "costPrice": 565,
-          "productId": "p-1793177484625-0fm0",
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
           "unitPrice": 750,
           "costLocked": true
         }
@@ -1097,84 +1625,2218 @@
       "totalAmount": 750,
       "notes": "",
       "status": "Chờ in",
-      "createdAt": "16:11:34 28/10/2026",
-      "updatedAt": "16:16:36 28/10/2026"
+      "createdAt": "2026-10-29T09:16:23.856Z",
+      "updatedAt": "2026-10-29T09:16:38.144Z"
     },
     {
-      "id": "ord-1793169298026",
-      "code": "#DH-1003",
-      "customerName": "Quan Tra Sua Ruby",
-      "customerPhone": "0383.0383.98",
-      "customerAddress": "110.C Thanh Bình - CT1 - Hoàng Hoa Thám - Võ Cường - Bắc Ninh",
+      "id": "ord-1793259162359",
+      "code": "#DH-1005",
+      "customerId": "c-1793259121375",
+      "customerName": "Báo",
+      "customerPhone": "",
+      "customerAddress": "Hương canh",
       "items": [
         {
-          "id": "row-1793169268987-v0mto",
-          "code": "t7app",
-          "name": "Ly tim 700ml",
-          "amount": 2280,
-          "quantity": 3,
-          "costPrice": 580,
-          "productId": "p-1793163521006-1qvl",
-          "unitPrice": 760,
+          "id": "row-1793259122522-bb42v",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 560,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 560,
           "costLocked": true
         },
         {
-          "id": "row-1793169268987-jg6ov",
-          "code": "t5app",
-          "name": "Ly tim 500ml",
-          "amount": 660,
+          "id": "row-1793259122522-9jp7c",
+          "code": "Y95ht",
+          "name": "Nắp Vuông 95 HT",
+          "amount": 200,
           "quantity": 1,
-          "costPrice": 480,
-          "productId": "p-1793163521006-ayk2",
-          "unitPrice": 660,
-          "costLocked": true
-        }
-      ],
-      "totalQuantity": 4,
-      "totalAmount": 2940,
-      "notes": "",
-      "status": "Chờ in",
-      "createdAt": "13:34:58 28/10/2026",
-      "updatedAt": "2026-10-28T08:39:26.360Z"
-    },
-    {
-      "id": "ord-1793091141181",
-      "code": "#DH-1001",
-      "customerId": "c-1793091131376",
-      "customerName": "Lâm Hảo",
-      "customerPhone": "0977943388",
-      "customerAddress": "SN 23 Tổ 18B Khu 6,P. Uông Bí,TP. Quảng Ninh",
-      "items": [
-        {
-          "id": "row-1793091132486-5r56n",
-          "productId": "p-1793091057699-04y6",
-          "code": "p650app",
-          "name": "Ly đáy bằng 650ml",
-          "unitPrice": 700,
-          "quantity": 1,
-          "amount": 700,
-          "costPrice": 515,
-          "costLocked": true
-        },
-        {
-          "id": "row-1793177449822-xf82d",
-          "productId": "p-1793091057699-0d7b",
-          "code": "q500app",
-          "name": "Ly đáy bầu 360ml",
-          "unitPrice": 660,
-          "quantity": 1,
-          "amount": 660,
-          "costPrice": 480,
+          "costPrice": 145,
+          "productId": "p-1793179331833-f4e7",
+          "unitPrice": 200,
           "costLocked": true
         }
       ],
       "totalQuantity": 2,
-      "totalAmount": 1360,
+      "totalAmount": 760,
       "notes": "",
       "status": "Chờ in",
-      "createdAt": "15:52:21 27/10/2026",
-      "updatedAt": "2026-10-28T08:50:55.069Z"
+      "createdAt": "2026-10-29T07:32:42.359Z",
+      "updatedAt": "2026-10-29T07:32:56.892Z"
+    },
+    {
+      "id": "ord-1793594942020",
+      "code": "#DH-1028",
+      "customerId": "c-1793594942018",
+      "customerName": "Mlem - Đê Hến",
+      "customerPhone": "",
+      "customerAddress": "Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793594807578-phit",
+          "code": "PET598UKP",
+          "name": "Ly Pet500ml/98 Ukp",
+          "amount": 830,
+          "quantity": 1,
+          "costPrice": 643,
+          "productId": "p-1793179331833-cg3g",
+          "unitPrice": 830,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594819410-0qvd",
+          "code": "P7QDM",
+          "name": "Ly đáy bằng 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 485,
+          "productId": "p-1793179331833-fkyp",
+          "unitPrice": 670,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594857242-vaeb",
+          "code": "LYGIAY5002LOPTRANG",
+          "name": "Ly giấy 500ml 2 lớp - Trắng",
+          "amount": 1160,
+          "quantity": 1,
+          "costPrice": 960,
+          "productId": "p-1793594657323",
+          "unitPrice": 1160,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594863690-tp23",
+          "code": "LYGIAY3602LOPTRANG",
+          "name": "Ly giấy 2 lớp 360ml - Trắng",
+          "amount": 1080,
+          "quantity": 1,
+          "costPrice": 800,
+          "productId": "p-1793594508339",
+          "unitPrice": 1080,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594888306-mcb1",
+          "code": "T7NHAMDAY",
+          "name": "Ly tim 700ml nhám dày",
+          "amount": 1290,
+          "quantity": 1,
+          "costPrice": 1160,
+          "productId": "p-1793179331833-og43",
+          "unitPrice": 1290,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594907410-niln",
+          "code": "NAPBAT90TRANG",
+          "name": "Nắp bật 90 màu trắng",
+          "amount": 560,
+          "quantity": 2,
+          "costPrice": 285,
+          "productId": "p-1793581848144",
+          "unitPrice": 280,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594922362-cyws",
+          "code": "NAPTIMDAYTRONG",
+          "name": "Nắp tim dày trong",
+          "amount": 460,
+          "quantity": 1,
+          "costPrice": 360,
+          "productId": "p-1793581775417",
+          "unitPrice": 460,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594927362-sl2q",
+          "code": "98S",
+          "name": "Nắp trực tiếp 98S-ukp",
+          "amount": 380,
+          "quantity": 1000,
+          "costPrice": 0.3,
+          "productId": "p-1793179331833-p3hg",
+          "unitPrice": 0.38,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1008,
+      "totalAmount": 6430,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:49:02 02/11/2026",
+      "updatedAt": "11:52:27 02/11/2026"
+    },
+    {
+      "id": "ord-1793595382388",
+      "code": "#DH-1029",
+      "customerId": "c-1793595382386",
+      "customerName": "Nhớ Coffee",
+      "customerPhone": "",
+      "customerAddress": "Vinh Tiến - Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793595380449-btjc",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 570,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:56:22 02/11/2026",
+      "updatedAt": "11:56:22 02/11/2026"
+    },
+    {
+      "id": "ord-1793334899729",
+      "code": "#DH-1007",
+      "customerId": "c-1793241121456",
+      "customerName": "Chị Vy - Vy Coffee",
+      "customerPhone": "0987339739",
+      "customerAddress": "159/90/63 Trần Văn Đang, phường 11 quận 3, Tp. HCM,,P. Nhiêu Lộc,TP. Hồ Chí Minh",
+      "items": [
+        {
+          "id": "row-1793334885826-5pu1r",
+          "code": "P7QDM",
+          "name": "Ly đáy bằng 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 485,
+          "productId": "p-1793179331833-fkyp",
+          "unitPrice": 670,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 670,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-30T04:34:59.729Z",
+      "updatedAt": "2026-10-30T04:34:59.729Z"
+    },
+    {
+      "id": "ord-1793334946105",
+      "code": "#DH-1008",
+      "customerId": "c-1793169032301",
+      "customerName": "Thu Hương - Trà đào Bá Hiến",
+      "customerPhone": "",
+      "customerAddress": "Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793334918602-yckcy",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 650,
+          "quantity": 1,
+          "costPrice": 480,
+          "productId": "p-1793179331833-3wfc",
+          "unitPrice": 650,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793334918602-ac04k",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 750,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 750,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1400,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-30T04:35:46.105Z",
+      "updatedAt": "2026-10-30T04:35:46.105Z"
+    },
+    {
+      "id": "ord-1793335130920",
+      "code": "#DH-1010",
+      "customerId": "c-1793335051837",
+      "customerName": "Vinh Thành Đỏ - Phúc Yên",
+      "customerPhone": "",
+      "customerAddress": "Phúc Yên",
+      "items": [
+        {
+          "id": "row-1793335052773-tyvuq",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 750,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 750,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335052773-echfz",
+          "code": "t7nk",
+          "name": "Ly tim 700ml nhám dày",
+          "amount": 1280,
+          "quantity": 1,
+          "costPrice": 1160,
+          "productId": "p-1793179331833-og43",
+          "unitPrice": 1280,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 2030,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-30T04:38:50.920Z",
+      "updatedAt": "2026-10-30T04:38:50.920Z"
+    },
+    {
+      "id": "ord-1793612773881",
+      "code": "#DH-1032",
+      "customerId": "c-1793612773879",
+      "customerName": "Phương Thùy",
+      "customerPhone": "0976740875",
+      "customerAddress": "HH1 - FLC Đại Mỗ, Nam Từ Liêm, Hà Nội.,P. Xuân Phương,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793612761671-fcma",
+          "code": "pet3appmong",
+          "name": "Ly Pet 360ml App mỏng",
+          "amount": 600,
+          "quantity": 1,
+          "costPrice": 425,
+          "productId": "p-1793179331833-2euq",
+          "unitPrice": 600,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793612808287-003w",
+          "code": "931APP",
+          "name": "Nắp trực tiếp 93-1",
+          "amount": 280,
+          "quantity": 1000,
+          "costPrice": 0.2,
+          "productId": "p-1793179331833-lr7l",
+          "unitPrice": 0.28,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 880,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "16:46:13 02/11/2026",
+      "updatedAt": "16:46:54 02/11/2026"
+    },
+    {
+      "id": "ord-1793944934555",
+      "code": "#DH-1044",
+      "customerId": "c-1793944934553",
+      "customerName": "Hương - 245 Coffee",
+      "customerPhone": "0917512484",
+      "customerAddress": "số nhà 245 đường tân xuân,P. Đông Ngạc,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793944919201-vct6",
+          "code": "pet3Ukpday",
+          "name": "Ly Pet 360ml Ukp dày",
+          "amount": 690,
+          "quantity": 1,
+          "costPrice": 505,
+          "productId": "p-1793179331833-t0c1",
+          "unitPrice": 690,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793944923632-ulpk",
+          "code": "93S",
+          "name": "Nắp trực tiếp 93S UKP",
+          "amount": 320,
+          "quantity": 1000,
+          "costPrice": 0.235,
+          "productId": "p-1793179331833-342i",
+          "unitPrice": 0.32,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 1010,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:02:14 06/11/2026",
+      "updatedAt": "14:21:28 07/11/2026"
+    },
+    {
+      "id": "ord-1793241161839",
+      "code": "#DH-1003",
+      "customerId": "c-1793241121456",
+      "customerName": "Chị Vy - Vy Coffee",
+      "customerPhone": "0987339739",
+      "customerAddress": "159/90/63 Trần Văn Đang, phường 11 quận 3, Tp. HCM,,P. Nhiêu Lộc,TP. Hồ Chí Minh",
+      "items": [
+        {
+          "id": "row-1793241126217-kw02j",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793241126217-qe3mr",
+          "code": "p360qd",
+          "name": "Ly đáy bằng 360ml",
+          "amount": 530,
+          "quantity": 1,
+          "costPrice": 355,
+          "productId": "p-1793179331833-wch0",
+          "unitPrice": 530,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793242383046-a1foa",
+          "code": "KC95TD",
+          "name": "Nắp kim cương 95 TĐ",
+          "amount": 230,
+          "quantity": 1000,
+          "costPrice": 0.155,
+          "productId": "p-1793179331833-2t3x",
+          "unitPrice": 0.23,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793242401494-qp9g3",
+          "code": "N95TD",
+          "name": "Nắp trực tiếp 95 TĐ",
+          "amount": 280,
+          "quantity": 1000,
+          "costPrice": 0.155,
+          "productId": "p-1793241246497",
+          "unitPrice": 0.28,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2002,
+      "totalAmount": 1610,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-29T02:32:41.839Z",
+      "updatedAt": "2026-10-29T02:53:41.094Z"
+    },
+    {
+      "id": "ord-1793595441885",
+      "code": "#DH-1030",
+      "customerId": "c-1793595441882",
+      "customerName": "Biii Coffee",
+      "customerPhone": "",
+      "customerAddress": "Trung Mỹ",
+      "items": [
+        {
+          "id": "row-1793595436089-7wi3",
+          "code": "P5QDM",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 590,
+          "quantity": 1,
+          "costPrice": 405,
+          "productId": "p-1793179331833-dl75",
+          "unitPrice": 590,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 590,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:57:21 02/11/2026",
+      "updatedAt": "11:57:21 02/11/2026"
+    },
+    {
+      "id": "ord-1793335538797",
+      "code": "#DH-1011",
+      "customerId": "c-1793335195111",
+      "customerName": "Happy - Bá Hiến",
+      "customerPhone": "",
+      "customerAddress": "Ngõ 4 Trại Cúp",
+      "items": [
+        {
+          "id": "row-1793335430303-n5byw",
+          "code": "T5DAY",
+          "name": "Ly tim 500ml nhám dày",
+          "amount": 1050,
+          "quantity": 1,
+          "costPrice": 840,
+          "productId": "p-1793335407143",
+          "unitPrice": 1050,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335430303-qrebf",
+          "code": "P7QDM",
+          "name": "Ly đáy bằng 700ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 485,
+          "productId": "p-1793179331833-fkyp",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335430303-4lw3p",
+          "code": "hut12xanhb",
+          "name": "Hút 12 xanh ( Bịch )",
+          "amount": 110,
+          "quantity": 5,
+          "costPrice": 19,
+          "productId": "p-1793179331833-e2s0",
+          "unitPrice": 22,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335507390-2nfp",
+          "code": "hut6trongb",
+          "name": "Hút 6 trong ( Bịch )",
+          "amount": 110,
+          "quantity": 5,
+          "costPrice": 19,
+          "productId": "p-1793179331833-w6df",
+          "unitPrice": 22,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335518350-sz53x",
+          "code": "tuidoi",
+          "name": "Túi đôi",
+          "amount": 265,
+          "quantity": 5,
+          "costPrice": 46,
+          "productId": "p-1793179331833-9xuh",
+          "unitPrice": 53,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335525789-9zuf",
+          "code": "tuidon",
+          "name": "Túi đơn",
+          "amount": 265,
+          "quantity": 5,
+          "costPrice": 46,
+          "productId": "p-1793179331833-8mwx",
+          "unitPrice": 53,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 22,
+      "totalAmount": 2370,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-30T04:45:38.797Z",
+      "updatedAt": "2026-10-30T04:45:54.549Z"
+    },
+    {
+      "id": "ord-1793335770508",
+      "code": "#DH-1012",
+      "customerId": "c-1793335597496",
+      "customerName": "Dương - Nova Coffee",
+      "customerPhone": "0908175977",
+      "customerAddress": "108 nguyễn hồng đào f14,P. Tân Bình,TP. Hồ Chí Minh",
+      "items": [
+        {
+          "id": "row-1793335743605-35a7c",
+          "code": "p360qd",
+          "name": "Ly đáy bằng 360ml",
+          "amount": 530,
+          "quantity": 1,
+          "costPrice": 355,
+          "productId": "p-1793179331833-wch0",
+          "unitPrice": 530,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793335743605-ubpsv",
+          "code": "D95TD",
+          "name": "Nắp cầu 95 TĐ",
+          "amount": 230,
+          "quantity": 1000,
+          "costPrice": 0.155,
+          "productId": "p-1793179331833-8mbo",
+          "unitPrice": 0.23,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 760,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "2026-10-30T04:49:30.508Z",
+      "updatedAt": "2026-10-30T04:49:30.508Z"
+    },
+    {
+      "id": "ord-1793340114076",
+      "code": "#DH-1013",
+      "customerName": "Hồng Nhung",
+      "customerPhone": "",
+      "customerAddress": "Xuân Hòa",
+      "items": [
+        {
+          "id": "row-1793340096660-4unn",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793340100308-7d5x",
+          "code": "Y95HT",
+          "name": "Nắp Vuông 95 HT",
+          "amount": 200,
+          "quantity": 1000,
+          "costPrice": 0.145,
+          "productId": "p-1793179331833-f4e7",
+          "unitPrice": 0.2,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 770,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:01:54 30/10/2026",
+      "updatedAt": "13:01:54 30/10/2026"
+    },
+    {
+      "id": "ord-1793434633020",
+      "code": "#DH-1013",
+      "customerId": "c-1793434633013",
+      "customerName": "Dương coffee",
+      "customerPhone": "",
+      "customerAddress": "Lào cai",
+      "items": [
+        {
+          "id": "row-1793434607600-9psr",
+          "code": "pet593ukp",
+          "name": "Ly Pet500ml/93 Ukp",
+          "amount": 750,
+          "quantity": 1,
+          "costPrice": 565,
+          "productId": "p-1793179331833-khh5",
+          "unitPrice": 750,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793434616646-w1j7",
+          "code": "93Dapp",
+          "name": "Nắp cầu D93",
+          "amount": 310,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-3epu",
+          "unitPrice": 310,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1060,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "15:17:13 31/10/2026",
+      "updatedAt": "15:17:13 31/10/2026"
+    },
+    {
+      "id": "ord-1793342279771",
+      "code": "#DH-1014",
+      "customerId": "c-1793342279770",
+      "customerName": "Phan Thị Nga - Nga Coffee",
+      "customerPhone": "0397065103",
+      "customerAddress": "KTĐC vịnh sơn,xã quảng đông,huyện quảng trạch,Quảng Bình",
+      "items": [
+        {
+          "id": "row-1793342267706-08w1",
+          "code": "pet3Ukpmong",
+          "name": "Ly Pet 360ml Ukp mỏng",
+          "amount": 630,
+          "quantity": 1,
+          "costPrice": 440,
+          "productId": "p-1793179331833-k6si",
+          "unitPrice": 630,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793342270410-dfxl",
+          "code": "93S",
+          "name": "Nắp trực tiếp 93S UKP",
+          "amount": 310,
+          "quantity": 1000,
+          "costPrice": 0.235,
+          "productId": "p-1793179331833-342i",
+          "unitPrice": 0.31,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 940,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:37:59 30/10/2026",
+      "updatedAt": "13:37:59 30/10/2026"
+    },
+    {
+      "id": "ord-1793342507203",
+      "code": "#DH-1015",
+      "customerId": "c-1793342507202",
+      "customerName": "Ngọc Như - Ngọc Bích",
+      "customerPhone": "0849100979",
+      "customerAddress": "332 Nguyễn huệ, ấp 3 xã tân hồng đồng tháp",
+      "items": [
+        {
+          "id": "row-1793342609970-byl4",
+          "code": "U3VIET",
+          "name": "Ly đáy bầu 360ml",
+          "amount": 600,
+          "quantity": 1,
+          "costPrice": 390,
+          "productId": "p-1793342594514",
+          "unitPrice": 600,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793342613985-0a2v",
+          "code": "KC95TD",
+          "name": "Nắp kim cương 95 TĐ",
+          "amount": 230,
+          "quantity": 1000,
+          "costPrice": 0.155,
+          "productId": "p-1793179331833-2t3x",
+          "unitPrice": 0.23,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 830,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:41:47 30/10/2026",
+      "updatedAt": "13:43:44 30/10/2026"
+    },
+    {
+      "id": "ord-1793434892185",
+      "code": "#DH-1018",
+      "customerId": "c-1793434892171",
+      "customerName": "Dương nova",
+      "customerPhone": "",
+      "customerAddress": "Hcm",
+      "items": [
+        {
+          "id": "row-1793434878077-72kw",
+          "code": "p360qd",
+          "name": "Ly đáy bằng 360ml",
+          "amount": 530,
+          "quantity": 1,
+          "costPrice": 355,
+          "productId": "p-1793179331833-wch0",
+          "unitPrice": 530,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793434885850-1tws",
+          "code": "D95APP",
+          "name": "Nắp cầu 95 App",
+          "amount": 230,
+          "quantity": 1000,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-5kxy",
+          "unitPrice": 0.23,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 760,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "15:21:32 31/10/2026",
+      "updatedAt": "15:21:32 31/10/2026"
+    },
+    {
+      "id": "ord-1793342992843",
+      "code": "#DH-1016",
+      "customerId": "c-1793342992841",
+      "customerName": "Thu - Cokcok",
+      "customerPhone": "",
+      "customerAddress": "Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793342814193-dfgp",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 1920,
+          "quantity": 3,
+          "costPrice": 480,
+          "productId": "p-1793179331833-3wfc",
+          "unitPrice": 640,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793342824457-cg7k",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 740,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 740,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793342838281-6f7n",
+          "code": "N90",
+          "name": "Nắp trực tiếp 90",
+          "amount": 960,
+          "quantity": 4000,
+          "costPrice": 0.185,
+          "productId": "p-1793342801134",
+          "unitPrice": 0.24,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 4004,
+      "totalAmount": 3620,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:49:52 30/10/2026",
+      "updatedAt": "08:19:16 02/11/2026"
+    },
+    {
+      "id": "ord-1793594082533",
+      "code": "#DH-1027",
+      "customerId": "c-1793594082531",
+      "customerName": "Như Ngọc - Lép Coffee",
+      "customerPhone": "0814960567",
+      "customerAddress": "181/14/1 Quang Trung,P. Buôn Ma Thuột,Tỉnh Đắk Lắk",
+      "items": [
+        {
+          "id": "row-1793594068387-c1lj",
+          "code": "p650app",
+          "name": "Ly đáy bằng 650ml",
+          "amount": 700,
+          "quantity": 1,
+          "costPrice": 515,
+          "productId": "p-1793179331833-8i9p",
+          "unitPrice": 700,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793594119019-0oyb",
+          "code": "Y95APP",
+          "name": "Nắp Vuông Y95 APP",
+          "amount": 230,
+          "quantity": 1000,
+          "costPrice": 0.185,
+          "productId": "p-1793179331833-0eh0",
+          "unitPrice": 0.23,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 930,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:34:42 02/11/2026",
+      "updatedAt": "11:35:23 02/11/2026"
+    },
+    {
+      "id": "ord-1793612676822",
+      "code": "#DH-1031",
+      "customerId": "c-1793612676816",
+      "customerName": "Anh Hùng - Coffee & Tea",
+      "customerPhone": "",
+      "customerAddress": "Đê Hến - Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793612674167-qlm7",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 570,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "16:44:36 02/11/2026",
+      "updatedAt": "16:44:36 02/11/2026"
+    },
+    {
+      "id": "ord-1793537929034",
+      "code": "#DH-1019",
+      "customerId": "c-1793537929006",
+      "customerName": "Đặng Thanh",
+      "customerPhone": "",
+      "customerAddress": "Phú Thọ",
+      "items": [
+        {
+          "id": "row-1793537562814-ttfq",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 1680,
+          "quantity": 3,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 560,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793537574864-yrzj",
+          "code": "TO1000",
+          "name": "Tô giấy in 1000ml dày",
+          "amount": 2400,
+          "quantity": 2,
+          "costPrice": 470,
+          "productId": "p-1793534368206",
+          "unitPrice": 1200,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793537592238-y1cl",
+          "code": "KC95APP",
+          "name": "Nắp kim cương 95 App",
+          "amount": 720,
+          "quantity": 3000,
+          "costPrice": 0.185,
+          "productId": "p-1793179331833-5ezb",
+          "unitPrice": 0.24,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793537757448-xrss",
+          "code": "hut12trongt",
+          "name": "Hút 12 trong ( 10 bịch )",
+          "amount": 460,
+          "quantity": 2,
+          "costPrice": 185,
+          "productId": "p-1793179331833-ioqn",
+          "unitPrice": 230,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793537770890-6azo",
+          "code": "hut8trongt",
+          "name": "Hút 8 trong  ( 10 bịch )",
+          "amount": 230,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-3yef",
+          "unitPrice": 230,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793537784238-lwdw",
+          "code": "tuit",
+          "name": "Túi chữ T",
+          "amount": 300,
+          "quantity": 5,
+          "costPrice": 50,
+          "productId": "p-1793179331833-3sb8",
+          "unitPrice": 60,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793537860830-uthg",
+          "code": "p360qd",
+          "name": "Ly đáy bằng 360ml",
+          "amount": 530,
+          "quantity": 1,
+          "costPrice": 355,
+          "productId": "p-1793179331833-wch0",
+          "unitPrice": 530,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 3014,
+      "totalAmount": 6320,
+      "notes": "Tổng 17 kiện",
+      "status": "Chờ in",
+      "createdAt": "19:58:49 01/11/2026",
+      "updatedAt": "19:58:49 01/11/2026"
+    },
+    {
+      "id": "ord-1793581571826",
+      "code": "#DH-1020",
+      "customerId": "c-1793581571824",
+      "customerName": "Lộc Vũ",
+      "customerPhone": "0968862661",
+      "customerAddress": "Cầu Bầu ,X. Ứng Thiên,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793581569760-j2nl",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 760,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 760,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 760,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "08:06:11 02/11/2026",
+      "updatedAt": "08:06:11 02/11/2026"
+    },
+    {
+      "id": "ord-1793582616327",
+      "code": "#DH-1021",
+      "customerId": "c-1793582455664",
+      "customerName": "8789",
+      "customerPhone": "",
+      "customerAddress": "Hương Canh",
+      "items": [
+        {
+          "id": "row-1793582477895-jzju",
+          "code": "P5QDD",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 1180,
+          "quantity": 2,
+          "costPrice": 425,
+          "productId": "p-1793179331833-az82",
+          "unitPrice": 590,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793582491775-6omg",
+          "code": "Y95app",
+          "name": "Nắp Vuông Y95 APP",
+          "amount": 820,
+          "quantity": 4000,
+          "costPrice": 0.185,
+          "productId": "p-1793179331833-0eh0",
+          "unitPrice": 0.205,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793582589567-x8vb",
+          "code": "hut12trongt",
+          "name": "Hút 12 trong ( 10 bịch )",
+          "amount": 200,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-ioqn",
+          "unitPrice": 200,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793582604527-lz9z",
+          "code": "hut6trongb",
+          "name": "Hút 6 trong ( Bịch )",
+          "amount": 105,
+          "quantity": 5,
+          "costPrice": 19,
+          "productId": "p-1793179331833-w6df",
+          "unitPrice": 21,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 4008,
+      "totalAmount": 2305,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "08:23:36 02/11/2026",
+      "updatedAt": "08:23:36 02/11/2026"
+    },
+    {
+      "id": "ord-1793582775601",
+      "code": "#DH-1022",
+      "customerId": "c-1793582775599",
+      "customerName": "Sam Bá Thiện",
+      "customerPhone": "",
+      "customerAddress": "Bá Thiện",
+      "items": [
+        {
+          "id": "row-1793582767759-h13w",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 1500,
+          "quantity": 2,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 750,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1500,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "08:26:15 02/11/2026",
+      "updatedAt": "08:26:15 02/11/2026"
+    },
+    {
+      "id": "ord-1793593841341",
+      "code": "#DH-1025",
+      "customerId": "c-1793593841339",
+      "customerName": "Tiệm Bánh Mỳ Huy Hoàng _ Hea Miso",
+      "customerPhone": "0974941154",
+      "customerAddress": "Đội Diện Trường THPT Lê Quý Đôn, Thạch Đài, TP. Hà Tỉnh",
+      "items": [
+        {
+          "id": "row-1793593796611-rorj",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 560,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 560,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593807747-bzjt",
+          "code": "P7QDM",
+          "name": "Ly đáy bằng 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 485,
+          "productId": "p-1793179331833-fkyp",
+          "unitPrice": 670,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593813883-fnaj",
+          "code": "N95APP",
+          "name": "Nắp trực tiếp N95 App",
+          "amount": 560,
+          "quantity": 2000,
+          "costPrice": 0.16,
+          "productId": "p-1793179331833-tkli",
+          "unitPrice": 0.28,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593825675-0psm",
+          "code": "hut12trongt",
+          "name": "Hút 12 trong ( 10 bịch )",
+          "amount": 230,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-ioqn",
+          "unitPrice": 230,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593830003-thd2",
+          "code": "hut6trongt",
+          "name": "Hút 6 trong  ( 10 bịch )",
+          "amount": 240,
+          "quantity": 1,
+          "costPrice": 190,
+          "productId": "p-1793179331833-4lvw",
+          "unitPrice": 240,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593837003-oim0",
+          "code": "D95APP",
+          "name": "Nắp cầu 95 App",
+          "amount": 23,
+          "quantity": 100,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-5kxy",
+          "unitPrice": 0.23,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2104,
+      "totalAmount": 2283,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:30:41 02/11/2026",
+      "updatedAt": "11:30:41 02/11/2026"
+    },
+    {
+      "id": "ord-1793593902469",
+      "code": "#DH-1026",
+      "customerId": "c-1793593902467",
+      "customerName": "Nguyễn Vân - Trà Trái Cây",
+      "customerPhone": "0374329899",
+      "customerAddress": "Gs1 vinhome smart city tây mỗ. Nam từ liêm,P. Tây Mỗ,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793593895691-t0zv",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593900219-yglf",
+          "code": "P7QDM",
+          "name": "Ly đáy bằng 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 485,
+          "productId": "p-1793179331833-fkyp",
+          "unitPrice": 670,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1240,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:31:42 02/11/2026",
+      "updatedAt": "11:31:42 02/11/2026"
+    },
+    {
+      "id": "ord-1793593716083",
+      "code": "#DH-1024",
+      "customerId": "c-1793593716076",
+      "customerName": "Nguyễn Ngọc Huệ - Nhà Xoài",
+      "customerPhone": "0379991552",
+      "customerAddress": "239 điện biên phủ, khu 7, mường tè, lai châu,X. Mường Tè,Tỉnh Lai Châu",
+      "items": [
+        {
+          "id": "row-1793593706060-wq75",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 760,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 760,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593710253-rltw",
+          "code": "tuit",
+          "name": "Túi chữ T",
+          "amount": 120,
+          "quantity": 2,
+          "costPrice": 50,
+          "productId": "p-1793179331833-3sb8",
+          "unitPrice": 60,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793593931315-43y6",
+          "code": "D90APP",
+          "name": "Nắp cầu 90 App",
+          "amount": 250,
+          "quantity": 1000,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-vadz",
+          "unitPrice": 0.25,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1003,
+      "totalAmount": 1130,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:28:36 02/11/2026",
+      "updatedAt": "11:33:14 02/11/2026"
+    },
+    {
+      "id": "ord-1793583026441",
+      "code": "#DH-1023",
+      "customerId": "c-1793583026439",
+      "customerName": "Thanh Zuzi",
+      "customerPhone": "",
+      "customerAddress": "Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793583012454-ynbj",
+          "code": "pet5lun98ukp",
+          "name": "Ly Pet500ml/98 Lùn Ukp",
+          "amount": 820,
+          "quantity": 1,
+          "costPrice": 634,
+          "productId": "p-1793179331833-65ys",
+          "unitPrice": 820,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793583016502-6sxv",
+          "code": "98S",
+          "name": "Nắp trực tiếp 98S-ukp",
+          "amount": 380,
+          "quantity": 1000,
+          "costPrice": 0.3,
+          "productId": "p-1793179331833-p3hg",
+          "unitPrice": 0.38,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1001,
+      "totalAmount": 1200,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "08:30:26 02/11/2026",
+      "updatedAt": "13:53:01 07/11/2026"
+    },
+    {
+      "id": "ord-1793613221747",
+      "code": "#DH-1033",
+      "customerId": "c-1793613221744",
+      "customerName": "Đậu Đậu Coffee",
+      "customerPhone": "",
+      "customerAddress": "Đê Hến - Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793613210647-8lxp",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 650,
+          "quantity": 1,
+          "costPrice": 480,
+          "productId": "p-1793179331833-3wfc",
+          "unitPrice": 650,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793613213095-axmb",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 750,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 750,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1400,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "16:53:41 02/11/2026",
+      "updatedAt": "16:53:41 02/11/2026"
+    },
+    {
+      "id": "ord-1793690856603",
+      "code": "#DH-1037",
+      "customerId": "c-1793690856601",
+      "customerName": "3 Râu",
+      "customerPhone": "",
+      "customerAddress": "Phúc Yên",
+      "items": [
+        {
+          "id": "row-1793690840616-h2lh",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 1320,
+          "quantity": 2,
+          "costPrice": 480,
+          "productId": "p-1793179331833-3wfc",
+          "unitPrice": 660,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793690845312-k3ze",
+          "code": "D90APP",
+          "name": "Nắp cầu 90 App",
+          "amount": 480,
+          "quantity": 2000,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-vadz",
+          "unitPrice": 0.24,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2002,
+      "totalAmount": 1800,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "14:27:36 03/11/2026",
+      "updatedAt": "14:27:36 03/11/2026"
+    },
+    {
+      "id": "ord-1793673861340",
+      "code": "#DH-1036",
+      "customerId": "c-1793673861338",
+      "customerName": "Tú Anh Quán",
+      "customerPhone": "",
+      "customerAddress": "Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793673827562-5ct4",
+          "code": "TO1000IN",
+          "name": "Tô giấy in 1000ml dày + Nắp",
+          "amount": 1200,
+          "quantity": 1,
+          "costPrice": 0,
+          "productId": "p-1793534368206",
+          "unitPrice": 1200,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 1200,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "09:44:21 03/11/2026",
+      "updatedAt": "09:44:21 03/11/2026"
+    },
+    {
+      "id": "ord-1793690921251",
+      "code": "#DH-1038",
+      "customerId": "c-1793690921249",
+      "customerName": "Annh",
+      "customerPhone": "0365477565",
+      "customerAddress": "bến xe bộc bố - xã bằng thành - tỉnh thái nguyên ,X. Bằng Thành,Tỉnh Thái Nguyên",
+      "items": [
+        {
+          "id": "row-1793690916824-5zh1",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 560,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 560,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 560,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "14:28:41 03/11/2026",
+      "updatedAt": "14:28:41 03/11/2026"
+    },
+    {
+      "id": "ord-1793673806221",
+      "code": "#DH-1035",
+      "customerId": "c-1793673806219",
+      "customerName": "Ngọc Linh Coffee",
+      "customerPhone": "",
+      "customerAddress": "Thiện kế - Bình Xuyên",
+      "items": [
+        {
+          "id": "row-1793673796186-qkzw",
+          "code": "p360qd",
+          "name": "Ly đáy bằng 360ml",
+          "amount": 530,
+          "quantity": 1,
+          "costPrice": 355,
+          "productId": "p-1793179331833-wch0",
+          "unitPrice": 530,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793673802394-a95z",
+          "code": "P7HT",
+          "name": "Ly nhựa 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 482,
+          "productId": "p-1793667646427",
+          "unitPrice": 670,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793864723766-u979",
+          "code": "Q5HT",
+          "name": "Ly đáy bầu 500ml",
+          "amount": 620,
+          "quantity": 1,
+          "costPrice": 410,
+          "productId": "p-1793179331833-8abm",
+          "unitPrice": 620,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793864731366-66w2",
+          "code": "Y95HT",
+          "name": "Nắp Vuông 95 HT",
+          "amount": 320,
+          "quantity": 2000,
+          "costPrice": 0.145,
+          "productId": "p-1793179331833-f4e7",
+          "unitPrice": 0.16,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2003,
+      "totalAmount": 2140,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "09:43:26 03/11/2026",
+      "updatedAt": "14:45:59 05/11/2026"
+    },
+    {
+      "id": "ord-1793254736889",
+      "code": "#DH-1004",
+      "customerId": "c-1793093904653",
+      "customerName": "Chị Thủy Phương",
+      "customerPhone": "",
+      "customerAddress": "Thăng Long 3 - Thiện Kế - Bình Xuyên",
+      "items": [
+        {
+          "id": "row-1793254656407-ss8z0",
+          "code": "p360qd",
+          "name": "Ly đáy bằng 360ml",
+          "amount": 530,
+          "quantity": 1,
+          "costPrice": 355,
+          "productId": "p-1793179331833-wch0",
+          "unitPrice": 530,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793254656407-jmf45",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793254656407-gfxwk",
+          "code": "t7Ukp",
+          "name": "Ly tim700ml Ukp",
+          "amount": 780,
+          "quantity": 1,
+          "costPrice": 595,
+          "productId": "p-1793179331833-n820",
+          "unitPrice": 780,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255064657-ci8l",
+          "code": "D95APP",
+          "name": "Nắp cầu 95 App",
+          "amount": 200,
+          "quantity": 1000,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-5kxy",
+          "unitPrice": 0.2,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255080880-rawq",
+          "code": "90FTRONG",
+          "name": "Nắp tim trong Ukp",
+          "amount": 33,
+          "quantity": 100,
+          "costPrice": 0.26,
+          "productId": "p-1793254906274",
+          "unitPrice": 0.33,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255106225-v3sh",
+          "code": "hut12trongt",
+          "name": "Hút 12 trong ( 10 bịch )",
+          "amount": 210,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-ioqn",
+          "unitPrice": 210,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255110305-mf4c",
+          "code": "hut8trongt",
+          "name": "Hút 8 trong  ( 10 bịch )",
+          "amount": 210,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-3yef",
+          "unitPrice": 210,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255116345-1v25",
+          "code": "hut6trongt",
+          "name": "Hút 6 trong  ( 10 bịch )",
+          "amount": 220,
+          "quantity": 1,
+          "costPrice": 190,
+          "productId": "p-1793179331833-4lvw",
+          "unitPrice": 220,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255142025-es06",
+          "code": "tuidoi",
+          "name": "Túi đôi",
+          "amount": 530,
+          "quantity": 10,
+          "costPrice": 46,
+          "productId": "p-1793179331833-9xuh",
+          "unitPrice": 53,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255152440-eulg",
+          "code": "tuit",
+          "name": "Túi chữ T",
+          "amount": 285,
+          "quantity": 5,
+          "costPrice": 50,
+          "productId": "p-1793179331833-3sb8",
+          "unitPrice": 57,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255281528-jxqc",
+          "code": "THIA10CM",
+          "name": "Thìa 10cm (100c)",
+          "amount": 100,
+          "quantity": 10,
+          "costPrice": 8,
+          "productId": "p-1793255231650",
+          "unitPrice": 10,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255289401-q9fb",
+          "code": "THIA20CM",
+          "name": "Thìa 20cm 50c",
+          "amount": 120,
+          "quantity": 10,
+          "costPrice": 10,
+          "productId": "p-1793255264138",
+          "unitPrice": 12,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793255298576-78gd",
+          "code": "t1000mlnhamday",
+          "name": "Ly tim 1000ml nhám dày",
+          "amount": 64,
+          "quantity": 50,
+          "costPrice": 1.18,
+          "productId": "p-1793179331833-6t6y",
+          "unitPrice": 1.28,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793696843434-52193",
+          "code": "D90APP",
+          "name": "Nắp cầu 90 App",
+          "amount": 240,
+          "quantity": 1000,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-vadz",
+          "unitPrice": 0.24,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793696955746-r7fw",
+          "code": "CUONMANGIN",
+          "name": "Cuộn màng in",
+          "amount": 630,
+          "quantity": 3,
+          "costPrice": 170,
+          "productId": "p-1793255012658",
+          "unitPrice": 210,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2194,
+      "totalAmount": 4722,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:18:56 29/10/2026",
+      "updatedAt": "16:09:19 03/11/2026"
+    },
+    {
+      "id": "ord-1793667613381",
+      "code": "#DH-1034",
+      "customerId": "c-1793667613378",
+      "customerName": "Chị Phượng",
+      "customerPhone": "",
+      "customerAddress": "Hữu Bằng",
+      "items": [
+        {
+          "id": "row-1793667600089-0z1s",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793667654888-xowm",
+          "code": "P7HT",
+          "name": "Ly nhựa 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 482,
+          "productId": "p-1793667646427",
+          "unitPrice": 670,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793667670096-e7rj",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 760,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 760,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793667707464-oe0w",
+          "code": "hut12dot",
+          "name": "Hút 12 đỏ ( 10 bịch )",
+          "amount": 230,
+          "quantity": 1,
+          "costPrice": 190,
+          "productId": "p-1793179331833-v5bm",
+          "unitPrice": 230,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793667714920-yly6",
+          "code": "tuidon",
+          "name": "Túi đơn",
+          "amount": 112,
+          "quantity": 2,
+          "costPrice": 46,
+          "productId": "p-1793179331833-8mwx",
+          "unitPrice": 56,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793667720576-poqx",
+          "code": "tuit",
+          "name": "Túi chữ T",
+          "amount": 58,
+          "quantity": 1,
+          "costPrice": 50,
+          "productId": "p-1793179331833-3sb8",
+          "unitPrice": 58,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793667734984-flc9",
+          "code": "tuidoi",
+          "name": "Túi đôi",
+          "amount": 106,
+          "quantity": 2,
+          "costPrice": 46,
+          "productId": "p-1793179331833-9xuh",
+          "unitPrice": 53,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 9,
+      "totalAmount": 2506,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "08:00:13 03/11/2026",
+      "updatedAt": "08:17:18 04/11/2026"
+    },
+    {
+      "id": "ord-1793758157022",
+      "code": "#DH-1039",
+      "customerId": "c-1793758157018",
+      "customerName": "Lê Thảo Chi - Mơ Coffee",
+      "customerPhone": "0375235667",
+      "customerAddress": "53 Tây Cao Tốc - Thôn Bầu ,X. Thiên Lộc,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793758153378-lj51",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 770,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 770,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 770,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "09:09:17 04/11/2026",
+      "updatedAt": "09:09:17 04/11/2026"
+    },
+    {
+      "id": "ord-1793776867114",
+      "code": "#DH-1041",
+      "customerId": "c-1793776867111",
+      "customerName": "Phương Thảo",
+      "customerPhone": "",
+      "customerAddress": "Hương Canh",
+      "items": [
+        {
+          "id": "row-1793776846662-ebiy",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 560,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 560,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793776965526-uvnx",
+          "code": "HUT28CM",
+          "name": "Hút 12 dài 28cm",
+          "amount": 290,
+          "quantity": 1,
+          "costPrice": 26,
+          "productId": "p-1793776929928",
+          "unitPrice": 290,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793777001494-2inb",
+          "code": "CUONMANG",
+          "name": "Cuộn màng trong",
+          "amount": 95,
+          "quantity": 1,
+          "costPrice": 75,
+          "productId": "p-1793776954751",
+          "unitPrice": 95,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 3,
+      "totalAmount": 945,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "14:21:07 04/11/2026",
+      "updatedAt": "14:23:25 04/11/2026"
+    },
+    {
+      "id": "ord-1793831907493",
+      "code": "#DH-1014",
+      "customerId": "c-1793831907491",
+      "customerName": "Đức - Laha Coffee",
+      "customerPhone": "0352583829",
+      "customerAddress": "79 đinh bộ lĩnh p26, q binh thanh,P. Bình Thạnh,TP. Hồ Chí Minh",
+      "items": [
+        {
+          "id": "row-1793831888202-343o",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793831898810-busb",
+          "code": "p650app",
+          "name": "Ly đáy bằng 650ml",
+          "amount": 700,
+          "quantity": 1,
+          "costPrice": 515,
+          "productId": "p-1793179331833-8i9p",
+          "unitPrice": 700,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793831902162-ts8x",
+          "code": "D95APP",
+          "name": "Nắp cầu 95 App",
+          "amount": 460,
+          "quantity": 2000,
+          "costPrice": 0.18,
+          "productId": "p-1793179331833-5kxy",
+          "unitPrice": 0.23,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2002,
+      "totalAmount": 1730,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "05:38:27 05/11/2026",
+      "updatedAt": "05:38:27 05/11/2026"
+    },
+    {
+      "id": "ord-1793765558865",
+      "code": "#DH-1040",
+      "customerId": "c-1793957006855",
+      "customerName": "Hai chị em - Huệ Chu",
+      "customerPhone": "",
+      "customerAddress": "Thăng Long 3 - Thiện kế",
+      "items": [
+        {
+          "id": "row-1793765533482-zuit",
+          "code": "t7Ukp",
+          "name": "Ly tim700ml Ukp",
+          "amount": 780,
+          "quantity": 1,
+          "costPrice": 595,
+          "productId": "p-1793179331833-n820",
+          "unitPrice": 780,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793765538282-lpii",
+          "code": "t5Ukp",
+          "name": "Ly tim 500ml",
+          "amount": 1360,
+          "quantity": 2,
+          "costPrice": 500,
+          "productId": "p-1793179331833-pgyh",
+          "unitPrice": 680,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 3,
+      "totalAmount": 2140,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "11:12:38 04/11/2026",
+      "updatedAt": "16:23:26 06/11/2026"
+    },
+    {
+      "id": "ord-1793942296404",
+      "code": "#DH-1043",
+      "customerId": "c-1793942296401",
+      "customerName": "Chị Vy - Vy Xinh",
+      "customerPhone": "0364422192",
+      "customerAddress": "số nhà 39 ngõ 1 đào duy từ. Khu 2 ba đình  bỉm sơn thanh hoá",
+      "items": [
+        {
+          "id": "row-1793942260145-b7jd",
+          "code": "P5ht",
+          "name": "Ly đáy bằng 500ml",
+          "amount": 570,
+          "quantity": 1,
+          "costPrice": 395,
+          "productId": "p-1793179331833-q8sw",
+          "unitPrice": 570,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793942264953-66l0",
+          "code": "Y95HT",
+          "name": "Nắp Vuông 95 HT",
+          "amount": 230,
+          "quantity": 1000,
+          "costPrice": 0.145,
+          "productId": "p-1793179331833-f4e7",
+          "unitPrice": 0.23,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793942280433-8bn3",
+          "code": "hut6trongt",
+          "name": "Hút 6 trong  ( 10 bịch )",
+          "amount": 240,
+          "quantity": 1,
+          "costPrice": 190,
+          "productId": "p-1793179331833-4lvw",
+          "unitPrice": 240,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793942284825-ys4z",
+          "code": "hut8trongt",
+          "name": "Hút 8 trong  ( 10 bịch )",
+          "amount": 230,
+          "quantity": 1,
+          "costPrice": 185,
+          "productId": "p-1793179331833-3yef",
+          "unitPrice": 230,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793942292704-kimz",
+          "code": "tuit",
+          "name": "Túi chữ T",
+          "amount": 120,
+          "quantity": 2,
+          "costPrice": 50,
+          "productId": "p-1793179331833-3sb8",
+          "unitPrice": 60,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1005,
+      "totalAmount": 1390,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "12:18:16 06/11/2026",
+      "updatedAt": "12:18:16 06/11/2026"
+    },
+    {
+      "id": "ord-1793947139121",
+      "code": "#DH-1045",
+      "customerId": "c-1793947104064",
+      "customerName": "Hạnh Anh - Hạnh Anh 1992",
+      "customerPhone": "0979294896",
+      "customerAddress": "THÔN CẦU VĨNH KHÚC VĂN GIANG HƯNG YÊN",
+      "items": [
+        {
+          "id": "row-1793947113920-7h3t",
+          "code": "P900",
+          "name": "Ly 1000ml App",
+          "amount": 1190,
+          "quantity": 1,
+          "costPrice": 700,
+          "productId": "p-1793946909921",
+          "unitPrice": 1190,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793947121320-aig4",
+          "code": "P7HT",
+          "name": "Ly nhựa 700ml",
+          "amount": 670,
+          "quantity": 1,
+          "costPrice": 482,
+          "productId": "p-1793667646427",
+          "unitPrice": 670,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1860,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:38:59 06/11/2026",
+      "updatedAt": "13:42:20 06/11/2026"
+    },
+    {
+      "id": "ord-1793953314747",
+      "code": "#DH-1047",
+      "customerId": "c-1793953314744",
+      "customerName": "Lan Anh - Hà Nội",
+      "customerPhone": "0978421980",
+      "customerAddress": "Chung cư starup tower ngõ 91 đại mỗ Nam từ liêm hà nội,P. Xuân Phương,TP. Hà Nội",
+      "items": [
+        {
+          "id": "row-1793953305415-urel",
+          "code": "p5nham",
+          "name": "Ly đáy bằng 500ml Nhám",
+          "amount": 680,
+          "quantity": 1,
+          "costPrice": 500,
+          "productId": "p-1793179331833-14f8",
+          "unitPrice": 680,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793953476855-8977",
+          "code": "P7NHAM",
+          "name": "Ly đáy bằng 700ml nhám",
+          "amount": 740,
+          "quantity": 1,
+          "costPrice": 0,
+          "productId": "p-1793953441720",
+          "unitPrice": 740,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1420,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "15:21:54 06/11/2026",
+      "updatedAt": "15:24:39 06/11/2026"
+    },
+    {
+      "id": "ord-1793947447435",
+      "code": "#DH-1046",
+      "customerId": "c-1793947447433",
+      "customerName": "You coffee",
+      "customerPhone": "",
+      "customerAddress": "Quảng Khai",
+      "items": [
+        {
+          "id": "row-1793947441656-kp7q",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 1300,
+          "quantity": 2,
+          "costPrice": 480,
+          "productId": "p-1793179331833-3wfc",
+          "unitPrice": 650,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 2,
+      "totalAmount": 1300,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:44:07 06/11/2026",
+      "updatedAt": "15:24:58 06/11/2026"
+    },
+    {
+      "id": "ord-1793956936842",
+      "code": "#DH-1048",
+      "customerId": "c-1793956936840",
+      "customerName": "88 Chill",
+      "customerPhone": "",
+      "customerAddress": "Sơn Lôi",
+      "items": [
+        {
+          "id": "row-1793956932079-m8wq",
+          "code": "Q7APP",
+          "name": "Ly đáy bầu 700ml",
+          "amount": 740,
+          "quantity": 1,
+          "costPrice": 560,
+          "productId": "p-1793583263223",
+          "unitPrice": 740,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 1,
+      "totalAmount": 740,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "16:22:16 06/11/2026",
+      "updatedAt": "16:22:16 06/11/2026"
+    },
+    {
+      "id": "ord-1793957440786",
+      "code": "#DH-1049",
+      "customerId": "c-1793957440783",
+      "customerName": "Trịnh Khuyến",
+      "customerPhone": "",
+      "customerAddress": "Bá Hiến",
+      "items": [
+        {
+          "id": "row-1793957402151-fmkc",
+          "code": "t5app",
+          "name": "Ly tim 500ml",
+          "amount": 650,
+          "quantity": 1,
+          "costPrice": 480,
+          "productId": "p-1793179331833-3wfc",
+          "unitPrice": 650,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793957406423-9hr4",
+          "code": "t7app",
+          "name": "Ly tim 700ml",
+          "amount": 750,
+          "quantity": 1,
+          "costPrice": 580,
+          "productId": "p-1793179331833-kcpf",
+          "unitPrice": 750,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793957409318-4fr3",
+          "code": "T5DAY",
+          "name": "Ly tim 500ml nhám dày",
+          "amount": 1090,
+          "quantity": 1,
+          "costPrice": 840,
+          "productId": "p-1793335407143",
+          "unitPrice": 1090,
+          "costLocked": true
+        },
+        {
+          "id": "row-1793957418303-rb32",
+          "code": "T7NHAMDAY",
+          "name": "Ly tim 700ml nhám dày",
+          "amount": 1350,
+          "quantity": 1,
+          "costPrice": 1160,
+          "productId": "p-1793179331833-og43",
+          "unitPrice": 1350,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 4,
+      "totalAmount": 3840,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "16:30:40 06/11/2026",
+      "updatedAt": "16:30:40 06/11/2026"
+    },
+    {
+      "id": "ord-1794032290933",
+      "code": "#DH-1050",
+      "customerId": "c-1794032269469",
+      "customerName": "Chà Bá - Thoa Ngô",
+      "customerPhone": "",
+      "customerAddress": "",
+      "items": [
+        {
+          "id": "row-1794032100956-lala",
+          "code": "T7NHAMDAY",
+          "name": "Ly tim 700ml nhám dày",
+          "amount": 6300,
+          "quantity": 5,
+          "costPrice": 1160,
+          "productId": "p-1793179331833-og43",
+          "unitPrice": 1260,
+          "costLocked": true
+        },
+        {
+          "id": "row-1794032120324-klel",
+          "code": "T5DAY",
+          "name": "Ly tim 500ml nhám dày",
+          "amount": 1050,
+          "quantity": 1,
+          "costPrice": 840,
+          "productId": "p-1793335407143",
+          "unitPrice": 1050,
+          "costLocked": true
+        },
+        {
+          "id": "row-1794032144948-aa2b",
+          "code": "TO1000IN",
+          "name": "Tô giấy in 1000ml dày + Nắp",
+          "amount": 1150,
+          "quantity": 1,
+          "costPrice": 0,
+          "productId": "p-1793534368206",
+          "unitPrice": 1150,
+          "costLocked": true
+        }
+      ],
+      "totalQuantity": 7,
+      "totalAmount": 8500,
+      "notes": "",
+      "status": "Chờ in",
+      "createdAt": "13:18:10 07/11/2026",
+      "updatedAt": "14:21:13 07/11/2026"
     }
   ],
-  "lastUpdated": "2026-10-28T09:16:36.889Z"
+  "lastUpdated": "2026-11-07T07:40:06.037Z"
 }
