@@ -1089,7 +1089,8 @@
           "quantity": 1,
           "costPrice": 565,
           "productId": "p-1793177484625-0fm0",
-          "unitPrice": 750
+          "unitPrice": 750,
+          "costLocked": true
         }
       ],
       "totalQuantity": 1,
@@ -1114,7 +1115,8 @@
           "quantity": 3,
           "costPrice": 580,
           "productId": "p-1793163521006-1qvl",
-          "unitPrice": 760
+          "unitPrice": 760,
+          "costLocked": true
         },
         {
           "id": "row-1793169268987-jg6ov",
@@ -1124,7 +1126,8 @@
           "quantity": 1,
           "costPrice": 480,
           "productId": "p-1793163521006-ayk2",
-          "unitPrice": 660
+          "unitPrice": 660,
+          "costLocked": true
         }
       ],
       "totalQuantity": 4,
@@ -1150,7 +1153,8 @@
           "unitPrice": 700,
           "quantity": 1,
           "amount": 700,
-          "costPrice": 0
+          "costPrice": 515,
+          "costLocked": true
         },
         {
           "id": "row-1793177449822-xf82d",
@@ -1160,7 +1164,8 @@
           "unitPrice": 660,
           "quantity": 1,
           "amount": 660,
-          "costPrice": 480
+          "costPrice": 480,
+          "costLocked": true
         }
       ],
       "totalQuantity": 2,

@@ -175,13 +175,15 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
       // Specific row requested via inline selector
       const idx = updatedRows.findIndex(r => r.id === targetRowId);
       if (idx >= 0) {
+        const snapshotCost = product.costPrice !== undefined && product.costPrice !== null ? Number(product.costPrice) : 0;
         updatedRows[idx] = {
           ...updatedRows[idx],
           productId: product.id,
           code: product.code,
           name: product.name,
           unitPrice: product.price,
-          costPrice: product.costPrice || 0,
+          costPrice: snapshotCost,
+          costLocked: true,
           quantity: updatedRows[idx].quantity || 1,
           amount: (updatedRows[idx].quantity || 1) * product.price
         };
@@ -201,6 +203,7 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
         };
         rowToFocusId = updatedRows[existingIdx].id;
       } else {
+        const snapshotCost = product.costPrice !== undefined && product.costPrice !== null ? Number(product.costPrice) : 0;
         // Find the first empty row
         const firstEmptyIdx = updatedRows.findIndex(r => !r.productId);
         if (firstEmptyIdx >= 0) {
@@ -210,7 +213,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             code: product.code,
             name: product.name,
             unitPrice: product.price,
-            costPrice: product.costPrice || 0,
+            costPrice: snapshotCost,
+            costLocked: true,
             quantity: 1,
             amount: product.price
           };
@@ -223,7 +227,8 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
             code: product.code,
             name: product.name,
             unitPrice: product.price,
-            costPrice: product.costPrice || 0,
+            costPrice: snapshotCost,
+            costLocked: true,
             quantity: 1,
             amount: product.price
           };
@@ -378,12 +383,31 @@ export const CalculatorScreen: React.FC<CalculatorScreenProps> = ({
   });
 
   // Filter only valid items that have a product selected or name
+  // Đảm bảo chốt cố định giá vốn (costPrice) tại thời điểm tạo đơn
   const validOrderItems = orderItems
     .filter(item => Boolean((item.name && item.name.trim()) || item.productId))
-    .map(item => ({
-      ...item,
-      productId: item.productId || 'p-' + item.id
-    }));
+    .map(item => {
+      const hasLockedCost =
+        (item.costLocked && item.costPrice !== undefined && item.costPrice !== null && !Number.isNaN(Number(item.costPrice))) ||
+        (item.costPrice !== undefined && item.costPrice !== null && Number(item.costPrice) > 0);
+
+      let snapshotCost = hasLockedCost ? Number(item.costPrice) : undefined;
+      if (snapshotCost === undefined) {
+        const matchedProd = products.find(
+          p => p.id === item.productId || (item.code && p.code.toUpperCase() === item.code.toUpperCase())
+        );
+        snapshotCost = matchedProd?.costPrice !== undefined && matchedProd?.costPrice !== null
+          ? Number(matchedProd.costPrice)
+          : 0;
+      }
+
+      return {
+        ...item,
+        productId: item.productId || 'p-' + item.id,
+        costPrice: snapshotCost,
+        costLocked: true
+      };
+    });
 
   // Calculate totals (only from valid rows)
   const totalQuantity = validOrderItems.reduce((sum, item) => sum + item.quantity, 0);

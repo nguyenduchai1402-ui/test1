@@ -265,22 +265,6 @@ export async function syncFromSupabase(): Promise<{
       createdAt: row.created_at
     }));
 
-    const cloudOrders: Order[] = (oRes.data || []).map((row: any) => ({
-      id: row.id,
-      code: row.code,
-      customerId: row.customer_id || undefined,
-      customerName: row.customer_name,
-      customerPhone: row.customer_phone || undefined,
-      customerAddress: row.customer_address || undefined,
-      items: typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []),
-      totalQuantity: Number(row.total_quantity || 0),
-      totalAmount: Number(row.total_amount || 0),
-      notes: row.notes || undefined,
-      status: row.status || 'Chờ in',
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    }));
-
     const mergedCloudProducts = mergeWithRecentlySavedProducts(cloudProducts);
     if (mergedCloudProducts.length > 0) {
       setStorage(STORAGE_KEYS.PRODUCTS, mergedCloudProducts);
@@ -291,6 +275,27 @@ export async function syncFromSupabase(): Promise<{
       setStorage(STORAGE_KEYS.CUSTOMERS, mergedCloudCustomers);
       window.dispatchEvent(new Event('pos_customers_updated'));
     }
+
+    const cloudOrders: Order[] = (oRes.data || []).map((row: any) => {
+      const rawItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
+      const { items: lockedItems } = freezeOrderItemsCost(rawItems, mergedCloudProducts);
+      return {
+        id: row.id,
+        code: row.code,
+        customerId: row.customer_id || undefined,
+        customerName: row.customer_name,
+        customerPhone: row.customer_phone || undefined,
+        customerAddress: row.customer_address || undefined,
+        items: lockedItems,
+        totalQuantity: Number(row.total_quantity || 0),
+        totalAmount: Number(row.total_amount || 0),
+        notes: row.notes || undefined,
+        status: row.status || 'Chờ in',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    });
+
     if (cloudOrders.length > 0) {
       setStorage(STORAGE_KEYS.ORDERS, cloudOrders);
       window.dispatchEvent(new Event('pos_orders_updated'));
@@ -918,7 +923,12 @@ export async function syncFromLocalApi(): Promise<boolean> {
       hasChanges = true;
     }
     if (Array.isArray(data.orders)) {
-      setStorage(STORAGE_KEYS.ORDERS, data.orders);
+      const currentProds = posDb.getProducts();
+      const lockedOrders = data.orders.map((o: Order) => {
+        const { items: lockedItems } = freezeOrderItemsCost(o.items || [], currentProds);
+        return { ...o, items: lockedItems };
+      });
+      setStorage(STORAGE_KEYS.ORDERS, lockedOrders);
       window.dispatchEvent(new Event('pos_orders_updated'));
       hasChanges = true;
     }
@@ -926,6 +936,66 @@ export async function syncFromLocalApi(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// Chốt cố định giá vốn (costPrice) vào từng món của đơn hàng để khi giá sản phẩm thay đổi sau này,
+// lợi nhuận của những đơn hàng đã tạo trước đó hoàn toàn KHÔNG bị thay đổi.
+function freezeOrderItemsCost(
+  items: OrderItem[],
+  productsList?: Product[]
+): { items: OrderItem[]; changed: boolean } {
+  if (!Array.isArray(items) || items.length === 0) {
+    return { items: items || [], changed: false };
+  }
+
+  let prodCostById: Map<string, number> | null = null;
+  let prodCostByCode: Map<string, number> | null = null;
+
+  const ensureCostMaps = () => {
+    if (prodCostById && prodCostByCode) return;
+    prodCostById = new Map<string, number>();
+    prodCostByCode = new Map<string, number>();
+    const prods = productsList && productsList.length > 0 ? productsList : INITIAL_PRODUCTS;
+    for (const p of prods) {
+      if (p.costPrice !== undefined && p.costPrice !== null && !Number.isNaN(Number(p.costPrice))) {
+        const c = Number(p.costPrice);
+        prodCostById.set(p.id, c);
+        if (p.code) prodCostByCode.set(p.code.trim().toUpperCase(), c);
+      }
+    }
+  };
+
+  let changed = false;
+  const lockedItems = items.map(it => {
+    if (it.costLocked && it.costPrice !== undefined && it.costPrice !== null && !Number.isNaN(Number(it.costPrice))) {
+      return it;
+    }
+    if (it.costPrice !== undefined && it.costPrice !== null && Number(it.costPrice) > 0) {
+      changed = true;
+      return {
+        ...it,
+        costPrice: Number(it.costPrice),
+        costLocked: true
+      };
+    }
+
+    ensureCostMaps();
+    let resolvedCost: number | undefined;
+    if (it.productId && prodCostById!.has(it.productId)) {
+      resolvedCost = prodCostById!.get(it.productId);
+    } else if (it.code && prodCostByCode!.has(String(it.code).trim().toUpperCase())) {
+      resolvedCost = prodCostByCode!.get(String(it.code).trim().toUpperCase());
+    }
+
+    changed = true;
+    return {
+      ...it,
+      costPrice: resolvedCost !== undefined ? resolvedCost : (Number(it.costPrice) || 0),
+      costLocked: true
+    };
+  });
+
+  return { items: lockedItems, changed };
 }
 
 export const posDb = {
@@ -1127,7 +1197,28 @@ export const posDb = {
 
   // ORDERS
   getOrders(): Order[] {
-    const list = getStorage<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    const rawList = getStorage<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    let anyChanged = false;
+    let productsCache: Product[] | undefined;
+
+    const list = rawList.map(o => {
+      const needsFreeze = (o.items || []).some(
+        it => !it.costLocked || it.costPrice === undefined || it.costPrice === null
+      );
+      if (!needsFreeze) return o;
+      if (!productsCache) productsCache = this.getProducts();
+      const { items: lockedItems, changed } = freezeOrderItemsCost(o.items || [], productsCache);
+      if (changed) {
+        anyChanged = true;
+        return { ...o, items: lockedItems };
+      }
+      return o;
+    });
+
+    if (anyChanged) {
+      setStorage(STORAGE_KEYS.ORDERS, list);
+    }
+
     return [...list].sort((a, b) => {
       const tA = parseOrderTimestamp(a.createdAt || a.updatedAt);
       const tB = parseOrderTimestamp(b.createdAt || b.updatedAt);
@@ -1192,8 +1283,10 @@ export const posDb = {
 
     const list = this.getOrders();
     const idx = list.findIndex(o => o.id === order.id);
+    const { items: lockedItems } = freezeOrderItemsCost(order.items || [], this.getProducts());
     const updated: Order = {
       ...order,
+      items: lockedItems,
       customerId: resolvedCustomerId,
       createdAt: order.createdAt ? formatVietnamDateTime(order.createdAt) : formatVietnamDateTime(),
       updatedAt: formatVietnamDateTime()

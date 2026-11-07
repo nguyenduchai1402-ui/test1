@@ -30,7 +30,8 @@ export interface OrderItem {
   code?: string;
   name: string;
   unitPrice: number;  // Price in thousand VND (k)
-  costPrice?: number;  // Giá vốn / Giá nhập (k)
+  costPrice?: number;  // Giá vốn / Giá nhập (k) đã chốt tại thời điểm tạo đơn
+  costLocked?: boolean; // Đánh dấu giá vốn của món trong đơn đã được khóa cố định
   quantity: number;   // Số lượng
   amount: number;     // unitPrice * quantity (in k)
   notes?: string;     // Ghi chú từng món (in màu, kèm nắp...)

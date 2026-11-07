@@ -126,7 +126,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
   });
 
 
-  // Bảng tra giá vốn sản phẩm để tính lợi nhuận
+  // Bảng tra giá vốn dự phòng (chỉ dùng cho dữ liệu cũ chưa được chốt giá vốn trong item)
   const productCostMap = new Map<string, number>();
   products.forEach(p => {
     if (p.costPrice !== undefined && p.costPrice !== null) {
@@ -137,8 +137,14 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ onEditOrder, onShowT
 
   const getOrderItemCost = (it: any): number => {
     const qty = it.quantity || 0;
-    if (it.costPrice !== undefined && it.costPrice !== null && it.costPrice > 0) {
-      return it.costPrice * qty;
+    // Khi đơn hàng đã tạo, giá vốn (costPrice) được chốt cố định trong từng món của đơn hàng.
+    // Luôn ưu tiên dùng giá vốn đã lưu trong đơn để khi sản phẩm thay đổi giá sau này,
+    // lợi nhuận của các đơn hàng đã tạo trước đó hoàn toàn KHÔNG bị thay đổi.
+    if (it.costLocked && it.costPrice !== undefined && it.costPrice !== null && !Number.isNaN(Number(it.costPrice))) {
+      return Number(it.costPrice) * qty;
+    }
+    if (it.costPrice !== undefined && it.costPrice !== null && Number(it.costPrice) > 0) {
+      return Number(it.costPrice) * qty;
     }
     if (it.productId && productCostMap.has(it.productId)) {
       return (productCostMap.get(it.productId) || 0) * qty;
