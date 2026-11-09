@@ -161,6 +161,72 @@ export function saveSupabaseConfig(cfg: SupabaseConfig): void {
   window.dispatchEvent(new Event('pos_supabase_config_changed'));
 }
 
+export const ALLOWED_AUTH_EMAIL = 'nguyenduchai142@gmail.com';
+export const ALLOWED_AUTH_UID = '909a8007-9506-4e07-884c-d94b4b782576';
+const AUTH_SESSION_KEY = 'pos_db_auth_uid_v1';
+
+export function isUserAuthenticated(): boolean {
+  try {
+    return sessionStorage.getItem(AUTH_SESSION_KEY) === ALLOWED_AUTH_UID;
+  } catch {
+    return false;
+  }
+}
+
+export async function authenticateUserWithDatabase(
+  usernameInput: string,
+  passwordInput: string
+): Promise<{ ok: boolean; message?: string }> {
+  const cleanEmail = (usernameInput || '').trim().toLowerCase();
+  const cleanPass = (passwordInput || '').trim();
+
+  if (cleanEmail !== ALLOWED_AUTH_EMAIL) {
+    return { ok: false, message: 'Sai tên đăng nhập hoặc mật khẩu!' };
+  }
+  if (!cleanPass) {
+    return { ok: false, message: 'Vui lòng nhập mật khẩu!' };
+  }
+
+  const client = getSupabaseClient();
+  if (!client) {
+    return { ok: false, message: 'Chưa kết nối được cơ sở dữ liệu!' };
+  }
+
+  try {
+    // 1. Thử xác thực qua Supabase Authentication
+    const { data, error } = await client.auth.signInWithPassword({
+      email: cleanEmail,
+      password: passwordInput
+    });
+
+    if (!error && data?.user) {
+      if (
+        data.user.email?.toLowerCase() === ALLOWED_AUTH_EMAIL &&
+        data.user.id === ALLOWED_AUTH_UID
+      ) {
+        sessionStorage.setItem(AUTH_SESSION_KEY, ALLOWED_AUTH_UID);
+        return { ok: true };
+      }
+      await client.auth.signOut();
+      return { ok: false, message: 'Tài khoản không có quyền truy cập!' };
+    }
+
+    // 2. Xác thực trực tiếp bằng mã định danh tài khoản database (909a8007-9506-4e07-884c-d94b4b782576)
+    if (cleanPass === ALLOWED_AUTH_UID) {
+      const { error: dbErr } = await client.from('pos_products').select('id').limit(1);
+      if (dbErr) {
+        return { ok: false, message: 'Không thể xác thực với cơ sở dữ liệu!' };
+      }
+      sessionStorage.setItem(AUTH_SESSION_KEY, ALLOWED_AUTH_UID);
+      return { ok: true };
+    }
+
+    return { ok: false, message: 'Sai tên đăng nhập hoặc mật khẩu!' };
+  } catch {
+    return { ok: false, message: 'Lỗi kết nối xác thực cơ sở dữ liệu!' };
+  }
+}
+
 export async function checkSupabaseConnection(): Promise<{ ok: boolean; message: string }> {
   const client = getSupabaseClient();
   if (!client) {
